@@ -8,6 +8,13 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**An account's colour can be changed.** The coloured dot beside each account, and the mark on its
+messages in a mixed list, was picked for you when the account was added and could never be changed.
+Settings → Mail accounts now has a colour swatch on every row — Gmail and Outlook accounts included,
+which the Edit form is closed to — that opens the palette of eight. Two accounts may share a colour
+if you want them to read as a pair. No migration.
+[#69](https://github.com/karatektus/pl_mail/pull/69), by @Flouss.
+
 **An open message stays open when you change what the list shows.** With the reading pane on the
 right, choosing another folder, switching a category tab, turning the page, sorting or searching
 closed the message you were reading, although it had never covered the list. It stays now, and the

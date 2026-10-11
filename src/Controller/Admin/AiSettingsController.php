@@ -307,7 +307,7 @@ final class AiSettingsController extends AbstractController
             'millis'  => $result->milliseconds,
             'message' => $this->translator->trans(
                 'admin.ai.warmup.' . (string) $result->reason,
-                $result->reasonParams,
+                $result->placeholders(),
             ),
         ]);
     }

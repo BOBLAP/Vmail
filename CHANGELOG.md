@@ -6,6 +6,12 @@ so anything that changes the schema irreversibly is called out explicitly.
 The published image tags: `latest` follows the most recent release below,
 `main` follows the tip of the default branch, and `sha-…` pins one commit.
 
+## Unreleased
+
+**Admin → AI shows what the model host said when a test or a warm-up fails.** The message kept the
+percent signs of its own placeholder, so a refusal read "HTTP %403%" and the host's reason sat
+between two stray percent signs.
+
 ## v0.3.3 — 2026-10-11
 
 **The emoji picker is no longer almost empty on an iPhone or in Safari.** Nearly every cell of the

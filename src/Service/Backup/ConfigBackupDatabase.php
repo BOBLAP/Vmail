@@ -19,6 +19,7 @@ use App\Entity\Monitoring\LogSettings;
 use App\Repository\Ai\AiSettingsRepository;
 use App\Repository\Monitoring\LogSettingsRepository;
 use App\Repository\System\UpdateCheckRepository;
+use App\Domain\Enum\Ai\AiProvider;
 use App\Domain\Enum\Ai\PromptSlot;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -248,6 +249,7 @@ final readonly class ConfigBackupDatabase
 
         return [
             'isEnabled'             => $settings->isEnabled,
+            'provider'              => $settings->provider->value,
             'baseUrl'               => $settings->baseUrl,
             'apiToken'              => $settings->apiToken,
             'chatModel'             => $settings->chatModel,
@@ -295,6 +297,11 @@ final readonly class ConfigBackupDatabase
         $settings = $this->aiSettings->current() ?? new AiSettings();
 
         $settings->isEnabled             = true === ($values['isEnabled'] ?? false);
+        // Absent from every backup taken before there was a choice, and absent
+        // means Ollama: it is what those installations were talking to. An
+        // unknown value means the same rather than a failed restore — a file
+        // from a later release naming a dialect this one has not heard of.
+        $settings->provider              = AiProvider::tryFrom((string) ($values['provider'] ?? '')) ?? AiProvider::Ollama;
         $settings->baseUrl               = $this->string($values, 'baseUrl');
         $settings->apiToken              = $this->string($values, 'apiToken');
         $settings->chatModel             = $this->string($values, 'chatModel');

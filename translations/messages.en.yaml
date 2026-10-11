@@ -147,7 +147,7 @@ admin:
             qwen3-embedding_0_6b: 'The default, and the one to pick unless you have a reason. Multilingual, which matters more than any benchmark for a mailbox that is not all in one language, and the only one here that reached perfect precision in testing. 639 MB.'
         field:
             base_url: 'Model host'
-            base_url_help: 'The address of an Ollama container on your network, including the port.'
+            base_url_help: 'For Ollama, the address of the container on your network, including the port. For an OpenAI-compatible endpoint, the API root including its version, such as https://api.example.com/v1.'
             categorisation: 'Sort mail into tabs'
             categorisation_help: 'Runs on every message that arrives. Only ever a tie-breaker — the ordinary rules decide first.'
             chat_keep_alive: 'Keep the writing model loaded for'
@@ -167,6 +167,8 @@ admin:
             semantic_min_similarity: 'Minimum similarity'
             semantic_min_similarity_help: 'How close a match has to be, from 0 to 1. Every model answers on its own scale, so this belongs with the model above: too high finds nothing, too low returns the whole mailbox.'
             enabled: 'Use a language model'
+            provider: 'Provider'
+            provider_help: 'Which API the model host speaks. Ollama is the one plMail knows most about: it can keep a model loaded and load one ahead of time. OpenAI-compatible covers nearly everything else, on your own network or hosted.'
             enabled_help: 'Off by default. Everything below is ignored while this is off.'
             search: 'Search by meaning'
             search_help: 'Adds results that match what you meant. The ordinary search is unchanged.'
@@ -182,12 +184,13 @@ admin:
             details: 'See each message'
             measured: 'Last 7 days: %count% messages held, typically for %median% s (95% within %p95% s). %timeout% were shown without an answer because the wait ran out.'
             no_data: 'No mail has been held in the last 7 days, so there is no delay to report yet.'
-        intro: 'plMail can use a language model you run yourself. Nothing is sent anywhere else, nothing is switched on until you say so, and the mail client works exactly as it does now while this is off.'
+        intro: 'plMail can use a language model, on a machine you run yourself or at an endpoint you choose. Mail is sent to the address you enter here and nowhere else, nothing is switched on until you say so, and the mail client works exactly as it does now while this is off.'
         perf:
             by_model: 'Per model'
             chip:
                 cold: 'Nothing loaded'
                 off: 'Off'
+                answering: 'Answering'
                 split: 'Partly on the CPU'
                 unreachable: 'No answer'
                 warm: 'Loaded'
@@ -236,9 +239,15 @@ admin:
                 day: '24 hours'
                 hour: 'Hour'
                 week: '7 days'
+        provider:
+            ollama: 'Ollama'
+            openai: 'OpenAI-compatible'
         probe:
             missing_model: 'That host answered, but it is not holding: %models%. Pull them on the host first.'
             no_host: 'Type an address first.'
+            no_model_list: 'Something answered at that address, but it has no model list (HTTP %status%). Check that the address ends in the API version, usually /v1. Some servers have no list and still work; save and try a draft to find out.'
+            not_an_api: 'Something answered at that address, but not with JSON. That is usually a login page or a proxy, not the API.'
+            refused: 'That host answered and refused the request (HTTP %status%). Check the token.'
             ok: 'That host answered, and is holding %count% models.'
             models: 'Show the %count% models it is holding'
             status: 'That host answered with HTTP %status%.'
@@ -291,6 +300,7 @@ admin:
             model_missing: 'That host has no model called “%model%”. Pull it there, or name one that is on it. (%error%)'
             no_host: 'Set a model host first, and save.'
             no_model: 'Name a writing model first, and save.'
+            not_ollama: 'Only an Ollama host can be asked to load a model ahead of time.'
             status: 'The host refused with HTTP %status%. (%error%)'
             timeout: 'The host was still loading after four minutes and plMail stopped waiting. It may well finish; the model is very likely too big for the memory it has.'
             unexpected: 'Something went wrong before the host could answer. (%error%)'
@@ -2414,7 +2424,7 @@ onboarding:
                 For Gmail and Outlook, use the sign-in buttons under Settings → Mail
                 accounts instead — no server addresses needed.
         admin_ai:
-            body: 'The address of an Ollama container on your network, and the names of two models it is holding — one for writing, one for search. Nothing leaves your network.'
+            body: 'The address of an Ollama container on your network, or of any OpenAI-compatible endpoint, and the names of two models it offers — one for writing, one for search. Mail goes to that address and nowhere else.'
             heading: 'What you need'
             skip_body: 'Press Next with everything empty. plMail is a complete mail client without any of this, and you can come back to it later in Admin → AI.'
             skip_heading: 'Not interested?'
@@ -2478,7 +2488,7 @@ onboarding:
             lead: Connect the mailbox you actually read, and plMail starts syncing it.
             title: Mail account
         admin-ai:
-            intro: 'plMail can use a language model you run yourself — for searching by meaning, sorting mail, and help with writing. It is entirely optional, and you can leave every box below empty.'
+            intro: 'plMail can use a language model — one you run yourself, or an endpoint you choose — for searching by meaning, sorting mail, and help with writing. It is entirely optional, and you can leave every box below empty.'
             lead: 'Optional. Leave it empty if you do not want it.'
             title: 'Language model'
         admin-integrations:

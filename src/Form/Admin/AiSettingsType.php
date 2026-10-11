@@ -6,10 +6,12 @@ namespace App\Form\Admin;
 
 use App\Domain\Ai\EmbeddingPreset;
 use App\Domain\Ai\KeepAlive;
+use App\Domain\Enum\Ai\AiProvider;
 use App\Entity\Ai\AiSettings;
 use App\Form\PasswordManagerIgnore;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -42,7 +44,7 @@ final class AiSettingsType extends AbstractType
         // Read now, before a submission has been mapped onto the object: by the
         // time the listener below runs, $settings->baseUrl is already what was
         // typed, and the address the stored key was issued for is gone.
-        $addressBefore = $settings instanceof AiSettings ? $settings->baseUrl : null;
+        $addressBefore = $settings instanceof AiSettings ? self::address($settings) : null;
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,
@@ -57,7 +59,7 @@ final class AiSettingsType extends AbstractType
                     $submitted->apiToken,
                     (string) $event->getForm()->get('apiToken')->getData(),
                     $addressBefore,
-                    $submitted->baseUrl,
+                    self::address($submitted),
                 );
             },
         );
@@ -67,6 +69,19 @@ final class AiSettingsType extends AbstractType
                 'label'    => 'admin.ai.field.enabled',
                 'help'     => 'admin.ai.field.enabled_help',
                 'required' => false,
+            ])
+            // FIRST, because it decides what the fields under it mean: which
+            // address is expected, and whether the keep-alive boxes and the
+            // warm-up button are about anything at all.
+            ->add('provider', EnumType::class, [
+                'class'        => AiProvider::class,
+                'label'        => 'admin.ai.field.provider',
+                'help'         => 'admin.ai.field.provider_help',
+                'choice_label' => static fn (AiProvider $provider): string => $provider->label(),
+                'attr'         => [
+                    'data-admin--ai-connection-target' => 'provider',
+                    'data-action'                      => 'admin--ai-connection#refresh',
+                ],
             ])
             ->add('baseUrl', TextType::class, [
                 'label'       => 'admin.ai.field.base_url',
@@ -246,25 +261,34 @@ final class AiSettingsType extends AbstractType
      *    credential to a host that was never given it — by an administrator who
      *    only meant to change a URL.
      *
-     * A trailing slash is not a change of address. People paste one and people
-     * remove one, and both clients tolerate it.
      */
-    private static function keyAfter(?string $stored, string $typed, ?string $addressBefore, ?string $addressAfter): ?string
+    private static function keyAfter(?string $stored, string $typed, ?string $addressBefore, string $addressAfter): ?string
     {
         if ('' !== trim($typed)) {
             return $typed;
         }
 
-        if (self::address($addressBefore) !== self::address($addressAfter)) {
+        if ($addressBefore !== $addressAfter) {
             return null;
         }
 
         return $stored;
     }
 
-    private static function address(?string $url): string
+    /**
+     * What a key was issued for: the dialect and the address, as one string.
+     *
+     * The dialect counts. The same host and port can be an Ollama at its root
+     * and something else entirely behind a proxy path, and "the provider
+     * changed" is at least as strong a sign as "the URL changed" that whoever
+     * answers now is not who the key was typed for.
+     *
+     * A trailing slash does not count. People paste one and people remove one,
+     * and both clients tolerate it.
+     */
+    private static function address(AiSettings $settings): string
     {
-        return rtrim(trim((string) $url), '/');
+        return $settings->provider->value . ' ' . rtrim(trim((string) $settings->baseUrl), '/');
     }
 
     /**

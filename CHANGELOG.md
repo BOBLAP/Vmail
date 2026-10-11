@@ -8,6 +8,24 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**The language model can be any OpenAI-compatible endpoint.** Admin → AI has a **Provider** field:
+Ollama, as before, or OpenAI-compatible, which covers llama.cpp, vLLM, LM Studio, LiteLLM, hosted
+providers and Ollama under `/v1`. Writing help, summaries, sorting and search by meaning all work
+with either. The address is the API root including its version, such as
+`https://api.example.com/v1`, and the token is the API key.
+
+- **Ollama is still the default** and nothing changes for an existing installation.
+- **Not for the other provider:** the keep-alive fields, **Warm up now** and the "in memory" half of
+  the model host card. The OpenAI format cannot ask for any of them, so they are put away while it
+  is chosen.
+- **A hosted provider receives your mail.** Sorting sends every arriving message no rule recognised,
+  and search sends every message once to index it. plMail sends only to the address you enter.
+- **Changing the provider re-uses the index** when the search model has the same name. A different
+  model still needs a new pass from Admin → AI, as it always has.
+
+One column is added to `ai_settings`; the migration is reversible. Built on
+[#58](https://github.com/karatektus/pl_mail/pull/58) by @shady2k.
+
 **The token in Admin → AI is now sent to the model host.** It was stored and never used, so an
 Ollama behind a reverse proxy that asks for one answered 401 to every request while the page said a
 token was on file. It goes as a bearer token with every request, including the Test button and the

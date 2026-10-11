@@ -1,4 +1,4 @@
-<!-- translated-from: features/admin.md sha1:c3cba2b03494edf8c24656563aed4d147139093f -->
+<!-- translated-from: features/admin.md sha1:9f1b678ff554721fb55331d525efa52790c9d390 -->
 
 # Administration
 
@@ -461,15 +461,39 @@ Aufbewahrt wird 30 Tage, nächtlich weggeräumt von `app:monitoring:prune`; `--p
 ## KI
 
 Optional, standardmäßig aus, und plMail ist auch ohne einen vollständigen Mail-Client. Hier wird
-nichts eingeschaltet, bis du es einschaltest, und es verlässt nichts dein Netz: Das Modell läuft auf
-einer Maschine, die dir gehört.
+nichts eingeschaltet, bis du es einschaltest. Mails gehen an den Modell-Host, den du einträgst, und
+sonst nirgendwohin: Läuft das Modell auf einer Maschine, die dir gehört, verlässt nichts dein Netz.
 
-**Modell-Host** ist die Adresse eines [Ollama](https://ollama.com)-Containers in deinem eigenen Netz,
-mit Port — `http://10.0.0.5:11434`. Ein **Token** brauchst du nur, wenn du den Host hinter etwas
-gestellt hast, das danach fragt; Ollama selbst hat keine Authentifizierung. Es geht als Bearer-Token
+**Anbieter** ist die API, die der Modell-Host spricht. Es gibt zwei:
+
+| Anbieter | Was das ist | Was plMail damit kann |
+|---|---|---|
+| **Ollama** | Ein [Ollama](https://ollama.com)-Container, meist in deinem eigenen Netz | Alles auf dieser Seite |
+| **OpenAI-kompatibel** | Alles, was `/chat/completions` und `/embeddings` im OpenAI-Format beantwortet: llama.cpp, vLLM, LM Studio, LiteLLM, ein gehosteter Anbieter oder Ollama unter `/v1` | Schreiben, Zusammenfassungen, Einsortieren und Suche. Nicht die Keep-alive-Felder und nicht **Jetzt vorwärmen** |
+
+Das OpenAI-Format kann nicht fragen, was ein Host im Speicher hält, kann kein Modell geladen halten
+und keines vorab laden. Ist dieser Anbieter gewählt, werden die beiden Keep-alive-Felder und **Jetzt
+vorwärmen** weggeräumt, und die Karte zum Modell-Host unter **Admin → Performance** zeigt, ob der Host
+antwortet und was die Aufrufe gekostet haben, ohne die Hälfte „im Speicher“. Die Werte bleiben
+erhalten, beim Zurückwechseln geht also nichts verloren.
+
+**Wählst du einen gehosteten Anbieter, gehen deine Mails an ihn.** Das Einsortieren schickt jede
+ankommende Nachricht, die keine Regel erkannt hat; die Suche schickt jede Nachricht einmal zum
+Indizieren und jede Suchanfrage; Schreibhilfe und Zusammenfassungen schicken das, worum du sie
+bittest. Gehostete Anbieter rechnen meist pro Anfrage ab. plMail weicht nie auf einen anderen Host
+aus und schickt nie etwas an eine Adresse, die du nicht eingetragen hast.
+
+**Modell-Host** ist die Adresse. Bei Ollama ist das der Container, mit Port —
+`http://10.0.0.5:11434`. Bei einem OpenAI-kompatiblen Endpunkt ist es die Wurzel der API samt
+Version, etwa `https://api.example.com/v1`; plMail hängt `/chat/completions` und den Rest an genau
+das, was du eintippst. Das **Token** ist der API-Schlüssel eines gehosteten Anbieters, oder du
+brauchst es nur, wenn du den Host hinter etwas gestellt hast, das danach fragt; Ollama selbst hat
+keine Authentifizierung. Es geht als Bearer-Token
 mit jeder Anfrage an diese Adresse und ist für diese Adresse gespeichert: Änderst du den Modell-Host,
 ohne ein Token einzutippen, wird das gespeicherte verworfen. So landet es nie bei einem Host, für den
-es nicht ausgestellt wurde.
+es nicht ausgestellt wurde. Ein Wechsel des Anbieters zählt als Wechsel der Adresse. Weiterleitungen
+werden nicht verfolgt, sobald ein Token mitgeht, und bei einem OpenAI-kompatiblen Endpunkt nie: Die
+Antwort wird als der Status gemeldet, der sie ist.
 
 Zwei Modelle, weil die Aufgaben verschieden sind. Das **Schreib-Modell** sollte instruction-tuned
 sein und wird zum Entwerfen und Einsortieren benutzt; das **Such-Modell** ist ein Embedding-Modell
@@ -507,7 +531,17 @@ Es sagt dir den Unterschied zwischen „unter der Adresse hat nichts geantwortet
 geantwortet, hat aber nicht das Modell, das du eingetragen hast“ — und das führt an zwei ganz
 verschiedene Stellen.
 
+Bei einem OpenAI-kompatiblen Endpunkt liest Testen dessen Modell-Liste unter `/models`. Dabei
+unterscheidet es drei weitere Antworten: Der Host hat das Token abgelehnt, unter der Adresse
+antwortet etwas, das nicht die API ist (meist eine Anmeldeseite), und unter der Adresse gibt es
+keine Modell-Liste. Das Letzte heißt meistens, dass der Adresse ihr `/v1` fehlt. Einige Server haben
+keine Liste und funktionieren trotzdem, deshalb ist es eine Warnung und kein Urteil: Speichere und
+probier einen Entwurf aus.
+
 ### Wie lange die Modelle geladen bleiben
+
+Dieser Abschnitt handelt von Ollama. Ein OpenAI-kompatibler Endpunkt entscheidet selbst, was er
+geladen hält, und die Felder unten werden für ihn nicht angezeigt.
 
 Ollama wirft ein Modell ein paar Minuten nach der letzten Anfrage aus dem Speicher, und es wieder
 von der Platte zu lesen ist die ganze Wartezeit beim ersten „Hilf mir schreiben“ nach einer Pause —

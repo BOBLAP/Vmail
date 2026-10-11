@@ -153,14 +153,29 @@ poll would empty a field mid-word.
                        adds for a root form, and form_rest() below still emits
                        the CSRF token — dropping it is how this kind of
                        hand-rendered form silently stops validating. #}
-                    <div class="space-y-5">
+                    <div class="space-y-5" data-controller="admin--ai-connection">
                         {{ form_errors(form) }}
 
                         {{ form_row(form.isEnabled) }}
+                        {{ form_row(form.provider) }}
                         {{ form_row(form.baseUrl) }}
                         {{ form_row(form.apiToken) }}
 
                         {{ form_row(form.chatModel) }}
+
+                        {# ── What only Ollama can be asked ────────────────
+                           How long the model is held, and loading it ahead of
+                           time. The OpenAI-compatible dialect has no word for
+                           either, so for that provider both are put away — by
+                           the server for the saved choice, and by
+                           admin--ai-connection when the select changes. See
+                           that controller on why hidden and not disabled.
+
+                           A plain wrapper, with no display class: `hidden`
+                           loses to one. #}
+                        {% set manages_memory = settings.provider.managesMemory %}
+                        <div data-admin--ai-connection-target="ollamaOnly" {{ manages_memory ? '' : 'hidden' }}>
+                        <div class="space-y-5">
                         {{ form_row(form.chatKeepAlive) }}
 
                         {# ── Warm up now ──────────────────────────────────
@@ -217,6 +232,8 @@ poll would empty a field mid-word.
                                hidden
                                class="text-[12px] leading-snug"></p>
                         </div>
+                        </div>
+                        </div>
 
                         {# The model, its query instruction and its threshold
                            are one decision written in three boxes: any two of
@@ -258,7 +275,9 @@ poll would empty a field mid-word.
                             {{ form_row(form.semanticMinSimilarity) }}
                         </div>
 
-                        {{ form_row(form.embeddingKeepAlive) }}
+                        <div data-admin--ai-connection-target="ollamaOnly" {{ manages_memory ? '' : 'hidden' }}>
+                            {{ form_row(form.embeddingKeepAlive) }}
+                        </div>
 
                         {{ form_row(form.searchEnabled) }}
                         {{ form_row(form.categorisationEnabled) }}

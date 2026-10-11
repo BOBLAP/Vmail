@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Form\Admin;
 
+use App\Domain\Enum\Ai\AiProvider;
 use App\Entity\Ai\AiSettings;
 use App\Form\Admin\AiSettingsType;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -56,6 +57,21 @@ final class AiConnectionKeyTest extends KernelTestCase
         self::assertNull($settings->apiToken, 'a key issued for one host must not be sent to another');
     }
 
+    /**
+     * The provider is part of what a key was issued for.
+     *
+     * The same address under a different provider is, as far as plMail can
+     * tell, a different thing answering — and the stored key was typed for the
+     * one that was there before.
+     */
+    public function testAChangedProviderDropsTheKeyToo(): void
+    {
+        $settings = $this->submit('http://10.0.0.5:11434', '', 'openai');
+
+        self::assertSame(AiProvider::OpenAi, $settings->provider);
+        self::assertNull($settings->apiToken);
+    }
+
     /** A new address with a new key typed beside it keeps the new key. */
     public function testATypedKeyIsTheKeyWhateverTheAddressDid(): void
     {
@@ -73,13 +89,13 @@ final class AiConnectionKeyTest extends KernelTestCase
         self::assertSame('', (string) $form->createView()->children['apiToken']->vars['value']);
     }
 
-    private function submit(string $address, string $key): AiSettings
+    private function submit(string $address, string $key, string $provider = 'ollama'): AiSettings
     {
         $settings = $this->stored();
 
         $form = $this->forms->create(AiSettingsType::class, $settings, ['csrf_protection' => false]);
 
-        $form->submit(['baseUrl' => $address, 'apiToken' => $key], false);
+        $form->submit(['provider' => $provider, 'baseUrl' => $address, 'apiToken' => $key], false);
 
         self::assertTrue($form->isValid(), (string) $form->getErrors(true, false));
 

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Controller\Admin;
 
 use App\Domain\Ai\EmbeddingPreset;
+use App\Domain\Enum\Ai\AiProvider;
 use App\Entity\User\User;
 use App\Repository\Ai\AiSettingsRepository;
 use App\Repository\User\UserRepository;
 use App\Service\Ai\OllamaClient;
+use App\Service\Ai\OpenAiClient;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
@@ -240,6 +242,76 @@ final class AiSettingsCardTest extends WebTestCase
         foreach ($asked as $headers) {
             self::assertStringNotContainsString('stored-key', $headers);
         }
+    }
+
+    /**
+     * The provider on screen decides how the address on screen is tested.
+     *
+     * Chosen and not yet saved, like the address beside it. A test that used
+     * the stored provider would ask a new OpenAI-compatible endpoint for
+     * Ollama's `/api/tags`, get a 404, and report a good address as a bad one.
+     */
+    public function testTheTestButtonSpeaksTheProviderThatWasChosen(): void
+    {
+        $this->client->disableReboot();
+
+        /** @var \ArrayObject<int, string> $asked */
+        $asked = new \ArrayObject();
+
+        static::getContainer()->set(OpenAiClient::class, new OpenAiClient(
+            new MockHttpClient(static function (string $method, string $url) use ($asked): MockResponse {
+                $asked[] = $url;
+
+                return new MockResponse((string) json_encode(['data' => [['id' => 'a-writing-model']]]));
+            }),
+            new NullLogger(),
+        ));
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+        $form    = $crawler->filter('form[name="ai_settings"]')->form();
+
+        $form['ai_settings[provider]']       = 'openai';
+        $form['ai_settings[baseUrl]']        = 'https://api.example.test/v1';
+        $form['ai_settings[chatModel]']      = 'a-writing-model';
+        $form['ai_settings[embeddingModel]'] = '';
+
+        $this->client->request('POST', '/admin/ai/test', $form->getPhpValues());
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['https://api.example.test/v1/models'], $asked->getArrayCopy());
+        self::assertSelectorExists('.fa-plug-circle-check', 'the model that was named is on the list');
+    }
+
+    /**
+     * The controls that are about Ollama's memory are put away for the other
+     * provider — rendered, so their values survive a save, and hidden.
+     */
+    public function testTheOllamaOnlyControlsAreHiddenForAnotherProvider(): void
+    {
+        // One kernel for both requests: a rebooted one opens its own database
+        // connection, which cannot see what this test's transaction has written.
+        $this->client->disableReboot();
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+
+        self::assertCount(0, $crawler->filter('[data-admin--ai-connection-target="ollamaOnly"][hidden]'));
+
+        $settings = $this->settings->currentOrDefault();
+        $settings->provider = AiProvider::OpenAi;
+        $settings->baseUrl  = 'https://api.example.test/v1';
+
+        if (null === $settings->id) {
+            $this->em->persist($settings);
+        }
+
+        $this->em->flush();
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+        $hidden  = $crawler->filter('[data-admin--ai-connection-target="ollamaOnly"][hidden]');
+
+        self::assertCount(2, $hidden, 'the writing model\'s keep-alive with its warm-up button, and the search model\'s keep-alive');
+        self::assertCount(1, $hidden->filter('#ai_settings_chatKeepAlive'), 'still in the form, so still submitted');
+        self::assertCount(1, $hidden->filter('[data-controller="admin--ai-warmup"]'));
     }
 
     /** Without a valid token this action sends nothing anywhere. */

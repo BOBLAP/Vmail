@@ -11,6 +11,7 @@ use App\Domain\DTO\Ai\AiEmbedResult;
 use App\Domain\DTO\Ai\AiProbe;
 use App\Domain\DTO\Ai\AiWarmUp;
 use App\Domain\Enum\Ai\AiCallFeature;
+use App\Domain\Enum\Ai\AiProvider;
 use App\Entity\Ai\AiFeature;
 use App\Entity\Ai\AiSettings;
 use App\Repository\Ai\AiSettingsRepository;
@@ -36,6 +37,15 @@ use Psr\Log\LoggerInterface;
  *  · Nothing here throws. The host is a box on somebody's LAN which may be
  *    switched off, mid-update, or holding a different set of models than it did
  *    last week, and none of that is an application error.
+ *
+ * TWO DIALECTS, ONE DOOR
+ * ─────────────────────
+ * The host speaks Ollama's API or the OpenAI-compatible one, and this is the
+ * only class that knows there are two. Each call below reads the connection for
+ * its feature and hands the request to the client for that connection's
+ * dialect; both clients answer in the same value objects, so nothing above this
+ * line is written twice. What only Ollama can be asked — to hold a model, to
+ * load one, to size a context window — is simply not asked of the other.
  *
  * WHY IT IS NOT CACHED
  * ────────────────────
@@ -86,6 +96,7 @@ final readonly class AiAssistant
     public function __construct(
         private AiSettingsRepository $settings,
         private OllamaClient         $client,
+        private OpenAiClient         $openAi,
         private AiCallRecorder       $recorder,
         private LoggerInterface      $logger,
     ) {
@@ -155,12 +166,15 @@ final readonly class AiAssistant
         $model      = (string) $settings->embeddingModel;
         $connection = $settings->connectionFor(AiFeature::Search);
 
-        $result = $this->client->authorised($connection)->embed(
-            $connection->baseUrl,
-            $model,
-            $text,
-            $settings->keepAliveFor(AiFeature::Search),
-        );
+        $result = match ($connection->provider) {
+            AiProvider::Ollama => $this->client->authorised($connection)->embed(
+                $connection->baseUrl,
+                $model,
+                $text,
+                $settings->keepAliveFor(AiFeature::Search),
+            ),
+            AiProvider::OpenAi => $this->openAi->embed($connection, $model, $text),
+        };
 
         // Recorded here rather than in the client, because the client knows the
         // numbers and this knows what they were FOR.
@@ -222,13 +236,16 @@ final readonly class AiAssistant
         $model      = (string) $settings->chatModel;
         $connection = $settings->connectionFor($feature);
 
-        $result = $this->client->authorised($connection)->chat(
-            $connection->baseUrl,
-            $model,
-            $messages,
-            $temperature,
-            $settings->keepAliveFor($feature),
-        );
+        $result = match ($connection->provider) {
+            AiProvider::Ollama => $this->client->authorised($connection)->chat(
+                $connection->baseUrl,
+                $model,
+                $messages,
+                $temperature,
+                $settings->keepAliveFor($feature),
+            ),
+            AiProvider::OpenAi => $this->openAi->chat($connection, $model, $messages, $temperature),
+        };
 
         $this->recorder->record(
             AiCallFeature::forChat($feature),
@@ -296,15 +313,22 @@ final readonly class AiAssistant
         return $this->recorded(
             AiCallFeature::forChat($feature),
             $model,
-            $this->client->authorised($connection)->chatStream(
-                $connection->baseUrl,
-                $model,
-                $messages,
-                $temperature,
-                $settings->keepAliveFor($feature),
-                $numCtx,
-                $timeout,
-            ),
+            match ($connection->provider) {
+                AiProvider::Ollama => $this->client->authorised($connection)->chatStream(
+                    $connection->baseUrl,
+                    $model,
+                    $messages,
+                    $temperature,
+                    $settings->keepAliveFor($feature),
+                    $numCtx,
+                    $timeout,
+                ),
+                // $numCtx is left behind, deliberately. It is an Ollama option
+                // and the OpenAI format has no field for the size of a context
+                // window: the endpoint has whatever it was started with. The
+                // longer wait the same caller asks for still applies.
+                AiProvider::OpenAi => $this->openAi->chatStream($connection, $model, $messages, $temperature, $timeout),
+            },
         );
     }
 
@@ -336,13 +360,23 @@ final readonly class AiAssistant
             return false;
         }
 
+        $connection = $settings->connectionFor($feature);
+
+        // NOT A QUESTION THE OTHER DIALECT CAN BE ASKED, so it gets the answer
+        // that makes the composer say the true thing. "Not resident" means
+        // "expect a long silence while a model loads", and an endpoint that
+        // cannot report what it has loaded is, nearly always, one that keeps
+        // its model loaded or is somebody else's machine entirely. Promising a
+        // cold start in front of every draft would be wrong on all of them.
+        if (false === $connection->provider->managesMemory()) {
+            return true;
+        }
+
         $wanted = self::tagged((string) $settings->chatModel);
 
         if (':latest' === $wanted) {
             return false;
         }
-
-        $connection = $settings->connectionFor($feature);
 
         foreach ($this->client->authorised($connection)->ps($connection->baseUrl, self::RESIDENCY_TIMEOUT) as $loaded) {
             if ($wanted === self::tagged($loaded->name)) {
@@ -461,7 +495,10 @@ final readonly class AiAssistant
             return AiProbe::unreachable('no_host');
         }
 
-        return $this->client->authorised($connection)->probe($connection->baseUrl);
+        return match ($connection->provider) {
+            AiProvider::Ollama => $this->client->authorised($connection)->probe($connection->baseUrl),
+            AiProvider::OpenAi => $this->openAi->probe($connection),
+        };
     }
 
     /**
@@ -510,6 +547,14 @@ final readonly class AiAssistant
         }
 
         $connection = $settings->connectionFor(AiFeature::WritingHelp);
+
+        // The page does not offer the button for this dialect; this is for the
+        // request that arrives anyway, from a tab left open across a change of
+        // provider. An answer of its own, because "nothing answered" would send
+        // somebody to check a network that is fine.
+        if (false === $connection->provider->managesMemory()) {
+            return AiWarmUp::failed('not_ollama');
+        }
 
         return $this->client->authorised($connection)->preload(
             $connection->baseUrl,

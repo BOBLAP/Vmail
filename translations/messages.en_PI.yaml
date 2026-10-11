@@ -148,7 +148,9 @@ admin:
             qwen3-embedding_0_6b: "The default, an' the one to take unless ye have cause otherwise. Speaks many tongues, which counts more than any benchmark for a hold that be not all one language, an' the only one here to strike perfect precision in testin'. 639 MB."
         field:
             base_url: "Oracle's berth"
-            base_url_help: "Where yer Ollama box lies on the network, port an' all."
+            provider: 'Tongue'
+            provider_help: "Which tongue the oracle speaks. Ollama be the one plMail knows best: it can keep a model aboard an' fetch one ahead o' time. OpenAI-compatible covers near ev'rythin' else, in yer own waters or hired."
+            base_url_help: "For Ollama, where the box lies on yer network, port an' all. For an OpenAI-compatible port, the root o' the API with its version, like https://api.example.com/v1."
             categorisation: 'Sort mail into holds'
             categorisation_help: "Runs on ev'ry message that arrives. Only breaks a tie — the ordinary rules speak first."
             chat_keep_alive: "Keep the scrivener aboard for"
@@ -183,12 +185,13 @@ admin:
             details: 'See each message'
             measured: "Last 7 days: %count% messages held, most fer %median% s (95% within %p95% s). %timeout% were shown with no answer, the wait havin' run out."
             no_data: "No mail's been held these 7 days, so there be no delay to report yet."
-        intro: "plMail can consult an oracle ye run yerself. Nowt leaves yer waters, nowt starts until ye say so, an' while this be off the mail works exactly as it does now."
+        intro: "plMail can consult an oracle, on a box ye run yerself or at a port o' yer choosin'. Mail goes to the berth ye write here an' nowhere else, nowt starts until ye say so, an' while this be off the mail works exactly as it does now."
         perf:
             by_model: 'By model'
             chip:
                 cold: 'Nowt aboard'
                 off: 'Off'
+                answering: "Answerin'"
                 split: 'Part ashore on the CPU'
                 unreachable: 'Nowt answers'
                 warm: 'Aboard'
@@ -237,9 +240,15 @@ admin:
                 day: '24 hours'
                 hour: 'Hour'
                 week: '7 days'
+        provider:
+            ollama: 'Ollama'
+            openai: 'OpenAI-compatible'
         probe:
             missing_model: "That berth answered, but holds no: %models%. Haul 'em aboard there first."
             no_host: 'Write an address first.'
+            no_model_list: "Somethin' answered at that berth, but it keeps no list o' models (HTTP %status%). See that the address ends in the API version, most often /v1. Some keep no list an' sail fine all the same; stow it an' try a draft."
+            not_an_api: "Somethin' answered at that berth, but not in JSON. Most like a gate or a go-between, not the API."
+            refused: 'That berth answered an'' turned ye away (HTTP %status%). Check the token.'
             ok: "That berth answered, an' holds %count% models."
             models: 'Show the %count% models it holds'
             status: 'That berth answered with HTTP %status%.'
@@ -292,6 +301,7 @@ admin:
             model_missing: "That host carries no model named “%model%”. Haul it aboard there, or name one that be. (%error%)"
             no_host: "Name a model host first, an' stow it."
             no_model: "Name a scrivener model first, an' stow it."
+            not_ollama: "Only an Ollama box can be asked to fetch a model ahead o' time."
             status: 'The host refused with HTTP %status%. (%error%)'
             timeout: "Four minutes an' the host were still haulin', so plMail stopped waitin'. It may yet finish — like as not the model be too heavy for the hold it has."
             unexpected: "Somethin' went wrong afore the host could answer. (%error%)"
@@ -2274,7 +2284,7 @@ onboarding:
                 For Gmail an' Outlook, use the sign-aboard buttons under Riggin' → Mailbags
                 instead — no addresses needed.
         admin_ai:
-            body: "The berth of an Ollama box on yer network, an' the names o' two models it holds — one for writin', one for searchin'. Nowt leaves yer waters."
+            body: "The berth of an Ollama box on yer network, or of any OpenAI-compatible port, an' the names o' two models it offers — one for writin', one for searchin'. Mail goes to that berth an' nowhere else."
             heading: 'What ye need'
             skip_body: "Press Next with all of it empty. plMail be a whole mail client without any o' this, an' ye can come back later under Admin -> Oracle."
             skip_heading: 'Not for ye?'
@@ -2338,7 +2348,7 @@ onboarding:
             lead: Hitch up the mailbag ye actually read, an' plMail starts haulin' it in.
             title: Mailbag
         admin-ai:
-            intro: "plMail can consult an oracle ye run yerself — for searchin' by meanin', sortin' mail, an' help with writin'. Wholly optional; leave ev'ry box below empty if ye like."
+            intro: "plMail can consult an oracle — one ye run yerself, or a port o' yer choosin' — for searchin' by meanin', sortin' mail, an' help with writin'. Wholly optional; leave ev'ry box below empty if ye like."
             lead: "Optional. Leave it be if ye don't want it."
             title: 'Oracle'
         admin-integrations:

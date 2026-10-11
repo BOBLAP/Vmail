@@ -416,13 +416,35 @@ Retention is 30 days, swept nightly by `app:monitoring:prune`; `--push-days=N` c
 ## AI
 
 Optional, off by default, and plMail is a complete mail client with it off. Nothing here is switched
-on until you switch it on, and nothing leaves your network: the model runs on a machine you own.
+on until you switch it on. Mail is sent to the model host you enter and nowhere else: with a model on
+a machine you own, nothing leaves your network.
 
-**Model host** is the address of an [Ollama](https://ollama.com) container on your own network,
-including the port — `http://10.0.0.5:11434`. **Token** is only needed if you have put that host
-behind something that asks for one; Ollama itself has no authentication. It is sent as a bearer token
+**Provider** is the API the model host speaks. There are two:
+
+| Provider | What it is | What plMail can do with it |
+|---|---|---|
+| **Ollama** | An [Ollama](https://ollama.com) container, usually on your own network | Everything on this page |
+| **OpenAI-compatible** | Anything that answers `/chat/completions` and `/embeddings` in OpenAI's format: llama.cpp, vLLM, LM Studio, LiteLLM, a hosted provider, or Ollama under `/v1` | Writing, summaries, sorting and search. Not the keep-alive fields or **Warm up now** |
+
+The OpenAI format has no way to ask what a host holds in memory, to keep a model loaded, or to load
+one ahead of time. With that provider chosen, the two keep-alive fields and **Warm up now** are put
+away, and the model host card on **Admin → Performance** shows whether the host answers and what the
+calls cost, without the "in memory" half. Their values are kept, so switching back loses nothing.
+
+**If you choose a hosted provider, your mail goes to it.** Sorting sends every arriving message that
+no rule recognised; search sends every message once to index it and every query; writing help and
+summaries send what you ask them about. Hosted providers usually charge per request. plMail never
+falls back to another host and never sends anything to an address you did not enter.
+
+**Model host** is the address. For Ollama that is the container, including the port —
+`http://10.0.0.5:11434`. For an OpenAI-compatible endpoint it is the API root including its version,
+such as `https://api.example.com/v1`; plMail adds `/chat/completions` and the rest to exactly what you
+type. **Token** is the API key of a hosted provider, or only needed if you have put the host behind
+something that asks for one; Ollama itself has no authentication. It is sent as a bearer token
 with every request to that address, and it is stored for that address: change the model host without
 typing a token and the stored one is dropped, so it is never sent to a host it was not issued for.
+Changing the provider counts as changing the address. Redirects are not followed once a token is
+attached, and never for an OpenAI-compatible endpoint: the answer is reported as the status it is.
 
 Two models, because the jobs are different. The **writing model** should be instruction-tuned and is
 used for drafting and sorting; the **search model** is an embedding model and is usually much
@@ -457,7 +479,16 @@ benchmark score for a mailbox that is not all in one language.
 tell you the difference between "nothing answered at that address" and "that host answered but is
 not holding the model you named", which send you to two different places.
 
+For an OpenAI-compatible endpoint, Test reads its model list at `/models`. It separates three more
+answers: the host refused the token, the address answered with something that is not the API (a
+login page, usually), and the address has no model list. The last one most often means the address
+is missing its `/v1`. A few servers have no list and work regardless, so it is a warning and not a
+verdict: save, and try a draft.
+
 ### How long each model stays loaded
+
+This section is about Ollama. An OpenAI-compatible endpoint decides for itself what it keeps loaded,
+and the fields below are not shown for it.
 
 Ollama drops a model out of memory a few minutes after the last request, and reading it back off
 disk is the whole of the wait on the first "Help me write" after a quiet spell — a 20 GB model takes

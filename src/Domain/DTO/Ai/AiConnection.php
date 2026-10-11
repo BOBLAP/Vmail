@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\DTO\Ai;
 
+use App\Domain\Enum\Ai\AiProvider;
+
 /**
  * Where a model is, and what has to be shown at the door.
  *
@@ -19,6 +21,11 @@ namespace App\Domain\DTO\Ai;
  * A request is built from one of these and nothing else, so a key can only ever
  * reach the address it is stored beside.
  *
+ * THE DIALECT IS PART OF IT. An address says where and not how: the same host
+ * can speak Ollama's own API at its root and the OpenAI one under `/v1`, and
+ * which client a request is built by has to be decided by the same object that
+ * says where it goes.
+ *
  * A VALUE, NOT THE SETTINGS
  * ─────────────────────────
  * Built by {@see \App\Entity\Ai\AiSettings::connectionFor()} and read by the
@@ -29,8 +36,9 @@ namespace App\Domain\DTO\Ai;
 final readonly class AiConnection
 {
     public function __construct(
-        public string  $baseUrl,
-        public ?string $token = null,
+        public string     $baseUrl,
+        public ?string    $token = null,
+        public AiProvider $provider = AiProvider::Ollama,
     ) {
     }
 

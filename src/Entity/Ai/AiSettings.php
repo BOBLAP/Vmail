@@ -7,6 +7,7 @@ namespace App\Entity\Ai;
 use App\Domain\Ai\EmbeddingPreset;
 use App\Domain\Ai\KeepAlive;
 use App\Domain\DTO\Ai\AiConnection;
+use App\Domain\Enum\Ai\AiProvider;
 use App\Domain\Trait\TimestampableTrait;
 use App\Entity\Embeddable\AiPrompts;
 use App\Infrastructure\Doctrine\Type\EncryptedStringType;
@@ -94,7 +95,21 @@ class AiSettings
     #[ORM\Column(options: ['default' => false])]
     public bool $isEnabled = false;
 
-    /** e.g. `http://10.0.0.5:11434`. A box on the operator's own network. */
+    /**
+     * Which dialect $baseUrl speaks.
+     *
+     * Ollama for every installation that existed before this column did, and
+     * for every new one until somebody says otherwise. See {@see AiProvider}
+     * for what the other choice gives up.
+     */
+    #[ORM\Column(name: 'provider', length: 16, enumType: AiProvider::class, options: ['default' => 'ollama'])]
+    public AiProvider $provider = AiProvider::Ollama;
+
+    /**
+     * e.g. `http://10.0.0.5:11434`, a box on the operator's own network — or,
+     * for the OpenAI-compatible dialect, the API root including its version
+     * segment, `https://api.example.com/v1`.
+     */
     #[ORM\Column(name: 'base_url', length: 255, nullable: true)]
     public ?string $baseUrl = null;
 
@@ -395,7 +410,7 @@ class AiSettings
      */
     public function connectionFor(AiFeature $feature): AiConnection
     {
-        return new AiConnection((string) $this->baseUrl, $this->apiToken);
+        return new AiConnection((string) $this->baseUrl, $this->apiToken, $this->provider);
     }
 
     /**
@@ -415,6 +430,13 @@ class AiSettings
      */
     public function keepAliveFor(AiFeature $feature): ?string
     {
+        // Nothing to hold on a host whose dialect has no word for it. Null is
+        // already "send no keep_alive", so the stored value survives a switch
+        // of provider and back without ever reaching a host that cannot use it.
+        if (false === $this->connectionFor($feature)->provider->managesMemory()) {
+            return null;
+        }
+
         return match ($feature) {
             AiFeature::Search      => $this->embeddingKeepAlive,
             AiFeature::Categorise,

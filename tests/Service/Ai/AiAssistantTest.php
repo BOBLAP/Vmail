@@ -6,12 +6,14 @@ namespace App\Tests\Service\Ai;
 
 use App\Domain\DTO\Ai\AiConnection;
 use App\Domain\Enum\Ai\AiCallFeature;
+use App\Domain\Enum\Ai\AiProvider;
 use App\Service\Ai\AiCallRecorder;
 use App\Entity\Ai\AiFeature;
 use App\Entity\Ai\AiSettings;
 use App\Repository\Ai\AiSettingsRepository;
 use App\Service\Ai\AiAssistant;
 use App\Service\Ai\OllamaClient;
+use App\Service\Ai\OpenAiClient;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
@@ -273,7 +275,94 @@ final class AiAssistantTest extends KernelTestCase
         }
     }
 
+    /**
+     * The provider decides which dialect every feature is asked in.
+     *
+     * One setting, and it has to reach all of them: a draft, a vector and a
+     * test of the address. Asked at Ollama's paths, an OpenAI-compatible server
+     * answers 404 to each and the installation looks misconfigured in three
+     * different places.
+     */
+    public function testAnOpenAiCompatibleHostIsAskedInItsOwnDialect(): void
+    {
+        $settings = $this->openAi();
+
+        $seen      = [];
+        $assistant = $this->assistant($settings, headers: $seen);
+
+        self::assertSame('an answer', $assistant->chat(AiFeature::WritingHelp, [['role' => 'user', 'content' => 'hi']]));
+        self::assertSame([1.0, 2.0], $assistant->embed(AiCallFeature::SearchQuery, 'anything'));
+        self::assertTrue($assistant->probe()->reachable);
+
+        self::assertSame([
+            'https://api.example.test/v1/chat/completions',
+            'https://api.example.test/v1/embeddings',
+            'https://api.example.test/v1/models',
+        ], array_keys($seen));
+
+        foreach ($seen as $url => $headers) {
+            self::assertStringContainsString('Bearer sk-test', $headers, $url);
+        }
+    }
+
+    /** The streamed draft goes the same way, and still comes back as tokens. */
+    public function testAStreamedDraftUsesTheSameDialect(): void
+    {
+        $seen   = [];
+        $tokens = $this->assistant($this->openAi(), headers: $seen)
+            ->chatStream(AiFeature::WritingHelp, [['role' => 'user', 'content' => 'hi']], numCtx: 32768);
+
+        self::assertNotNull($tokens);
+        self::assertSame(['Dear ', 'Anna'], iterator_to_array($tokens, false));
+        self::assertSame(['https://api.example.test/v1/chat/completions'], array_keys($seen));
+    }
+
+    /**
+     * What only Ollama can be asked is not asked of anything else.
+     *
+     * The residency read and the warm-up are both requests to Ollama paths. On
+     * another server they would be two 404s in front of every draft — and the
+     * first would make the composer promise a long cold start that is not
+     * coming.
+     */
+    public function testNothingAboutMemoryIsAskedOfAHostThatCannotAnswer(): void
+    {
+        $calls     = 0;
+        $assistant = $this->assistant($this->openAi(), $calls);
+
+        self::assertTrue($assistant->isModelResident(AiFeature::WritingHelp), 'no cold start is promised');
+        self::assertSame('not_ollama', $assistant->warmUp()->reason);
+        self::assertSame(0, $calls);
+    }
+
+    /** A stored keep-alive survives a change of provider and is simply not used. */
+    public function testAKeepAliveIsNotOfferedToADialectWithNoWordForIt(): void
+    {
+        $settings = $this->openAi();
+        $settings->chatKeepAlive = '30m';
+
+        self::assertNull($settings->keepAliveFor(AiFeature::WritingHelp));
+        self::assertNull($settings->keepAliveFor(AiFeature::Search));
+
+        $settings->provider = AiProvider::Ollama;
+
+        self::assertSame('30m', $settings->keepAliveFor(AiFeature::WritingHelp), 'and it is still there afterwards');
+    }
+
     // ── fixtures ─────────────────────────────────────────────────────────────
+
+    /** Everything on, at an OpenAI-compatible address with a key. */
+    private function openAi(): AiSettings
+    {
+        $settings = $this->configured();
+        $settings->provider           = AiProvider::OpenAi;
+        $settings->baseUrl            = 'https://api.example.test/v1';
+        $settings->apiToken           = 'sk-test';
+        $settings->searchEnabled      = true;
+        $settings->writingHelpEnabled = true;
+
+        return $settings;
+    }
 
     /** Switched on, a host, and both models named. */
     private function configured(): AiSettings
@@ -308,6 +397,28 @@ final class AiAssistantTest extends KernelTestCase
 
             $headers[$url] = implode("\n", $options['headers'] ?? []);
 
+            // The OpenAI-compatible paths, answered in that format. Before the
+            // Ollama ones, because `/v1/embeddings` contains `/embed` too.
+            if (true === str_ends_with($url, '/v1/models')) {
+                return new MockResponse((string) json_encode(['data' => [['id' => 'llama3.1:8b']]]));
+            }
+
+            if (true === str_ends_with($url, '/v1/embeddings')) {
+                return new MockResponse((string) json_encode(['data' => [['embedding' => [1, 2]]]]));
+            }
+
+            if (true === str_ends_with($url, '/v1/chat/completions')) {
+                $body = json_decode((string) ($options['body'] ?? ''), true);
+
+                return true === ($body['stream'] ?? false)
+                    ? new MockResponse(
+                        'data: ' . json_encode(['choices' => [['delta' => ['content' => 'Dear ']]]]) . "\n\n"
+                        . 'data: ' . json_encode(['choices' => [['delta' => ['content' => 'Anna']]]]) . "\n\n"
+                        . "data: [DONE]\n\n",
+                    )
+                    : new MockResponse((string) json_encode(['choices' => [['message' => ['content' => 'an answer']]]]));
+            }
+
             if (true === str_contains($url, '/api/tags')) {
                 return new MockResponse(json_encode(['models' => [['name' => 'llama3.1:8b']]]));
             }
@@ -322,6 +433,7 @@ final class AiAssistantTest extends KernelTestCase
         return new AiAssistant(
             $this->repository,
             new OllamaClient($http, new NullLogger()),
+            new OpenAiClient($http, new NullLogger()),
             $this->recorder(),
             new NullLogger(),
         );

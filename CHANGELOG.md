@@ -8,6 +8,14 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**The emoji picker is no longer almost empty on an iPhone or in Safari.** Nearly every cell of the
+grid was blank, with a handful of emoji scattered through it, and an emoji typed into a message
+from the iOS keyboard could not be seen in the message. plMail ships its own emoji font so the
+picker looks the same everywhere, in a format Safari does not draw; the browser found each emoji
+in the font and painted nothing. The font is now only used where the browser can draw it. On an
+iPhone, iPad and in Safari on a Mac the picker and the message show Apple's own emoji instead.
+[#39](https://github.com/karatektus/pl_mail/issues/39).
+
 **A new account shows its newest mail first, and no longer holds up everybody else's.** Adding an
 account used to bring its whole history in through the sync itself: every IMAP folder from its
 oldest message to its newest, or every Gmail message or Microsoft folder listed before one message

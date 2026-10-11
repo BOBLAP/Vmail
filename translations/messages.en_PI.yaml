@@ -174,8 +174,8 @@ admin:
             summary: 'Yarn-in-short'
             summary_help: "Uses th' scrivenin' oracle. A cold askin' takes near a minute an' holds th' engine th' whole while."
             token: 'Token'
-            token_help: "Only if ye put a guard in front o' the box."
-            token_help_set: 'A token be on file. Leave it blank to keep it.'
+            token_help: "Only if ye put a guard in front o' the box. Shown to the guard as a bearer token on every call."
+            token_help_set: "A token be on file. Leave it blank to keep it. Change the berth above without typin' one an' it goes overboard."
             writing_help: 'Help me write'
             writing_help_help: "Offers drafts an' rewrites at the writin' desk, when ye ask."
         heading: 'Oracle'

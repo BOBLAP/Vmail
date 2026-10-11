@@ -8,6 +8,7 @@ use App\Domain\DTO\Ai\AiProbe;
 use App\Domain\DTO\Ai\BackfillProgress;
 use App\Domain\DTO\Ai\LoadedModel;
 use App\Domain\Enum\Ai\MetricWindow;
+use App\Entity\Ai\AiFeature;
 use App\Repository\Ai\AiCallMetricRepository;
 use App\Repository\Ai\AiSettingsRepository;
 use DateTimeImmutable;
@@ -76,10 +77,17 @@ final readonly class AiPerformancePanel
         // Nothing is asked of the host while the master switch is off. Off is a
         // valid configuration, not a fault, and a panel that kept probing would
         // be reporting on a feature nobody has switched on.
-        $probe = $ready ? $this->client->probe((string) $settings->baseUrl, self::PROBE_TIMEOUT) : null;
+        //
+        // With the key, when there is one. Without it a host behind a proxy
+        // answers 401 here while every feature works, and the panel reports a
+        // healthy installation as unreachable.
+        $connection = $settings->connectionFor(AiFeature::WritingHelp);
+        $client     = $this->client->authorised($connection);
+
+        $probe = $ready ? $client->probe($connection->baseUrl, self::PROBE_TIMEOUT) : null;
 
         $loaded = null !== $probe && true === $probe->reachable
-            ? $this->client->ps((string) $settings->baseUrl, self::PS_TIMEOUT)
+            ? $client->ps($connection->baseUrl, self::PS_TIMEOUT)
             : [];
 
         $features = $this->metrics->perFeatureSince($window->since($now));

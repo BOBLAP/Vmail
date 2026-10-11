@@ -6,6 +6,7 @@ namespace App\Entity\Ai;
 
 use App\Domain\Ai\EmbeddingPreset;
 use App\Domain\Ai\KeepAlive;
+use App\Domain\DTO\Ai\AiConnection;
 use App\Domain\Trait\TimestampableTrait;
 use App\Entity\Embeddable\AiPrompts;
 use App\Infrastructure\Doctrine\Type\EncryptedStringType;
@@ -102,7 +103,9 @@ class AiSettings
      * behind a reverse proxy that does, and a feature that cannot be used
      * behind one would push them towards exposing it instead.
      *
-     * Encrypted at rest like every other credential this application stores.
+     * Encrypted at rest like every other credential this application stores,
+     * and sent as a bearer token with every request to $baseUrl — see
+     * {@see connectionFor()}, which is the only way a client gets either.
      */
     #[ORM\Column(name: 'api_token', type: EncryptedStringType::NAME, nullable: true)]
     public ?string $apiToken = null;
@@ -309,6 +312,19 @@ class AiSettings
     }
 
     /**
+     * A copy that shares nothing with the row it was made from.
+     *
+     * The Test button binds the form to a copy, so that what somebody typed and
+     * did not save can be tried without it being one flush away from stored.
+     * The prompts are an object, and a shallow copy would have handed the copy
+     * the row's own.
+     */
+    public function __clone()
+    {
+        $this->prompts = clone $this->prompts;
+    }
+
+    /**
      * $holdMaxSeconds as something safe to wait for.
      *
      * Clamped on the way out rather than on the way in: the column is written
@@ -363,6 +379,23 @@ class AiSettings
             AiFeature::WritingHelp => $this->writingHelpEnabled,
             AiFeature::Summary     => $this->summaryEnabled,
         };
+    }
+
+    /**
+     * Where the model for this feature is, with the key that address wants.
+     *
+     * Asked per feature for the reason enabledFor() is: a caller does not get
+     * "the" host, it gets the one its job runs on, and it should not have to
+     * know which that is.
+     *
+     * An address that was never typed comes back as an empty one rather than
+     * as null. Every caller has already asked enabledFor() or isConfigured(),
+     * and {@see AiConnection::isSet()} answers the same question for the one
+     * that has not.
+     */
+    public function connectionFor(AiFeature $feature): AiConnection
+    {
+        return new AiConnection((string) $this->baseUrl, $this->apiToken);
     }
 
     /**

@@ -104,13 +104,8 @@ final readonly class AdminAiStepHandler implements OnboardingStepHandlerInterfac
     {
         $settings = $form->getData();
 
-        // Unmapped, so an empty box leaves a stored token alone rather than
-        // clearing it — the same rule the admin page follows.
-        $token = (string) $form->get('apiToken')->getData();
-
-        if ('' !== trim($token)) {
-            $settings->apiToken = $token;
-        }
+        // The key needs nothing here: the form has already decided what an
+        // empty box means, and it is the same form Admin → AI uses.
 
         // Persisted even when every box is empty, and that is the point: the
         // row IS the record that somebody was asked and said no. Without it the

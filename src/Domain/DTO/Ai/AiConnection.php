@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\DTO\Ai;
+
+/**
+ * Where a model is, and what has to be shown at the door.
+ *
+ * WHY THE ADDRESS AND THE KEY TRAVEL TOGETHER
+ * ───────────────────────────────────────────
+ * They were two separate columns read at two separate places, and the second
+ * place did not exist: the key an administrator typed was stored, encrypted, and
+ * never sent. Every call site passed the address alone, so there was nowhere for
+ * it to go. An object that carries both is one argument a caller cannot give
+ * half of.
+ *
+ * It is also what keeps a key from following an address it was not issued for.
+ * A request is built from one of these and nothing else, so a key can only ever
+ * reach the address it is stored beside.
+ *
+ * A VALUE, NOT THE SETTINGS
+ * ─────────────────────────
+ * Built by {@see \App\Entity\Ai\AiSettings::connectionFor()} and read by the
+ * clients. It holds no reference back to the row, so a client can keep one for
+ * the length of a request without holding the configuration open, and a test of
+ * an address nobody has saved yet is the same object as the saved one.
+ */
+final readonly class AiConnection
+{
+    public function __construct(
+        public string  $baseUrl,
+        public ?string $token = null,
+    ) {
+    }
+
+    /** Whether there is an address to ask at all. */
+    public function isSet(): bool
+    {
+        return '' !== trim($this->baseUrl);
+    }
+
+    /**
+     * What every request to this address carries.
+     *
+     * Empty when there is nothing to show, which is an Ollama on the LAN with
+     * no proxy in front of it — the commonest installation there is — and which
+     * lets a client skip building a second HTTP client for it.
+     *
+     * @return array<string, string>
+     */
+    public function requestHeaders(): array
+    {
+        if (null === $this->token || '' === trim($this->token)) {
+            return [];
+        }
+
+        return ['Authorization' => 'Bearer ' . trim($this->token)];
+    }
+}

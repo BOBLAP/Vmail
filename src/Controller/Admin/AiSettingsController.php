@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\ChecksCsrf;
-use App\Domain\DTO\Ai\AiProbe;
 use App\Domain\Enum\Ai\MetricWindow;
 use App\Domain\Enum\Ai\PromptSlot;
+use App\Entity\Ai\AiFeature;
 use App\Form\Admin\AiSettingsType;
 use App\Repository\Ai\AiSettingsRepository;
 use App\Repository\Mail\MessageRepository;
@@ -82,14 +82,9 @@ final class AiSettingsController extends AbstractController
         $saved = false;
 
         if (true === $form->isSubmitted() && true === $form->isValid()) {
-            // Unmapped, so an empty box leaves the stored token alone. Clearing
-            // it needs its own gesture rather than being what happens whenever
-            // somebody saves the page without retyping a credential.
-            $token = (string) $form->get('apiToken')->getData();
-
-            if ('' !== trim($token)) {
-                $settings->apiToken = $token;
-            }
+            // The key is not read here. Its field is unmapped and the form
+            // decides what it means — typed, left alone, or dropped because the
+            // address it belonged to has changed. See AiSettingsType::keyAfter().
 
             // The two keep-alive fields are NOT normalised here, and that is
             // deliberate rather than an omission. An emptied TextType bound to
@@ -124,34 +119,43 @@ final class AiSettingsController extends AbstractController
      *
      * The address comes off the submitted form rather than out of the database
      * so this can answer for something that has not been committed to yet.
+     *
+     * BOUND TO A COPY. The form writes what was typed onto the object it is
+     * given, and the row Doctrine manages would then be one flush away from
+     * storing an address somebody only wanted to try. A copy is not managed, so
+     * there is nothing for a flush to find.
+     *
+     * The copy is also what carries the key. A key typed beside the address is
+     * shown to that address; a stored one is shown only if the address is still
+     * the one it was stored for — the form's rule, applied to a test the same
+     * as to a save.
+     *
+     * ONLY A VALID FORM IS TESTED. The CSRF token is part of validity, and this
+     * action makes the server send a request, possibly with a credential, to an
+     * address taken from the request body.
      */
     #[Route('/test', name: 'test', methods: ['POST'])]
     public function test(Request $request): Response
     {
-        $settings = $this->settings->currentOrDefault();
+        $draft = clone $this->settings->currentOrDefault();
 
-        $form = $this->form($settings);
+        $form = $this->form($draft);
         $form->handleRequest($request);
 
-        /** @var array<string, mixed> $submitted */
-        $submitted = $request->request->all('ai_settings');
-
-        $typed = trim((string) ($submitted['baseUrl'] ?? ''));
-
-        $probe = '' === $typed
-            ? AiProbe::unreachable('no_host')
-            : $this->assistant->probe($typed);
+        $probe = true === $form->isSubmitted() && true === $form->isValid()
+            ? $this->assistant->probe($draft->connectionFor(AiFeature::WritingHelp))
+            : null;
 
         return $this->render('admin/ai/_frame.html.twig', [
-            'settings' => $settings,
+            'settings' => $draft,
             'form'     => $form,
             'saved'    => false,
             'probe'    => $probe,
             // So the template can say "the model you named is not on that host",
             // which is a completely different errand from "nothing answered".
             'wanted'   => array_values(array_filter([
-                $submitted['chatModel'] ?? null,
-                $submitted['embeddingModel'] ?? null,
+                $draft->chatModel,
+                $draft->embeddingModel,
             ])),
             'prompts'  => $this->promptRows(),
             'hold'     => $this->holdDelay(),

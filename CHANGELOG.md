@@ -8,6 +8,12 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**The token in Admin → AI is now sent to the model host.** It was stored and never used, so an
+Ollama behind a reverse proxy that asks for one answered 401 to every request while the page said a
+token was on file. It goes as a bearer token with every request, including the Test button and the
+panel on Admin → Performance. The token belongs to the address it was typed for: changing the model
+host without typing a token drops the stored one. No migration.
+
 **Admin → AI shows what the model host said when a test or a warm-up fails.** The message kept the
 percent signs of its own placeholder, so a refusal read "HTTP %403%" and the host's reason sat
 between two stray percent signs.

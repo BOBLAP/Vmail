@@ -420,7 +420,9 @@ on until you switch it on, and nothing leaves your network: the model runs on a 
 
 **Model host** is the address of an [Ollama](https://ollama.com) container on your own network,
 including the port — `http://10.0.0.5:11434`. **Token** is only needed if you have put that host
-behind something that asks for one; Ollama itself has no authentication.
+behind something that asks for one; Ollama itself has no authentication. It is sent as a bearer token
+with every request to that address, and it is stored for that address: change the model host without
+typing a token and the stored one is dropped, so it is never sent to a host it was not issued for.
 
 Two models, because the jobs are different. The **writing model** should be instruction-tuned and is
 used for drafting and sorting; the **search model** is an embedding model and is usually much

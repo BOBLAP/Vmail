@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Service\Ai;
 
+use App\Domain\DTO\Ai\AiConnection;
 use App\Domain\Enum\Ai\AiCallFeature;
 use App\Service\Ai\AiCallRecorder;
 use App\Entity\Ai\AiFeature;
@@ -186,7 +187,7 @@ final class AiAssistantTest extends KernelTestCase
     {
         $calls = 0;
 
-        $probe = $this->assistant(new AiSettings(), $calls)->probe('http://10.0.0.9:11434');
+        $probe = $this->assistant(new AiSettings(), $calls)->probe(new AiConnection('http://10.0.0.9:11434'));
 
         self::assertTrue($probe->reachable, 'an administrator setting this up has not switched it on yet');
         self::assertGreaterThan(0, $calls);
@@ -201,6 +202,75 @@ final class AiAssistantTest extends KernelTestCase
         self::assertFalse($probe->reachable);
         self::assertSame('no_host', $probe->reason);
         self::assertSame(0, $calls);
+    }
+
+    /**
+     * The key in Admin → AI is shown to the host, on every kind of request.
+     *
+     * It was stored and never sent. An Ollama behind a reverse proxy that asks
+     * for a token answered 401 to all of it, and nothing in plMail said why:
+     * the field was filled in, the page said a token was on file.
+     *
+     * Every request is checked rather than one, because the ones a caller does
+     * not see are the ones a per-call argument would have missed — the version
+     * read behind a probe, and the residency read in front of a draft.
+     */
+    public function testTheStoredKeyGoesWithEveryRequest(): void
+    {
+        $settings = $this->configured();
+        $settings->apiToken           = 'proxy-key';
+        $settings->searchEnabled      = true;
+        $settings->writingHelpEnabled = true;
+
+        $seen      = [];
+        $assistant = $this->assistant($settings, headers: $seen);
+
+        $assistant->embed(AiCallFeature::SearchQuery, 'anything');
+        $assistant->chat(AiFeature::WritingHelp, [['role' => 'user', 'content' => 'hi']]);
+        $assistant->isModelResident(AiFeature::WritingHelp);
+        $assistant->probe();
+        $assistant->warmUp();
+
+        self::assertGreaterThanOrEqual(6, count($seen), 'embed, chat, ps, tags, version and generate');
+
+        foreach ($seen as $url => $headers) {
+            self::assertStringContainsString('Authorization: Bearer proxy-key', $headers, $url);
+        }
+    }
+
+    /** No key, no header: an Ollama on the LAN is asked exactly as it was. */
+    public function testAHostWithNoKeyIsSentNoAuthorization(): void
+    {
+        $settings = $this->configured();
+        $settings->writingHelpEnabled = true;
+
+        $seen      = [];
+        $assistant = $this->assistant($settings, headers: $seen);
+
+        $assistant->chat(AiFeature::WritingHelp, [['role' => 'user', 'content' => 'hi']]);
+
+        self::assertCount(1, $seen);
+        self::assertStringNotContainsStringIgnoringCase('authorization', (string) reset($seen));
+    }
+
+    /**
+     * A test of an address shows it the key that came with it, not the stored
+     * one. The stored key belongs to the stored address.
+     */
+    public function testATestedConnectionCarriesItsOwnKey(): void
+    {
+        $settings = $this->configured();
+        $settings->apiToken = 'stored-key';
+
+        $seen = [];
+
+        $this->assistant($settings, headers: $seen)->probe(new AiConnection('http://10.0.0.9:11434', 'typed-key'));
+
+        foreach ($seen as $url => $headers) {
+            self::assertStringStartsWith('http://10.0.0.9:11434', $url);
+            self::assertStringContainsString('Bearer typed-key', $headers);
+            self::assertStringNotContainsString('stored-key', $headers);
+        }
     }
 
     // ── fixtures ─────────────────────────────────────────────────────────────
@@ -222,7 +292,10 @@ final class AiAssistantTest extends KernelTestCase
      * because the wiring is part of what is being tested. Only the transport is
      * a stand-in — that is the thing whose absence the assertions are about.
      */
-    private function assistant(AiSettings $settings, int &$calls = 0): AiAssistant
+    /**
+     * @param array<string, string> $headers the request headers each URL was asked with, by URL
+     */
+    private function assistant(AiSettings $settings, int &$calls = 0, array &$headers = []): AiAssistant
     {
 
         $this->connection->executeStatement('DELETE FROM ai_settings');
@@ -230,8 +303,10 @@ final class AiAssistantTest extends KernelTestCase
         $this->em->persist($settings);
         $this->em->flush();
 
-        $http = new MockHttpClient(function (string $method, string $url) use (&$calls): MockResponse {
+        $http = new MockHttpClient(function (string $method, string $url, array $options) use (&$calls, &$headers): MockResponse {
             ++$calls;
+
+            $headers[$url] = implode("\n", $options['headers'] ?? []);
 
             if (true === str_contains($url, '/api/tags')) {
                 return new MockResponse(json_encode(['models' => [['name' => 'llama3.1:8b']]]));

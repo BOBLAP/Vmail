@@ -6,6 +6,7 @@ namespace App\Service\Ai;
 
 use App\Domain\DTO\Ai\AiCallTiming;
 use App\Domain\DTO\Ai\AiChatResult;
+use App\Domain\DTO\Ai\AiConnection;
 use App\Domain\DTO\Ai\AiEmbedResult;
 use App\Domain\DTO\Ai\AiProbe;
 use App\Domain\DTO\Ai\AiWarmUp;
@@ -151,10 +152,11 @@ final readonly class AiAssistant
             return AiEmbedResult::failed(self::ERROR_NO_TEXT);
         }
 
-        $model = (string) $settings->embeddingModel;
+        $model      = (string) $settings->embeddingModel;
+        $connection = $settings->connectionFor(AiFeature::Search);
 
-        $result = $this->client->embed(
-            (string) $settings->baseUrl,
+        $result = $this->client->authorised($connection)->embed(
+            $connection->baseUrl,
             $model,
             $text,
             $settings->keepAliveFor(AiFeature::Search),
@@ -217,10 +219,11 @@ final readonly class AiAssistant
             return null;
         }
 
-        $model = (string) $settings->chatModel;
+        $model      = (string) $settings->chatModel;
+        $connection = $settings->connectionFor($feature);
 
-        $result = $this->client->chat(
-            (string) $settings->baseUrl,
+        $result = $this->client->authorised($connection)->chat(
+            $connection->baseUrl,
             $model,
             $messages,
             $temperature,
@@ -287,13 +290,14 @@ final readonly class AiAssistant
             return null;
         }
 
-        $model = (string) $settings->chatModel;
+        $model      = (string) $settings->chatModel;
+        $connection = $settings->connectionFor($feature);
 
         return $this->recorded(
             AiCallFeature::forChat($feature),
             $model,
-            $this->client->chatStream(
-                (string) $settings->baseUrl,
+            $this->client->authorised($connection)->chatStream(
+                $connection->baseUrl,
                 $model,
                 $messages,
                 $temperature,
@@ -338,7 +342,9 @@ final readonly class AiAssistant
             return false;
         }
 
-        foreach ($this->client->ps((string) $settings->baseUrl, self::RESIDENCY_TIMEOUT) as $loaded) {
+        $connection = $settings->connectionFor($feature);
+
+        foreach ($this->client->authorised($connection)->ps($connection->baseUrl, self::RESIDENCY_TIMEOUT) as $loaded) {
             if ($wanted === self::tagged($loaded->name)) {
                 return true;
             }
@@ -434,24 +440,28 @@ final readonly class AiAssistant
     /**
      * Is the configured host there, and is it holding what we named?
      *
-     * Takes an optional override so the admin form can test an address BEFORE
+     * Takes an optional connection so the admin form can test an address BEFORE
      * it is saved — which is the only moment the answer is actually useful,
      * because saving a wrong one and then discovering it is the workflow this
      * button exists to remove.
+     *
+     * A connection and not an address, so the test shows the host the key that
+     * was typed beside it. A proxy that wants one answers 401 to a test without
+     * it, and the page would report a working configuration as broken.
      *
      * Deliberately ignores the master switch: an administrator setting this up
      * has not turned it on yet, and a test button that says "disabled" to
      * somebody who is mid-configuration is answering a question nobody asked.
      */
-    public function probe(?string $baseUrl = null): AiProbe
+    public function probe(?AiConnection $connection = null): AiProbe
     {
-        $target = $baseUrl ?? $this->settings()->baseUrl;
+        $connection ??= $this->settings()->connectionFor(AiFeature::WritingHelp);
 
-        if (null === $target || '' === trim($target)) {
+        if (false === $connection->isSet()) {
             return AiProbe::unreachable('no_host');
         }
 
-        return $this->client->probe($target);
+        return $this->client->authorised($connection)->probe($connection->baseUrl);
     }
 
     /**
@@ -499,8 +509,10 @@ final readonly class AiAssistant
             return AiWarmUp::failed('no_model');
         }
 
-        return $this->client->preload(
-            (string) $settings->baseUrl,
+        $connection = $settings->connectionFor(AiFeature::WritingHelp);
+
+        return $this->client->authorised($connection)->preload(
+            $connection->baseUrl,
             trim($model),
             $settings->keepAliveFor(AiFeature::WritingHelp),
         );

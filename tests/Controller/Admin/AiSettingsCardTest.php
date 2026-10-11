@@ -8,10 +8,14 @@ use App\Domain\Ai\EmbeddingPreset;
 use App\Entity\User\User;
 use App\Repository\Ai\AiSettingsRepository;
 use App\Repository\User\UserRepository;
+use App\Service\Ai\OllamaClient;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 
 /**
  * Admin -> AI renders, and the settings card folds itself away once it is done.
@@ -170,6 +174,128 @@ final class AiSettingsCardTest extends WebTestCase
         // The fold must not take the state with it: the status chip lives in the
         // summary, which is the half that stays on screen.
         self::assertStringContainsString('<summary', (string) $this->client->getResponse()->getContent());
+    }
+
+    /**
+     * Test asks the address on screen, with the key on screen, and stores
+     * neither.
+     *
+     * The whole value of the button is that it answers BEFORE anything is
+     * committed to. So the request has to go to what was typed, carry what was
+     * typed, and leave the row exactly as it was.
+     */
+    public function testTheTestButtonAsksWhatWasTypedAndSavesNothing(): void
+    {
+        $asked = $this->recordModelHostRequests();
+
+        $this->storeHost('http://192.0.2.1:11434', 'stored-key');
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+        $form    = $crawler->filter('form[name="ai_settings"]')->form();
+
+        $form['ai_settings[baseUrl]']  = 'http://192.0.2.7:11434';
+        $form['ai_settings[apiToken]'] = 'typed-key';
+
+        $this->client->request('POST', '/admin/ai/test', $form->getPhpValues());
+
+        self::assertResponseIsSuccessful();
+        self::assertNotSame([], $asked->getArrayCopy(), 'the host was never asked');
+
+        foreach ($asked as $url => $headers) {
+            self::assertStringStartsWith('http://192.0.2.7:11434/', $url);
+            self::assertStringContainsString('Bearer typed-key', $headers);
+        }
+
+        self::assertStringNotContainsString('typed-key', (string) $this->client->getResponse()->getContent());
+
+        $this->em->clear();
+        $stored = $this->settings->currentOrDefault();
+
+        self::assertSame('http://192.0.2.1:11434', $stored->baseUrl);
+        self::assertSame('stored-key', $stored->apiToken);
+    }
+
+    /**
+     * The stored key is not shown to an address it was not stored for.
+     *
+     * Testing a different address with the key box left empty is the ordinary
+     * way to try a new host, and it must not be a way to post the old host's
+     * credential to it.
+     */
+    public function testTestingAnotherAddressDoesNotTakeTheStoredKeyAlong(): void
+    {
+        $asked = $this->recordModelHostRequests();
+
+        $this->storeHost('http://192.0.2.1:11434', 'stored-key');
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+        $form    = $crawler->filter('form[name="ai_settings"]')->form();
+
+        $form['ai_settings[baseUrl]'] = 'http://192.0.2.7:11434';
+
+        $this->client->request('POST', '/admin/ai/test', $form->getPhpValues());
+
+        self::assertNotSame([], $asked->getArrayCopy());
+
+        foreach ($asked as $headers) {
+            self::assertStringNotContainsString('stored-key', $headers);
+        }
+    }
+
+    /** Without a valid token this action sends nothing anywhere. */
+    public function testATestWithoutAValidCsrfTokenAsksNobody(): void
+    {
+        $asked = $this->recordModelHostRequests();
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+        $values  = $crawler->filter('form[name="ai_settings"]')->form()->getPhpValues();
+
+        $values['ai_settings']['baseUrl'] = 'http://192.0.2.7:11434';
+        $values['ai_settings']['_token']  = 'not-the-token';
+
+        $this->client->request('POST', '/admin/ai/test', $values);
+
+        self::assertSame([], $asked->getArrayCopy());
+    }
+
+    /**
+     * A model host that answers, and a record of what it was asked with.
+     *
+     * The kernel is kept across requests so the replaced client survives from
+     * the GET that renders the form to the POST that tests it.
+     *
+     * @return \ArrayObject<string, string> request headers by URL
+     */
+    private function recordModelHostRequests(): \ArrayObject
+    {
+        $this->client->disableReboot();
+
+        /** @var \ArrayObject<string, string> $asked */
+        $asked = new \ArrayObject();
+
+        $http = new MockHttpClient(static function (string $method, string $url, array $options) use ($asked): MockResponse {
+            $asked[$url] = implode("\n", $options['headers'] ?? []);
+
+            return new MockResponse((string) json_encode(['models' => [], 'version' => '0.0.0']));
+        });
+
+        static::getContainer()->set(OllamaClient::class, new OllamaClient($http, new NullLogger()));
+
+        return $asked;
+    }
+
+    private function storeHost(string $address, string $key): void
+    {
+        $settings = $this->settings->currentOrDefault();
+
+        $settings->baseUrl  = $address;
+        $settings->apiToken = $key;
+
+        if (null === $settings->id) {
+            $this->em->persist($settings);
+        }
+
+        $this->em->flush();
     }
 
     /**

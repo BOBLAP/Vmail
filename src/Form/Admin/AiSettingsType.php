@@ -16,6 +16,8 @@ use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Range;
 use Symfony\Component\Validator\Constraints\Regex;
@@ -36,6 +38,29 @@ final class AiSettingsType extends AbstractType
     {
         $settings = $options['data'];
         $hasToken = $settings instanceof AiSettings && null !== $settings->apiToken;
+
+        // Read now, before a submission has been mapped onto the object: by the
+        // time the listener below runs, $settings->baseUrl is already what was
+        // typed, and the address the stored key was issued for is gone.
+        $addressBefore = $settings instanceof AiSettings ? $settings->baseUrl : null;
+
+        $builder->addEventListener(
+            FormEvents::POST_SUBMIT,
+            static function (FormEvent $event) use ($addressBefore): void {
+                $submitted = $event->getData();
+
+                if (false === $submitted instanceof AiSettings) {
+                    return;
+                }
+
+                $submitted->apiToken = self::keyAfter(
+                    $submitted->apiToken,
+                    (string) $event->getForm()->get('apiToken')->getData(),
+                    $addressBefore,
+                    $submitted->baseUrl,
+                );
+            },
+        );
 
         $builder
             ->add('isEnabled', CheckboxType::class, [
@@ -199,6 +224,47 @@ final class AiSettingsType extends AbstractType
                 'help'     => 'admin.ai.field.summary_help',
                 'required' => false,
             ]);
+    }
+
+    /**
+     * The key a connection holds once a submission has been read.
+     *
+     * HERE AND NOT IN A CONTROLLER, because this form has two: Admin → AI and
+     * the setup wizard's AI step. The rule was written out in both, and a rule
+     * about where a credential may go is not one to keep two copies of.
+     *
+     * THREE CASES
+     * ───────────
+     *  · Something was typed: that is the key now.
+     *  · Nothing was typed and the address is the one the stored key was issued
+     *    for: the stored key stays. The field is never filled from storage, so
+     *    an empty box is what every save without a retyped credential looks
+     *    like, and it must not be what clears one.
+     *  · Nothing was typed and the address changed: the stored key is dropped.
+     *    It was issued by whoever answers at the old address, and from now on
+     *    every request goes to the new one. Carrying it over would hand a
+     *    credential to a host that was never given it — by an administrator who
+     *    only meant to change a URL.
+     *
+     * A trailing slash is not a change of address. People paste one and people
+     * remove one, and both clients tolerate it.
+     */
+    private static function keyAfter(?string $stored, string $typed, ?string $addressBefore, ?string $addressAfter): ?string
+    {
+        if ('' !== trim($typed)) {
+            return $typed;
+        }
+
+        if (self::address($addressBefore) !== self::address($addressAfter)) {
+            return null;
+        }
+
+        return $stored;
+    }
+
+    private static function address(?string $url): string
+    {
+        return rtrim(trim((string) $url), '/');
     }
 
     /**

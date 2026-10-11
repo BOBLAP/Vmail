@@ -1,4 +1,4 @@
-<!-- translated-from: features/admin.md sha1:2767661fff94331fe0f8e24bd3f5ffc971865832 -->
+<!-- translated-from: features/admin.md sha1:c3cba2b03494edf8c24656563aed4d147139093f -->
 
 # Administration
 
@@ -466,7 +466,10 @@ einer Maschine, die dir gehört.
 
 **Modell-Host** ist die Adresse eines [Ollama](https://ollama.com)-Containers in deinem eigenen Netz,
 mit Port — `http://10.0.0.5:11434`. Ein **Token** brauchst du nur, wenn du den Host hinter etwas
-gestellt hast, das danach fragt; Ollama selbst hat keine Authentifizierung.
+gestellt hast, das danach fragt; Ollama selbst hat keine Authentifizierung. Es geht als Bearer-Token
+mit jeder Anfrage an diese Adresse und ist für diese Adresse gespeichert: Änderst du den Modell-Host,
+ohne ein Token einzutippen, wird das gespeicherte verworfen. So landet es nie bei einem Host, für den
+es nicht ausgestellt wurde.
 
 Zwei Modelle, weil die Aufgaben verschieden sind. Das **Schreib-Modell** sollte instruction-tuned
 sein und wird zum Entwerfen und Einsortieren benutzt; das **Such-Modell** ist ein Embedding-Modell

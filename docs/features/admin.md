@@ -446,6 +446,24 @@ typing a token and the stored one is dropped, so it is never sent to a host it w
 Changing the provider counts as changing the address. Redirects are not followed once a token is
 attached, and never for an OpenAI-compatible endpoint: the answer is reported as the status it is.
 
+**Extra headers** are for whatever stands in front of the model and wants more than a token: a
+reverse proxy with basic auth, a zero-trust gateway that takes a client id and a secret, a routing
+or logging gateway with a key of its own, a provider that selects a project by header. Write one per
+line as `Name: value`:
+
+```
+CF-Access-Client-Id: 1a2b3c.access
+CF-Access-Client-Secret: …
+```
+
+They are sent with every request to the model host, for either provider, and stored encrypted. The
+page lists the names of what is stored and never shows a value again. Leaving the box empty keeps
+them; typing anything replaces all of them; **Remove the stored headers** drops them. Like the token,
+they are dropped when the address or the provider changes. An `Authorization` header typed here is
+sent in place of the token, which is how basic auth is written. The headers plMail writes itself,
+`Host`, `Content-Type`, `Content-Length` and the like, are refused. The setup wizard leaves this
+field out; it is on Admin → AI only.
+
 Two models, because the jobs are different. The **writing model** should be instruction-tuned and is
 used for drafting and sorting; the **search model** is an embedding model and is usually much
 smaller. `llama3.1:8b` and `qwen3-embedding:0.6b` are reasonable starting points. Both have to be

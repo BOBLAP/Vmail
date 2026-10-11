@@ -240,6 +240,40 @@ final class AiAssistantTest extends KernelTestCase
         }
     }
 
+    /**
+     * The extra headers go wherever the token goes, in either dialect.
+     *
+     * They are for whatever stands in front of the model, and that thing sees
+     * every request — so one that arrives without them is one it turns away.
+     */
+    public function testTheExtraHeadersGoWithEveryRequestInBothDialects(): void
+    {
+        $ollama = $this->configured();
+        $ollama->headers            = '{"CF-Access-Client-Id":"an-id","CF-Access-Client-Secret":"a-secret"}';
+        $ollama->searchEnabled      = true;
+        $ollama->writingHelpEnabled = true;
+
+        $openAi = $this->openAi();
+        $openAi->headers = $ollama->headers;
+
+        foreach ([$ollama, $openAi] as $settings) {
+            $seen      = [];
+            $assistant = $this->assistant($settings, headers: $seen);
+
+            $assistant->embed(AiCallFeature::SearchQuery, 'anything');
+            $assistant->chat(AiFeature::WritingHelp, [['role' => 'user', 'content' => 'hi']]);
+            $assistant->probe();
+
+            self::assertGreaterThanOrEqual(3, count($seen));
+
+            foreach ($seen as $url => $headers) {
+                // Lower case: the HTTP client normalises the names it is given.
+                self::assertStringContainsStringIgnoringCase('CF-Access-Client-Id: an-id', $headers, $url);
+                self::assertStringContainsStringIgnoringCase('CF-Access-Client-Secret: a-secret', $headers, $url);
+            }
+        }
+    }
+
     /** No key, no header: an Ollama on the LAN is asked exactly as it was. */
     public function testAHostWithNoKeyIsSentNoAuthorization(): void
     {

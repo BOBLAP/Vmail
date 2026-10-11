@@ -89,6 +89,9 @@ final readonly class AdminAiStepHandler implements OnboardingStepHandlerInterfac
             'action' => $this->urlGenerator->generate('app_onboarding_step', [
                 'step' => $this->step()->value,
             ]),
+            // The short version of the form. Extra headers and the like are in
+            // Admin → AI, for the installations that need them.
+            'advanced' => false,
         ]);
     }
 

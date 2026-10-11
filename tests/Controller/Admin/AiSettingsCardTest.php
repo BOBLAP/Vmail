@@ -314,6 +314,52 @@ final class AiSettingsCardTest extends WebTestCase
         self::assertCount(1, $hidden->filter('[data-controller="admin--ai-warmup"]'));
     }
 
+    /**
+     * The page says which extra headers are on file, and shows no value.
+     *
+     * Rendered rather than read off the form, because the leak this guards is a
+     * template one: a value that reached the page through a help text, a
+     * placeholder or the re-rendered field would not show in any form test.
+     */
+    public function testStoredHeadersAreNamedOnThePageAndTheirValuesAreNot(): void
+    {
+        $settings = $this->settings->currentOrDefault();
+        $settings->baseUrl = 'http://192.0.2.1:11434';
+        $settings->headers = '{"X-Gateway-Key":"the-secret-value"}';
+
+        if (null === $settings->id) {
+            $this->em->persist($settings);
+        }
+
+        $this->em->flush();
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+        $html    = (string) $this->client->getResponse()->getContent();
+
+        self::assertStringContainsString('X-Gateway-Key', $html);
+        self::assertStringNotContainsString('the-secret-value', $html);
+        self::assertSame('', $crawler->filter('#ai_settings_headers')->text());
+        self::assertCount(1, $crawler->filter('#ai_settings_clearHeaders'), 'and there is a way to remove them');
+    }
+
+    /** With nothing stored there is nothing to remove, and no box offering to. */
+    public function testWithNoStoredHeadersThereIsNoRemoveBox(): void
+    {
+        $settings = $this->settings->currentOrDefault();
+        $settings->headers = null;
+
+        if (null === $settings->id) {
+            $this->em->persist($settings);
+        }
+
+        $this->em->flush();
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+
+        self::assertCount(1, $crawler->filter('#ai_settings_headers'));
+        self::assertCount(0, $crawler->filter('#ai_settings_clearHeaders'));
+    }
+
     /** Without a valid token this action sends nothing anywhere. */
     public function testATestWithoutAValidCsrfTokenAsksNobody(): void
     {

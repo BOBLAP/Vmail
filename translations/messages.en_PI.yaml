@@ -148,6 +148,10 @@ admin:
             qwen3-embedding_0_6b: "The default, an' the one to take unless ye have cause otherwise. Speaks many tongues, which counts more than any benchmark for a hold that be not all one language, an' the only one here to strike perfect precision in testin'. 639 MB."
         field:
             base_url: "Oracle's berth"
+            headers: 'Extra colours'
+            headers_clear: 'Strike the stowed colours'
+            headers_help: "One to a line, writ Name: value. Flown on ev'ry call to the oracle, for a gate or go-between that wants more than a token. Stowed under lock an' never shown again."
+            headers_help_set: "Stowed: %names%. Leave it empty to keep 'em. Aught ye write here replaces the lot; what be stowed is never shown."
             provider: 'Tongue'
             provider_help: "Which tongue the oracle speaks. Ollama be the one plMail knows best: it can keep a model aboard an' fetch one ahead o' time. OpenAI-compatible covers near ev'rythin' else, in yer own waters or hired."
             base_url_help: "For Ollama, where the box lies on yer network, port an' all. For an OpenAI-compatible port, the root o' the API with its version, like https://api.example.com/v1."
@@ -181,6 +185,8 @@ admin:
             writing_help: 'Help me write'
             writing_help_help: "Offers drafts an' rewrites at the writin' desk, when ye ask."
         heading: 'Oracle'
+        headers:
+            summary: 'Extra colours for a gate or go-between'
         hold:
             details: 'See each message'
             measured: "Last 7 days: %count% messages held, most fer %median% s (95% within %p95% s). %timeout% were shown with no answer, the wait havin' run out."

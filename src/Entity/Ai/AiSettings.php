@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity\Ai;
 
+use App\Domain\Ai\ConnectionHeaders;
 use App\Domain\Ai\EmbeddingPreset;
 use App\Domain\Ai\KeepAlive;
 use App\Domain\DTO\Ai\AiConnection;
@@ -124,6 +125,21 @@ class AiSettings
      */
     #[ORM\Column(name: 'api_token', type: EncryptedStringType::NAME, nullable: true)]
     public ?string $apiToken = null;
+
+    /**
+     * Extra HTTP headers sent to $baseUrl with every request, as JSON.
+     *
+     * For whatever stands in front of the model and wants more than a bearer
+     * token: basic auth on a reverse proxy, a gateway's own key, a tenant or
+     * project header. {@see ConnectionHeaders} owns the format and says what is
+     * refused.
+     *
+     * Encrypted like the token, because a value here is a credential as often
+     * as not. Read through {@see connectionFor()} and written by the settings
+     * form; null means none.
+     */
+    #[ORM\Column(name: 'headers', type: EncryptedStringType::NAME, nullable: true)]
+    public ?string $headers = null;
 
     /** The model that writes: replies, subject lines, summaries. */
     #[ORM\Column(name: 'chat_model', length: 128, nullable: true)]
@@ -410,7 +426,12 @@ class AiSettings
      */
     public function connectionFor(AiFeature $feature): AiConnection
     {
-        return new AiConnection((string) $this->baseUrl, $this->apiToken, $this->provider);
+        return new AiConnection(
+            (string) $this->baseUrl,
+            $this->apiToken,
+            $this->provider,
+            ConnectionHeaders::decode($this->headers),
+        );
     }
 
     /**

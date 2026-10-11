@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Form\Admin;
 
+use App\Domain\Ai\ConnectionHeaders;
 use App\Domain\Ai\EmbeddingPreset;
 use App\Domain\Ai\KeepAlive;
 use App\Domain\Enum\Ai\AiProvider;
@@ -21,8 +22,10 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Callback;
 use Symfony\Component\Validator\Constraints\Range;
 use Symfony\Component\Validator\Constraints\Regex;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * The model host, and what it is allowed to do.
@@ -61,8 +64,23 @@ final class AiSettingsType extends AbstractType
                     $addressBefore,
                     self::address($submitted),
                 );
+
+                $form = $event->getForm();
+
+                // Absent in the setup wizard, which leaves the advanced fields
+                // out. Absent is "nothing typed, nothing ticked", so the stored
+                // headers still follow the address like the key does.
+                $submitted->headers = self::headersAfter(
+                    $submitted->headers,
+                    true === $form->has('headers') ? (string) $form->get('headers')->getData() : '',
+                    true === $form->has('clearHeaders') && true === $form->get('clearHeaders')->getData(),
+                    $addressBefore,
+                    self::address($submitted),
+                );
             },
         );
+
+        $storedHeaders = $settings instanceof AiSettings ? ConnectionHeaders::names($settings->headers) : [];
 
         $builder
             ->add('isEnabled', CheckboxType::class, [
@@ -115,7 +133,48 @@ final class AiSettingsType extends AbstractType
                 // password manager's overlay survives the Turbo frame swap and
                 // sits over the field it was anchored to.
                 'attr'        => [...PasswordManagerIgnore::SECRET, 'placeholder' => $hasToken ? '••••••••' : ''],
-            ])
+            ]);
+
+        // Only on Admin → AI. The setup wizard is the short version of this
+        // form: an address, a token, two models. Somebody who needs these knows
+        // where the long version is.
+        if (true === $options['advanced']) {
+            // A TEXTAREA OF `Name: value` LINES, unmapped like the token and for
+            // the token's reason: what is stored is never put back on the page.
+            // The help names the headers that are on file and nothing more.
+            // Typing anything here REPLACES the stored set — there is no way to
+            // edit one value without seeing the others, and showing them is the
+            // thing this field does not do.
+            $builder
+                ->add('headers', TextareaType::class, [
+                    'label'                       => 'admin.ai.field.headers',
+                    'help'                        => [] === $storedHeaders ? 'admin.ai.field.headers_help' : 'admin.ai.field.headers_help_set',
+                    'help_translation_parameters' => ['%names%' => implode(', ', $storedHeaders)],
+                    'required'                    => false,
+                    'mapped'                      => false,
+                    'empty_data'                  => '',
+                    'constraints'                 => [self::headersConstraint()],
+                    'attr'                        => [
+                        ...PasswordManagerIgnore::ATTR,
+                        'autocomplete' => 'off',
+                        'rows'         => 2,
+                        'spellcheck'   => 'false',
+                        'placeholder'  => 'X-Example-Key: value',
+                        'class'        => 'font-mono',
+                    ],
+                ])
+                // The token is cleared by typing a new one or changing the
+                // address. Headers need a gesture of their own, because "no
+                // extra headers" is a perfectly good configuration to go back
+                // to and an empty box already means "leave them alone".
+                ->add('clearHeaders', CheckboxType::class, [
+                    'label'    => 'admin.ai.field.headers_clear',
+                    'required' => false,
+                    'mapped'   => false,
+                ]);
+        }
+
+        $builder
             ->add('chatModel', TextType::class, [
                 'label'    => 'admin.ai.field.chat_model',
                 'help'     => 'admin.ai.field.chat_model_help',
@@ -276,6 +335,64 @@ final class AiSettingsType extends AbstractType
     }
 
     /**
+     * The extra headers a connection holds once a submission has been read.
+     *
+     * keyAfter()'s three cases, and a fourth. A value here is a credential for
+     * whatever stands at the address, so it follows the address exactly as the
+     * key does: kept while the address stays, dropped when it changes.
+     *
+     * The fourth case is the tick box. Dropped on request, for the installation
+     * that has taken its proxy away and now sends a header to nobody.
+     *
+     * What was typed wins over the tick box. Somebody who typed a new set and
+     * left the box ticked from a moment ago means the new set.
+     *
+     * Text that does not parse leaves the stored set alone. The constraint on
+     * the field has already made the form invalid, so nothing is saved either
+     * way; this only keeps the object from being left holding half an edit.
+     */
+    private static function headersAfter(?string $stored, string $typed, bool $clear, ?string $addressBefore, string $addressAfter): ?string
+    {
+        if ('' !== trim($typed)) {
+            try {
+                return ConnectionHeaders::encode(ConnectionHeaders::parse($typed));
+            } catch (\InvalidArgumentException) {
+                return $stored;
+            }
+        }
+
+        if (true === $clear || $addressBefore !== $addressAfter) {
+            return null;
+        }
+
+        return $stored;
+    }
+
+    /**
+     * Refuses header text that cannot be sent as written.
+     *
+     * {@see ConnectionHeaders::parse()} decides and names the reason; this only
+     * carries it to the field. The reason is a key in the `validators` domain
+     * and never quotes what was typed — what was typed is a credential.
+     */
+    private static function headersConstraint(): Callback
+    {
+        return new Callback(static function (?string $typed, ExecutionContextInterface $context): void {
+            if (null === $typed || '' === trim($typed)) {
+                return;
+            }
+
+            try {
+                ConnectionHeaders::parse($typed);
+            } catch (\InvalidArgumentException $exception) {
+                $context->buildViolation($exception->getMessage())
+                    ->setParameter('%max%', (string) ConnectionHeaders::MAX_HEADERS)
+                    ->addViolation();
+            }
+        });
+    }
+
+    /**
      * What a key was issued for: the dialect and the address, as one string.
      *
      * The dialect counts. The same host and port can be an Ollama at its root
@@ -343,6 +460,11 @@ final class AiSettingsType extends AbstractType
         $resolver->setDefaults([
             'data_class'         => AiSettings::class,
             'translation_domain' => 'messages',
+            // The fields most installations never touch. On by default, so the
+            // admin page is the whole form; the setup wizard turns it off.
+            'advanced'           => true,
         ]);
+
+        $resolver->setAllowedTypes('advanced', 'bool');
     }
 }

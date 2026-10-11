@@ -1,4 +1,4 @@
-<!-- translated-from: features/admin.md sha1:9f1b678ff554721fb55331d525efa52790c9d390 -->
+<!-- translated-from: features/admin.md sha1:10f5ba11e28a697ef7ef4c9f0e21d4ab5005e4fe -->
 
 # Administration
 
@@ -494,6 +494,24 @@ ohne ein Token einzutippen, wird das gespeicherte verworfen. So landet es nie be
 es nicht ausgestellt wurde. Ein Wechsel des Anbieters zählt als Wechsel der Adresse. Weiterleitungen
 werden nicht verfolgt, sobald ein Token mitgeht, und bei einem OpenAI-kompatiblen Endpunkt nie: Die
 Antwort wird als der Status gemeldet, der sie ist.
+
+**Zusätzliche Header** sind für das, was vor dem Modell steht und mehr als ein Token verlangt: ein
+Reverse-Proxy mit Basic Auth, ein Zero-Trust-Gateway, das eine Client-ID und ein Secret will, ein
+Routing- oder Logging-Gateway mit eigenem Schlüssel, ein Anbieter, der ein Projekt per Header wählt.
+Schreib einen pro Zeile als `Name: Wert`:
+
+```
+CF-Access-Client-Id: 1a2b3c.access
+CF-Access-Client-Secret: …
+```
+
+Sie gehen mit jeder Anfrage an den Modell-Host, bei beiden Anbietern, und werden verschlüsselt
+gespeichert. Die Seite nennt die Namen dessen, was hinterlegt ist, und zeigt nie wieder einen Wert.
+Lässt du das Feld leer, bleiben sie; tippst du etwas ein, ersetzt das alle; **Gespeicherte Header
+entfernen** verwirft sie. Wie das Token werden sie verworfen, wenn sich Adresse oder Anbieter ändern.
+Ein hier eingetippter `Authorization`-Header geht anstelle des Tokens, so schreibt man Basic Auth.
+Die Header, die plMail selbst setzt, `Host`, `Content-Type`, `Content-Length` und ähnliche, werden
+abgelehnt. Der Einrichtungsassistent lässt dieses Feld weg; es steht nur unter Admin → KI.
 
 Zwei Modelle, weil die Aufgaben verschieden sind. Das **Schreib-Modell** sollte instruction-tuned
 sein und wird zum Entwerfen und Einsortieren benutzt; das **Such-Modell** ist ein Embedding-Modell

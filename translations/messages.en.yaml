@@ -167,6 +167,10 @@ admin:
             semantic_min_similarity: 'Minimum similarity'
             semantic_min_similarity_help: 'How close a match has to be, from 0 to 1. Every model answers on its own scale, so this belongs with the model above: too high finds nothing, too low returns the whole mailbox.'
             enabled: 'Use a language model'
+            headers: 'Extra headers'
+            headers_clear: 'Remove the stored headers'
+            headers_help: 'One per line, written Name: value. Sent with every request to the model host, for a proxy or gateway that asks for more than a token. Stored encrypted and never shown again.'
+            headers_help_set: 'On file: %names%. Leave empty to keep them. Anything typed here replaces all of them; the stored values are never shown.'
             provider: 'Provider'
             provider_help: 'Which API the model host speaks. Ollama is the one plMail knows most about: it can keep a model loaded and load one ahead of time. OpenAI-compatible covers nearly everything else, on your own network or hosted.'
             enabled_help: 'Off by default. Everything below is ignored while this is off.'
@@ -180,6 +184,8 @@ admin:
             writing_help: 'Help me write'
             writing_help_help: 'Offers drafts and rewrites in the composer, when you ask for them.'
         heading: 'Language model'
+        headers:
+            summary: 'Extra headers for a proxy or gateway'
         hold:
             details: 'See each message'
             measured: 'Last 7 days: %count% messages held, typically for %median% s (95% within %p95% s). %timeout% were shown without an answer because the wait ran out.'

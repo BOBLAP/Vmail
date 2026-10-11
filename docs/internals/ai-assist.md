@@ -43,9 +43,19 @@ The durations in the metrics table are Ollama's own figures for an Ollama host. 
 dialect the total is the round trip measured from plMail, and a streamed call's generation time runs
 from its first token — recorded only when the server also sent a token count to divide by.
 
+**Extra headers** ride on the same object. `ConnectionHeaders` owns the format: typed as
+`Name: value` lines, stored as JSON in an encrypted column, and read back by
+`AiSettings::connectionFor()` into `AiConnection::$headers`. `parse()` is strict and runs in front of
+whoever typed them; `decode()` never throws and runs in front of every request, so an unreadable
+column costs the headers and not the feature. Values are fixed strings. There is deliberately no
+header whose value is made up per request: nothing plMail does needs one, and it would be a
+mechanism to carry through the queue for one endpoint's benefit. A typed `Authorization` replaces
+the bearer token, matched without regard to case.
+
 **The key belongs to the address.** `AiSettingsType` drops a stored key when the provider or the
 address changes and none is typed, and the Test action binds the form to a copy of the settings, so
-a stored key is never shown to an address it was not stored for. `OllamaClient::authorised()` scopes
+a stored key is never shown to an address it was not stored for. The extra headers follow the same
+rule. `OllamaClient::authorised()` scopes
 its HTTP client to the connection, which is what puts the key on every request including the two a
 caller does not see.
 

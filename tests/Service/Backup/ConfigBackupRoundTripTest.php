@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Service\Backup;
 
 use App\Domain\Enum\Account\MailProvider;
+use App\Domain\Enum\Ai\AiProvider;
 use App\Domain\Enum\Ai\PromptSlot;
 use App\Domain\Enum\Integration\Provider;
 use App\Domain\Enum\Mail\CategorySource;
@@ -231,6 +232,8 @@ final class ConfigBackupRoundTripTest extends KernelTestCase
         $this->check('aiSettings row exists', true, $ai instanceof AiSettings);
         $this->check('aiSettings.baseUrl', 'http://10.0.0.5:11434', $ai?->baseUrl);
         $this->check('aiSettings.apiToken', self::AI_TOKEN, $ai?->apiToken);
+        $this->check('aiSettings.provider', AiProvider::OpenAi, $ai?->provider);
+        $this->check('aiSettings.headers', '{"X-Tenant":"acme"}', $ai?->headers);
         $this->check('aiSettings.chatModel', 'llama3.1:8b', $ai?->chatModel);
         $this->check('aiSettings.embeddingModel', 'nomic-embed-text', $ai?->embeddingModel);
         $this->check('aiSettings.embeddingDimensions', 768, $ai?->embeddingDimensions);
@@ -446,6 +449,8 @@ final class ConfigBackupRoundTripTest extends KernelTestCase
         $ai->isEnabled           = true;
         $ai->baseUrl             = 'http://10.0.0.5:11434';
         $ai->apiToken            = self::AI_TOKEN;
+        $ai->provider            = AiProvider::OpenAi;
+        $ai->headers             = '{"X-Tenant":"acme"}';
         $ai->chatModel           = 'llama3.1:8b';
         $ai->embeddingModel      = 'nomic-embed-text';
         $ai->embeddingDimensions = 768;

@@ -161,6 +161,29 @@ poll would empty a field mid-word.
                         {{ form_row(form.baseUrl) }}
                         {{ form_row(form.apiToken) }}
 
+                        {# Folded away, and open only when it is in use or has
+                           just been refused. Most installations never need it,
+                           and two more boxes between the token and the model
+                           are two more things to wonder about on a page that
+                           already has plenty. #}
+                        <details class="group/headers" {{ (settings.headers is not null or not form.headers.vars.valid) ? 'open' : '' }}>
+                            <summary class="inline-flex items-center gap-2 cursor-pointer list-none text-[13px] font-medium text-ink-soft hover:text-ink">
+                                <i class="fa-solid fa-chevron-right w-3 text-[10px] text-ink-faint transition-transform group-open/headers:rotate-90" aria-hidden="true"></i>
+                                {{ 'admin.ai.headers.summary'|trans }}
+                            </summary>
+                            <div class="mt-4 space-y-5">
+                                {{ form_row(form.headers) }}
+                                {% if settings.headers is not null %}
+                                    {{ form_row(form.clearHeaders) }}
+                                {% else %}
+                                    {# Rendered nowhere, on purpose: with nothing
+                                       stored there is nothing to remove. Marked
+                                       so form_rest() does not print it below. #}
+                                    {% do form.clearHeaders.setRendered %}
+                                {% endif %}
+                            </div>
+                        </details>
+
                         {{ form_row(form.chatModel) }}
 
                         {# ── What only Ollama can be asked ────────────────

@@ -8,6 +8,13 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**The model host can be sent extra headers.** For a reverse proxy with basic auth, a zero-trust
+gateway, a routing gateway with its own key, or a provider that takes a project or tenant header.
+Admin → AI has an **Extra headers** box under the token: one `Name: value` per line, sent with every
+request for either provider, stored encrypted. The page lists the names on file and never shows a
+value again. They are dropped when the address or the provider changes, like the token. One column
+is added to `ai_settings`; the migration is reversible.
+
 **The language model can be any OpenAI-compatible endpoint.** Admin → AI has a **Provider** field:
 Ollama, as before, or OpenAI-compatible, which covers llama.cpp, vLLM, LM Studio, LiteLLM, hosted
 providers and Ollama under `/v1`. Writing help, summaries, sorting and search by meaning all work

@@ -39,6 +39,8 @@ final readonly class AiConnection
         public string     $baseUrl,
         public ?string    $token = null,
         public AiProvider $provider = AiProvider::Ollama,
+        /** @var array<string, string> extra headers, by name. {@see \App\Domain\Ai\ConnectionHeaders} */
+        public array      $headers = [],
     ) {
     }
 
@@ -51,6 +53,13 @@ final readonly class AiConnection
     /**
      * What every request to this address carries.
      *
+     * The token as a bearer, then the extra headers on top. On top is the
+     * order that matters for one name: an `Authorization` typed among the extra
+     * headers replaces the bearer, which is how basic auth in front of an
+     * Ollama is spelled. Matched without regard to case, because header names
+     * have none and two Authorization headers on one request is a request
+     * different proxies read differently.
+     *
      * Empty when there is nothing to show, which is an Ollama on the LAN with
      * no proxy in front of it — the commonest installation there is — and which
      * lets a client skip building a second HTTP client for it.
@@ -59,10 +68,22 @@ final readonly class AiConnection
      */
     public function requestHeaders(): array
     {
-        if (null === $this->token || '' === trim($this->token)) {
-            return [];
+        $headers = [];
+
+        if (null !== $this->token && '' !== trim($this->token)) {
+            $headers['Authorization'] = 'Bearer ' . trim($this->token);
         }
 
-        return ['Authorization' => 'Bearer ' . trim($this->token)];
+        foreach ($this->headers as $name => $value) {
+            foreach (array_keys($headers) as $existing) {
+                if (0 === strcasecmp($existing, $name)) {
+                    unset($headers[$existing]);
+                }
+            }
+
+            $headers[$name] = $value;
+        }
+
+        return $headers;
     }
 }

@@ -148,6 +148,10 @@ admin:
             qwen3-embedding_0_6b: "The default, an' the one to take unless ye have cause otherwise. Speaks many tongues, which counts more than any benchmark for a hold that be not all one language, an' the only one here to strike perfect precision in testin'. 639 MB."
         field:
             base_url: "Oracle's berth"
+            embedding_base_url: "Searcher's berth"
+            embedding_own: 'The searcher sails from another berth'
+            embedding_own_help: "For keepin' the search model somewhere other than the scrivener: a hired oracle for writin' an' a small one at home for searchin', or t'other way about. Ev'ry message goes to the searcher's berth once to be charted. If the search model bears the same name there, the old chart be kept."
+            embedding_provider: "Searcher's tongue"
             headers: 'Extra colours'
             headers_clear: 'Strike the stowed colours'
             headers_help: "One to a line, writ Name: value. Flown on ev'ry call to the oracle, for a gate or go-between that wants more than a token. Stowed under lock an' never shown again."
@@ -251,6 +255,9 @@ admin:
             openai: 'OpenAI-compatible'
         probe:
             missing_model: "That berth answered, but holds no: %models%. Haul 'em aboard there first."
+            host:
+                search: "Searcher's berth"
+                writing: "Oracle's berth"
             no_host: 'Write an address first.'
             no_model_list: "Somethin' answered at that berth, but it keeps no list o' models (HTTP %status%). See that the address ends in the API version, most often /v1. Some keep no list an' sail fine all the same; stow it an' try a draft."
             not_an_api: "Somethin' answered at that berth, but not in JSON. Most like a gate or a go-between, not the API."

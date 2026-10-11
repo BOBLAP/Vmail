@@ -52,6 +52,25 @@ header whose value is made up per request: nothing plMail does needs one, and it
 mechanism to carry through the queue for one endpoint's benefit. A typed `Authorization` replaces
 the bearer token, matched without regard to case.
 
+**Search may have a host of its own.** `AiSettings::$embeddingOwnConnection` is the switch, and
+four columns hold the second host's provider, address, token and headers.
+`AiSettings::connectionFor(AiFeature::Search)` returns that connection when the switch is on and the
+first host's otherwise; every other feature always gets the first. Nothing else changed to make this
+work, because every call already asked for the connection of its feature. Three rules:
+
+- The second host gets all four of its own values and none of the first's. A search host with no
+  token is sent no token.
+- `enabledFor()` asks whether the host *that feature runs on* is filled in, so search pointed at an
+  empty second host is off whatever the first host says, and a search host alone is enough for
+  search.
+- Stored vectors are filed under the model name and nothing else. The address and the provider are
+  not part of a vector's identity, so moving search to another host serving the same model re-uses
+  the index and needs no migration. An identity that included the address would have forced a full
+  re-embed whenever a host changed its IP.
+
+The panel reads the host that writes. With search elsewhere, the search model's `installed` is null
+and its `resident` is false there: unknown, not missing.
+
 **The key belongs to the address.** `AiSettingsType` drops a stored key when the provider or the
 address changes and none is typed, and the Test action binds the form to a copy of the settings, so
 a stored key is never shown to an address it was not stored for. The extra headers follow the same

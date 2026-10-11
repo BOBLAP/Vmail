@@ -383,6 +383,121 @@ final class AiAssistantTest extends KernelTestCase
         self::assertSame('30m', $settings->keepAliveFor(AiFeature::WritingHelp), 'and it is still there afterwards');
     }
 
+    /**
+     * Search on a host of its own: vectors from there, everything else from
+     * the first host, and neither shown the other's credentials.
+     *
+     * The arrangement the second host exists for — writing rented, search at
+     * home. The mailbox is what gets embedded, so the request that must not go
+     * to the wrong address is the embedding one, and the credential that must
+     * not travel with it is the hosted provider's key.
+     */
+    public function testSearchCanRunOnAHostOfItsOwn(): void
+    {
+        $settings = $this->openAi();
+        $settings->headers                = '{"X-Project":"mail"}';
+        $settings->embeddingOwnConnection = true;
+        $settings->embeddingProvider      = AiProvider::Ollama;
+        $settings->embeddingBaseUrl       = 'http://10.0.0.5:11434';
+        $settings->embeddingApiToken      = 'home-token';
+        $settings->embeddingHeaders       = '{"X-Home":"yes"}';
+
+        $seen      = [];
+        $assistant = $this->assistant($settings, headers: $seen);
+
+        self::assertSame([1.0, 2.0], $assistant->embed(AiCallFeature::SearchQuery, 'anything'));
+        self::assertSame('an answer', $assistant->chat(AiFeature::WritingHelp, [['role' => 'user', 'content' => 'hi']]));
+
+        self::assertSame(
+            ['http://10.0.0.5:11434/api/embed', 'https://api.example.test/v1/chat/completions'],
+            array_keys($seen),
+        );
+
+        $embed = $seen['http://10.0.0.5:11434/api/embed'];
+        $chat  = $seen['https://api.example.test/v1/chat/completions'];
+
+        self::assertStringContainsString('Bearer home-token', $embed);
+        self::assertStringContainsStringIgnoringCase('X-Home: yes', $embed);
+        self::assertStringNotContainsString('sk-test', $embed, 'the hosted key stays with the hosted address');
+        self::assertStringNotContainsStringIgnoringCase('X-Project', $embed);
+
+        self::assertStringContainsString('Bearer sk-test', $chat);
+        self::assertStringNotContainsString('home-token', $chat);
+        self::assertStringNotContainsStringIgnoringCase('X-Home', $chat);
+    }
+
+    /**
+     * A search host with no token is sent no token — not the other host's.
+     *
+     * "None" is a complete answer for an Ollama on the LAN. Falling back to
+     * the writing host's key would post a hosted provider's credential to a
+     * machine that never asked for one.
+     */
+    public function testASearchHostWithoutATokenDoesNotBorrowOne(): void
+    {
+        $settings = $this->openAi();
+        $settings->embeddingOwnConnection = true;
+        $settings->embeddingBaseUrl       = 'http://10.0.0.5:11434';
+
+        $seen = [];
+
+        $this->assistant($settings, headers: $seen)->embed(AiCallFeature::SearchQuery, 'anything');
+
+        self::assertSame(['http://10.0.0.5:11434/api/embed'], array_keys($seen));
+        self::assertStringNotContainsStringIgnoringCase('authorization', (string) reset($seen));
+    }
+
+    /**
+     * Each feature is usable when ITS host is filled in.
+     *
+     * Search switched to its own host and that host left empty is search
+     * switched off — whatever the writing host says. And the reverse: a search
+     * host on its own is enough for search, with no writing host at all.
+     */
+    public function testAFeatureNeedsTheHostItRunsOn(): void
+    {
+        $settings = $this->openAi();
+        $settings->embeddingOwnConnection = true;
+
+        self::assertFalse($settings->enabledFor(AiFeature::Search), 'its own host was never typed');
+        self::assertTrue($settings->enabledFor(AiFeature::WritingHelp));
+
+        $settings->embeddingBaseUrl = 'http://10.0.0.5:11434';
+        $settings->baseUrl          = null;
+
+        self::assertTrue($settings->enabledFor(AiFeature::Search));
+        self::assertFalse($settings->enabledFor(AiFeature::WritingHelp));
+        self::assertTrue($settings->isConfigured(), 'a search host alone is still a configured installation');
+    }
+
+    /** The second host's fields mean nothing until the switch says so. */
+    public function testTheSecondHostIsIgnoredWhileItIsSwitchedOff(): void
+    {
+        $settings = $this->openAi();
+        $settings->embeddingProvider = AiProvider::Ollama;
+        $settings->embeddingBaseUrl  = 'http://10.0.0.5:11434';
+        $settings->embeddingApiToken = 'home-token';
+
+        $connection = $settings->connectionFor(AiFeature::Search);
+
+        self::assertSame('https://api.example.test/v1', $connection->baseUrl);
+        self::assertSame(AiProvider::OpenAi, $connection->provider);
+        self::assertSame('sk-test', $connection->token);
+    }
+
+    /** The search keep-alive goes to an Ollama search host even when writing is elsewhere. */
+    public function testTheSearchKeepAliveFollowsTheSearchHost(): void
+    {
+        $settings = $this->openAi();
+        $settings->embeddingKeepAlive     = '-1';
+        $settings->embeddingOwnConnection = true;
+        $settings->embeddingProvider      = AiProvider::Ollama;
+        $settings->embeddingBaseUrl       = 'http://10.0.0.5:11434';
+
+        self::assertSame('-1', $settings->keepAliveFor(AiFeature::Search));
+        self::assertNull($settings->keepAliveFor(AiFeature::WritingHelp));
+    }
+
     // ── fixtures ─────────────────────────────────────────────────────────────
 
     /** Everything on, at an OpenAI-compatible address with a key. */

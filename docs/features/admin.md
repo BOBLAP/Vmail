@@ -469,6 +469,35 @@ used for drafting and sorting; the **search model** is an embedding model and is
 smaller. `llama3.1:8b` and `qwen3-embedding:0.6b` are reasonable starting points. Both have to be
 pulled on the host first — plMail never downloads a model.
 
+### Search on a model host of its own
+
+**Search uses a different model host** gives the search model its own provider, address, token and
+extra headers. It is off by default, and while it is off search asks the model host above like
+everything else does.
+
+The two jobs often want different machines. Writing wants the largest model you can run or rent.
+Search wants a small one that is asked constantly: every query, and every message of a mailbox once
+to index it. Two arrangements come up most:
+
+| Writing | Search | Why |
+|---|---|---|
+| A hosted, OpenAI-compatible endpoint | An Ollama at home | Good drafts without owning a large GPU, while the mailbox is indexed on a machine you own and nothing is billed per message |
+| An Ollama at home | Another host | The GPU that writes is not interrupted by indexing |
+
+Each host is sent only its own token and headers. A search host with no token is sent none; it
+never borrows the other host's. **Test** asks both hosts, each for the model that lives on it.
+
+**The index belongs to the model, not to the address.** Moving search to another host that serves
+the same model, under the same name, keeps the existing index. A different model name is a new
+index, as it always has been: start a pass from the card below. If the name is the same but the
+model is not, plMail cannot tell; give it a different name, or the old and new vectors are searched
+together and the results are poor.
+
+The search model's keep-alive is shown when the host search runs on is an Ollama, whichever host
+that is. The model host card on **Admin → Performance** reads the host that writes, and does not
+report on a search model that lives elsewhere. The setup wizard leaves this out; it is on
+Admin → AI only.
+
 ### The search model comes with two settings, and they are not optional
 
 Underneath the search model are a **query instruction** and a **minimum similarity**, and the three

@@ -4,9 +4,15 @@ import { Controller } from "@hotwired/stimulus";
  * Puts away the fields that mean nothing for the chosen provider.
  *
  * Targets:
- *   provider    — the select that says which dialect the model host speaks
- *   ollamaOnly  — every block that is about something only Ollama can be asked:
- *                 how long a model is held, and loading one ahead of time
+ *   provider          — the select that says which dialect the model host speaks
+ *   ollamaOnly        — every block about something only Ollama can be asked of
+ *                       the WRITING model: how long it is held, and loading it
+ *                       ahead of time
+ *   ownConnection     — the tick box that gives search a model host of its own
+ *   searchOwn         — the block of fields that describe that second host
+ *   searchProvider    — the second host's own provider select
+ *   searchOllamaOnly  — the search model's keep-alive, which follows whichever
+ *                       host search actually runs on
  *
  * WHY HIDE THEM AT ALL
  * ────────────────────
@@ -31,7 +37,7 @@ import { Controller } from "@hotwired/stimulus";
  * icons document.
  */
 export default class extends Controller {
-    static targets = ["provider", "ollamaOnly"];
+    static targets = ["provider", "ollamaOnly", "ownConnection", "searchOwn", "searchProvider", "searchOllamaOnly"];
 
     connect() {
         this.refresh();
@@ -46,6 +52,24 @@ export default class extends Controller {
 
         for (const block of this.ollamaOnlyTargets) {
             block.hidden = false === ollama;
+        }
+
+        // The setup wizard renders the short form, with no second host in it.
+        // Search then runs where everything else does.
+        const own = this.hasOwnConnectionTarget && this.ownConnectionTarget.checked;
+
+        for (const block of this.searchOwnTargets) {
+            block.hidden = false === own;
+        }
+
+        // Which host search runs on decides whether its keep-alive means
+        // anything: the second one when the box is ticked, the first otherwise.
+        const searchOllama = own && this.hasSearchProviderTarget
+            ? "ollama" === this.searchProviderTarget.value
+            : ollama;
+
+        for (const block of this.searchOllamaOnlyTargets) {
+            block.hidden = false === searchOllama;
         }
     }
 }

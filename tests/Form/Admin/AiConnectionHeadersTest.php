@@ -119,6 +119,43 @@ final class AiConnectionHeadersTest extends KernelTestCase
         self::assertSame(['%names%' => 'X-Tenant'], $view->vars['help_translation_parameters']);
     }
 
+    /** The search host has headers of its own, under the same rules. */
+    public function testTheSearchHostsHeadersAreItsOwn(): void
+    {
+        $settings = $this->stored();
+        $settings->embeddingBaseUrl = 'http://10.0.0.9:11434';
+        $settings->embeddingHeaders = '{"X-Home":"stored"}';
+
+        $form = $this->forms->create(AiSettingsType::class, $settings, ['csrf_protection' => false]);
+        $form->submit([
+            'provider'               => 'ollama',
+            'baseUrl'                => 'http://10.0.0.5:11434',
+            'clearHeaders'           => '1',
+            'embeddingOwnConnection' => '1',
+            'embeddingProvider'      => 'ollama',
+            'embeddingBaseUrl'       => 'http://10.0.0.9:11434',
+        ], false);
+
+        self::assertTrue($form->isValid(), (string) $form->getErrors(true, false));
+        self::assertNull($settings->headers, 'removed, as asked');
+        self::assertSame('{"X-Home":"stored"}', $settings->embeddingHeaders, 'the other host\'s were not asked about');
+
+        $view = $this->forms->create(AiSettingsType::class, $settings, ['csrf_protection' => false])->createView();
+
+        self::assertSame(['%names%' => 'X-Home'], $view->children['embeddingHeaders']->vars['help_translation_parameters']);
+        self::assertSame('', (string) $view->children['embeddingHeaders']->vars['value']);
+    }
+
+    /** The short form has no second host in it at all. */
+    public function testTheShortFormHasNoSecondHost(): void
+    {
+        $form = $this->forms->create(AiSettingsType::class, $this->stored(), ['csrf_protection' => false, 'advanced' => false]);
+
+        foreach (['embeddingOwnConnection', 'embeddingProvider', 'embeddingBaseUrl', 'embeddingApiToken', 'embeddingHeaders', 'clearEmbeddingHeaders'] as $field) {
+            self::assertFalse($form->has($field), $field);
+        }
+    }
+
     /**
      * The setup wizard uses the short form, without these fields — and saving
      * it must not be what removes headers somebody set up in Admin → AI.

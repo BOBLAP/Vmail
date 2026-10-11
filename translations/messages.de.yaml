@@ -151,6 +151,10 @@ admin:
             qwen3-embedding_0_6b: 'Die Voreinstellung, und ohne besonderen Grund die richtige Wahl. Mehrsprachig, was für ein Postfach, das nicht nur eine Sprache spricht, mehr zählt als jeder Benchmark — und das einzige hier, das im Test perfekte Präzision erreicht hat. 639 MB.'
         field:
             base_url: 'Modell-Host'
+            embedding_base_url: 'Such-Host'
+            embedding_own: 'Die Suche nutzt einen anderen Modell-Host'
+            embedding_own_help: 'Wenn das Such-Modell woanders laufen soll als das Schreib-Modell: ein gehostetes Modell zum Schreiben und ein kleines zu Hause für die Suche, oder umgekehrt. Jede Nachricht geht einmal an den Such-Host, um indiziert zu werden. Heißt das Such-Modell dort gleich, bleibt der vorhandene Index erhalten.'
+            embedding_provider: 'Anbieter des Such-Hosts'
             headers: 'Zusätzliche Header'
             headers_clear: 'Gespeicherte Header entfernen'
             headers_help: 'Einer pro Zeile, geschrieben Name: Wert. Gehen mit jeder Anfrage an den Modell-Host, für einen Proxy oder ein Gateway, das mehr als ein Token verlangt. Verschlüsselt gespeichert und nie wieder angezeigt.'
@@ -254,6 +258,9 @@ admin:
             openai: 'OpenAI-kompatibel'
         probe:
             missing_model: 'Der Host hat geantwortet, hat aber nicht: %models%. Zieh sie dort erst.'
+            host:
+                search: 'Such-Host'
+                writing: 'Modell-Host'
             no_host: 'Trag zuerst eine Adresse ein.'
             no_model_list: 'Unter der Adresse antwortet etwas, aber es gibt keine Modell-Liste (HTTP %status%). Prüf, ob die Adresse auf die API-Version endet, meist /v1. Manche Server haben keine Liste und funktionieren trotzdem; speichere und probier einen Entwurf aus.'
             not_an_api: 'Unter der Adresse antwortet etwas, aber nicht mit JSON. Das ist meist eine Anmeldeseite oder ein Proxy, nicht die API.'

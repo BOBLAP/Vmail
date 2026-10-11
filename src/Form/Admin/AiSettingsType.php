@@ -46,41 +46,54 @@ final class AiSettingsType extends AbstractType
 
         // Read now, before a submission has been mapped onto the object: by the
         // time the listener below runs, $settings->baseUrl is already what was
-        // typed, and the address the stored key was issued for is gone.
-        $addressBefore = $settings instanceof AiSettings ? self::address($settings) : null;
+        // typed, and the address the stored key was issued for is gone. Both
+        // hosts, because each has a key and headers of its own.
+        $addressBefore       = $settings instanceof AiSettings ? self::address($settings) : null;
+        $searchAddressBefore = $settings instanceof AiSettings ? self::searchAddress($settings) : null;
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT,
-            static function (FormEvent $event) use ($addressBefore): void {
+            static function (FormEvent $event) use ($addressBefore, $searchAddressBefore): void {
                 $submitted = $event->getData();
 
                 if (false === $submitted instanceof AiSettings) {
                     return;
                 }
 
-                $submitted->apiToken = self::keyAfter(
-                    $submitted->apiToken,
-                    (string) $event->getForm()->get('apiToken')->getData(),
-                    $addressBefore,
-                    self::address($submitted),
-                );
-
                 $form = $event->getForm();
 
-                // Absent in the setup wizard, which leaves the advanced fields
-                // out. Absent is "nothing typed, nothing ticked", so the stored
-                // headers still follow the address like the key does.
-                $submitted->headers = self::headersAfter(
-                    $submitted->headers,
-                    true === $form->has('headers') ? (string) $form->get('headers')->getData() : '',
-                    true === $form->has('clearHeaders') && true === $form->get('clearHeaders')->getData(),
-                    $addressBefore,
-                    self::address($submitted),
+                // A field that is not in the form was neither typed in nor
+                // ticked. The setup wizard leaves the advanced ones out, and
+                // what is stored for them then simply follows its address.
+                $typed  = static fn (string $field): string => true === $form->has($field) ? (string) $form->get($field)->getData() : '';
+                $ticked = static fn (string $field): bool => true === $form->has($field) && true === $form->get($field)->getData();
+
+                $address       = self::address($submitted);
+                $searchAddress = self::searchAddress($submitted);
+
+                $submitted->apiToken = self::keyAfter($submitted->apiToken, $typed('apiToken'), $addressBefore, $address);
+                $submitted->headers  = self::headersAfter($submitted->headers, $typed('headers'), $ticked('clearHeaders'), $addressBefore, $address);
+
+                $submitted->embeddingApiToken = self::keyAfter(
+                    $submitted->embeddingApiToken,
+                    $typed('embeddingApiToken'),
+                    $searchAddressBefore,
+                    $searchAddress,
+                );
+
+                $submitted->embeddingHeaders = self::headersAfter(
+                    $submitted->embeddingHeaders,
+                    $typed('embeddingHeaders'),
+                    $ticked('clearEmbeddingHeaders'),
+                    $searchAddressBefore,
+                    $searchAddress,
                 );
             },
         );
 
-        $storedHeaders = $settings instanceof AiSettings ? ConnectionHeaders::names($settings->headers) : [];
+        $storedHeaders       = $settings instanceof AiSettings ? ConnectionHeaders::names($settings->headers) : [];
+        $storedSearchHeaders = $settings instanceof AiSettings ? ConnectionHeaders::names($settings->embeddingHeaders) : [];
+        $hasSearchToken      = $settings instanceof AiSettings && null !== $settings->embeddingApiToken;
 
         $builder
             ->add('isEnabled', CheckboxType::class, [
@@ -101,77 +114,49 @@ final class AiSettingsType extends AbstractType
                     'data-action'                      => 'admin--ai-connection#refresh',
                 ],
             ])
-            ->add('baseUrl', TextType::class, [
-                'label'       => 'admin.ai.field.base_url',
-                'help'        => 'admin.ai.field.base_url_help',
-                'required'    => false,
-                'attr'        => ['placeholder' => 'http://10.0.0.5:11434', 'autocomplete' => 'off'],
-                'constraints' => [
-                    // Loose on purpose. This names a box on the operator's own
-                    // network — a bare host, an IP, a .local name, a port that
-                    // is not 11434 — and a strict URL validator would reject
-                    // half of what is legitimately typed here. What it does
-                    // refuse is a scheme this cannot speak, which is the one
-                    // mistake that produces a silent nothing.
-                    new Regex(
-                        pattern: '~^https?://[^\s]+$~i',
-                        message: 'admin.ai.field.base_url_invalid',
-                        match: true,
-                    ),
-                ],
-            ])
-            ->add('apiToken', PasswordType::class, [
-                'label'       => 'admin.ai.field.token',
-                'help'        => $hasToken ? 'admin.ai.field.token_help_set' : 'admin.ai.field.token_help',
-                'required'    => false,
-                'mapped'      => false,
-                'empty_data'  => '',
-                // Never re-rendered. A stored credential put back on screen is
-                // a credential in a page cache, a screenshot and a browser's
-                // autofill — the same rule FcmConfigType follows.
-                // Spread, like every other credential field here: without it a
-                // password manager's overlay survives the Turbo frame swap and
-                // sits over the field it was anchored to.
-                'attr'        => [...PasswordManagerIgnore::SECRET, 'placeholder' => $hasToken ? '••••••••' : ''],
-            ]);
+            ->add('baseUrl', TextType::class, self::addressField('admin.ai.field.base_url', 'admin.ai.field.base_url_help'))
+            ->add('apiToken', PasswordType::class, self::tokenField($hasToken));
 
         // Only on Admin → AI. The setup wizard is the short version of this
         // form: an address, a token, two models. Somebody who needs these knows
         // where the long version is.
         if (true === $options['advanced']) {
-            // A TEXTAREA OF `Name: value` LINES, unmapped like the token and for
-            // the token's reason: what is stored is never put back on the page.
-            // The help names the headers that are on file and nothing more.
-            // Typing anything here REPLACES the stored set — there is no way to
-            // edit one value without seeing the others, and showing them is the
-            // thing this field does not do.
             $builder
-                ->add('headers', TextareaType::class, [
-                    'label'                       => 'admin.ai.field.headers',
-                    'help'                        => [] === $storedHeaders ? 'admin.ai.field.headers_help' : 'admin.ai.field.headers_help_set',
-                    'help_translation_parameters' => ['%names%' => implode(', ', $storedHeaders)],
-                    'required'                    => false,
-                    'mapped'                      => false,
-                    'empty_data'                  => '',
-                    'constraints'                 => [self::headersConstraint()],
-                    'attr'                        => [
-                        ...PasswordManagerIgnore::ATTR,
-                        'autocomplete' => 'off',
-                        'rows'         => 2,
-                        'spellcheck'   => 'false',
-                        'placeholder'  => 'X-Example-Key: value',
-                        'class'        => 'font-mono',
-                    ],
-                ])
+                ->add('headers', TextareaType::class, self::headersField($storedHeaders))
                 // The token is cleared by typing a new one or changing the
                 // address. Headers need a gesture of their own, because "no
                 // extra headers" is a perfectly good configuration to go back
                 // to and an empty box already means "leave them alone".
-                ->add('clearHeaders', CheckboxType::class, [
-                    'label'    => 'admin.ai.field.headers_clear',
+                ->add('clearHeaders', CheckboxType::class, self::clearHeadersField())
+
+                // ── A second host, for search ────────────────────────────
+                // The switch and the four fields it brings with it: the same
+                // four the first host has, built by the same helpers, so the
+                // two cannot come to disagree about what an address or a
+                // header is. See AiSettings::$embeddingOwnConnection for why
+                // anybody wants this.
+                ->add('embeddingOwnConnection', CheckboxType::class, [
+                    'label'    => 'admin.ai.field.embedding_own',
+                    'help'     => 'admin.ai.field.embedding_own_help',
                     'required' => false,
-                    'mapped'   => false,
-                ]);
+                    'attr'     => [
+                        'data-admin--ai-connection-target' => 'ownConnection',
+                        'data-action'                      => 'admin--ai-connection#refresh',
+                    ],
+                ])
+                ->add('embeddingProvider', EnumType::class, [
+                    'class'        => AiProvider::class,
+                    'label'        => 'admin.ai.field.embedding_provider',
+                    'choice_label' => static fn (AiProvider $provider): string => $provider->label(),
+                    'attr'         => [
+                        'data-admin--ai-connection-target' => 'searchProvider',
+                        'data-action'                      => 'admin--ai-connection#refresh',
+                    ],
+                ])
+                ->add('embeddingBaseUrl', TextType::class, self::addressField('admin.ai.field.embedding_base_url', 'admin.ai.field.base_url_help'))
+                ->add('embeddingApiToken', PasswordType::class, self::tokenField($hasSearchToken))
+                ->add('embeddingHeaders', TextareaType::class, self::headersField($storedSearchHeaders))
+                ->add('clearEmbeddingHeaders', CheckboxType::class, self::clearHeadersField());
         }
 
         $builder
@@ -301,6 +286,103 @@ final class AiSettingsType extends AbstractType
     }
 
     /**
+     * A model host's address field. Both hosts have one.
+     *
+     * @return array<string, mixed>
+     */
+    private static function addressField(string $label, string $help): array
+    {
+        return [
+            'label'       => $label,
+            'help'        => $help,
+            'required'    => false,
+            'attr'        => ['placeholder' => 'http://10.0.0.5:11434', 'autocomplete' => 'off'],
+            'constraints' => [
+                // Loose on purpose. This names a box on the operator's own
+                // network — a bare host, an IP, a .local name, a port that is
+                // not 11434 — and a strict URL validator would reject half of
+                // what is legitimately typed here. What it does refuse is a
+                // scheme this cannot speak, which is the one mistake that
+                // produces a silent nothing.
+                new Regex(
+                    pattern: '~^https?://[^\s]+$~i',
+                    message: 'admin.ai.field.base_url_invalid',
+                    match: true,
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * A model host's token field.
+     *
+     * Unmapped and never re-rendered. A stored credential put back on screen is
+     * a credential in a page cache, a screenshot and a browser's autofill — the
+     * same rule FcmConfigType follows. What an empty box means is decided by
+     * {@see keyAfter()}.
+     *
+     * @return array<string, mixed>
+     */
+    private static function tokenField(bool $hasToken): array
+    {
+        return [
+            'label'      => 'admin.ai.field.token',
+            'help'       => $hasToken ? 'admin.ai.field.token_help_set' : 'admin.ai.field.token_help',
+            'required'   => false,
+            'mapped'     => false,
+            'empty_data' => '',
+            // Spread, like every other credential field here: without it a
+            // password manager's overlay survives the Turbo frame swap and sits
+            // over the field it was anchored to.
+            'attr'       => [...PasswordManagerIgnore::SECRET, 'placeholder' => $hasToken ? '••••••••' : ''],
+        ];
+    }
+
+    /**
+     * A model host's extra headers.
+     *
+     * A TEXTAREA OF `Name: value` LINES, unmapped like the token and for the
+     * token's reason: what is stored is never put back on the page. The help
+     * names the headers that are on file and nothing more. Typing anything
+     * REPLACES the stored set — there is no way to edit one value without
+     * seeing the others, and showing them is the thing this field does not do.
+     *
+     * @param list<string> $stored the names on file
+     *
+     * @return array<string, mixed>
+     */
+    private static function headersField(array $stored): array
+    {
+        return [
+            'label'                       => 'admin.ai.field.headers',
+            'help'                        => [] === $stored ? 'admin.ai.field.headers_help' : 'admin.ai.field.headers_help_set',
+            'help_translation_parameters' => ['%names%' => implode(', ', $stored)],
+            'required'                    => false,
+            'mapped'                      => false,
+            'empty_data'                  => '',
+            'constraints'                 => [self::headersConstraint()],
+            'attr'                        => [
+                ...PasswordManagerIgnore::ATTR,
+                'autocomplete' => 'off',
+                'rows'         => 2,
+                'spellcheck'   => 'false',
+                'placeholder'  => 'X-Example-Key: value',
+                'class'        => 'font-mono',
+            ],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private static function clearHeadersField(): array
+    {
+        return [
+            'label'    => 'admin.ai.field.headers_clear',
+            'required' => false,
+            'mapped'   => false,
+        ];
+    }
+
+    /**
      * The key a connection holds once a submission has been read.
      *
      * HERE AND NOT IN A CONTROLLER, because this form has two: Admin → AI and
@@ -406,6 +488,19 @@ final class AiSettingsType extends AbstractType
     private static function address(AiSettings $settings): string
     {
         return $settings->provider->value . ' ' . rtrim(trim((string) $settings->baseUrl), '/');
+    }
+
+    /**
+     * The same, for the search host.
+     *
+     * Read off the four embedding columns whether or not the switch is on. A
+     * search host that is switched off and on again is still the same host, and
+     * its key is still its key; it is the address changing that makes a stored
+     * credential somebody else's.
+     */
+    private static function searchAddress(AiSettings $settings): string
+    {
+        return $settings->embeddingProvider->value . ' ' . rtrim(trim((string) $settings->embeddingBaseUrl), '/');
     }
 
     /**

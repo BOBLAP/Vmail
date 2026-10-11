@@ -235,6 +235,11 @@ final class ConfigBackupRoundTripTest extends KernelTestCase
         $this->check('aiSettings.provider', AiProvider::OpenAi, $ai?->provider);
         $this->check('aiSettings.headers', '{"X-Tenant":"acme"}', $ai?->headers);
         $this->check('aiSettings.chatModel', 'llama3.1:8b', $ai?->chatModel);
+        $this->check('aiSettings.embeddingOwnConnection', true, $ai?->embeddingOwnConnection);
+        $this->check('aiSettings.embeddingProvider', AiProvider::Ollama, $ai?->embeddingProvider);
+        $this->check('aiSettings.embeddingBaseUrl', 'http://10.0.0.9:11434', $ai?->embeddingBaseUrl);
+        $this->check('aiSettings.embeddingApiToken', 'a-search-token', $ai?->embeddingApiToken);
+        $this->check('aiSettings.embeddingHeaders', '{"X-Home":"yes"}', $ai?->embeddingHeaders);
         $this->check('aiSettings.embeddingModel', 'nomic-embed-text', $ai?->embeddingModel);
         $this->check('aiSettings.embeddingDimensions', 768, $ai?->embeddingDimensions);
         $this->check('aiSettings.isEnabled', true, $ai?->isEnabled);
@@ -452,6 +457,11 @@ final class ConfigBackupRoundTripTest extends KernelTestCase
         $ai->provider            = AiProvider::OpenAi;
         $ai->headers             = '{"X-Tenant":"acme"}';
         $ai->chatModel           = 'llama3.1:8b';
+        $ai->embeddingOwnConnection = true;
+        $ai->embeddingProvider   = AiProvider::Ollama;
+        $ai->embeddingBaseUrl    = 'http://10.0.0.9:11434';
+        $ai->embeddingApiToken   = 'a-search-token';
+        $ai->embeddingHeaders    = '{"X-Home":"yes"}';
         $ai->embeddingModel      = 'nomic-embed-text';
         $ai->embeddingDimensions = 768;
         $ai->searchEnabled       = true;

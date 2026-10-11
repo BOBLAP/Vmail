@@ -79,6 +79,75 @@ final class AiConnectionKeyTest extends KernelTestCase
         self::assertSame('new-key', $this->submit('http://10.0.0.5:11434', 'new-key')->apiToken);
     }
 
+    /**
+     * The search host's key follows the search host's address, and only that.
+     *
+     * Two hosts, two keys, two addresses — and changing one address must not
+     * cost the other host its key.
+     */
+    public function testEachHostsKeyFollowsItsOwnAddress(): void
+    {
+        $settings = $this->stored();
+        $settings->embeddingOwnConnection = true;
+        $settings->embeddingBaseUrl       = 'http://10.0.0.9:11434';
+        $settings->embeddingApiToken      = 'search-key';
+
+        $form = $this->forms->create(AiSettingsType::class, $settings, ['csrf_protection' => false]);
+        $form->submit([
+            'provider'               => 'ollama',
+            'baseUrl'                => 'https://somewhere.else.example/ollama',
+            'embeddingOwnConnection' => '1',
+            'embeddingProvider'      => 'ollama',
+            'embeddingBaseUrl'       => 'http://10.0.0.9:11434',
+        ], false);
+
+        self::assertNull($settings->apiToken, 'the writing host moved');
+        self::assertSame('search-key', $settings->embeddingApiToken, 'the search host did not');
+
+        $form = $this->forms->create(AiSettingsType::class, $settings, ['csrf_protection' => false]);
+        $form->submit([
+            'provider'               => 'ollama',
+            'baseUrl'                => 'https://somewhere.else.example/ollama',
+            'embeddingOwnConnection' => '1',
+            'embeddingProvider'      => 'openai',
+            'embeddingBaseUrl'       => 'http://10.0.0.9:11434',
+        ], false);
+
+        self::assertNull($settings->embeddingApiToken, 'a different provider at the search address is a different host');
+    }
+
+    /**
+     * Switching the second host off and on again keeps its key.
+     *
+     * It is the same host with the same address; nothing about who the key was
+     * issued for has changed. Only the address changing makes it somebody
+     * else's.
+     */
+    public function testSwitchingTheSecondHostOffDoesNotForgetItsKey(): void
+    {
+        $settings = $this->stored();
+        $settings->embeddingOwnConnection = true;
+        $settings->embeddingBaseUrl       = 'http://10.0.0.9:11434';
+        $settings->embeddingApiToken      = 'search-key';
+
+        $form = $this->forms->create(AiSettingsType::class, $settings, ['csrf_protection' => false]);
+        // A whole submission, as a browser sends one: an unticked box is a
+        // field that is simply not there, and only clearing what is missing
+        // reads that as "off".
+        $form->submit([
+            'provider'              => 'ollama',
+            'baseUrl'               => 'http://10.0.0.5:11434',
+            'embeddingProvider'     => 'ollama',
+            'embeddingBaseUrl'      => 'http://10.0.0.9:11434',
+            'semanticMinSimilarity' => '0.42',
+            'holdMaxSeconds'        => '60',
+        ]);
+
+        self::assertTrue($form->isValid(), (string) $form->getErrors(true, false));
+        self::assertFalse($settings->embeddingOwnConnection);
+        self::assertSame('search-key', $settings->embeddingApiToken);
+    }
+
     /** Never rendered back, on the way in or on the way out. */
     public function testTheKeyIsNotPutBackOnThePage(): void
     {

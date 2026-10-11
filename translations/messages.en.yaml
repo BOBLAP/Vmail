@@ -156,7 +156,11 @@ admin:
             chat_model_help: 'Used for replies, summaries and sorting. Something instruction-tuned.'
             embedding_keep_alive: 'Keep the search model loaded for'
             embedding_keep_alive_help: 'Same format as above. This model is small and asked for constantly, so -1 — loaded for good — usually costs little and saves a wait on every search; it is worth setting if the host has the memory to spare. Leave empty to use whatever the host itself is set to.'
+            embedding_base_url: 'Search host'
             embedding_model: 'Search model'
+            embedding_own: 'Search uses a different model host'
+            embedding_own_help: 'For running the search model somewhere other than the writing model: a hosted model for writing and a small one at home for search, or the reverse. Every message is sent to the search host once to be indexed. If the search model has the same name there, the existing index is kept.'
+            embedding_provider: 'Search host provider'
             embedding_model_help: 'Turns mail into vectors so search can find meaning rather than words.'
             hold: 'Wait for the assistant before showing new mail in a tab'
             hold_help: 'For people who let the assistant sort their mail. New mail is kept out of the inbox tabs for the moment the assistant needs, so it appears once, in the right tab, instead of appearing in one and moving to another. Mail brought in by a first import is never held.'
@@ -249,6 +253,9 @@ admin:
             ollama: 'Ollama'
             openai: 'OpenAI-compatible'
         probe:
+            host:
+                search: 'Search host'
+                writing: 'Model host'
             missing_model: 'That host answered, but it is not holding: %models%. Pull them on the host first.'
             no_host: 'Type an address first.'
             no_model_list: 'Something answered at that address, but it has no model list (HTTP %status%). Check that the address ends in the API version, usually /v1. Some servers have no list and still work; save and try a draft to find out.'

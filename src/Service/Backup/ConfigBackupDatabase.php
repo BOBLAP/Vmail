@@ -259,6 +259,11 @@ final readonly class ConfigBackupDatabase
             'headers'               => ConnectionHeaders::decode($settings->headers),
             'chatModel'             => $settings->chatModel,
             'chatKeepAlive'         => $settings->chatKeepAlive,
+            'embeddingOwnConnection' => $settings->embeddingOwnConnection,
+            'embeddingProvider'     => $settings->embeddingProvider->value,
+            'embeddingBaseUrl'      => $settings->embeddingBaseUrl,
+            'embeddingApiToken'     => $settings->embeddingApiToken,
+            'embeddingHeaders'      => ConnectionHeaders::decode($settings->embeddingHeaders),
             'embeddingModel'        => $settings->embeddingModel,
             'embeddingKeepAlive'    => $settings->embeddingKeepAlive,
             'embeddingDimensions'   => $settings->embeddingDimensions,
@@ -328,6 +333,14 @@ final readonly class ConfigBackupDatabase
         $settings->apiToken              = $this->string($values, 'apiToken');
         $settings->headers               = self::headers($values['headers'] ?? null);
         $settings->chatModel             = $this->string($values, 'chatModel');
+        // Absent from every backup taken before search could have a host of
+        // its own, and absent has to mean "it does not": the switch off, and
+        // the four fields behind it empty.
+        $settings->embeddingOwnConnection = true === ($values['embeddingOwnConnection'] ?? false);
+        $settings->embeddingProvider     = AiProvider::tryFrom((string) ($values['embeddingProvider'] ?? '')) ?? AiProvider::Ollama;
+        $settings->embeddingBaseUrl      = $this->string($values, 'embeddingBaseUrl');
+        $settings->embeddingApiToken     = $this->string($values, 'embeddingApiToken');
+        $settings->embeddingHeaders      = self::headers($values['embeddingHeaders'] ?? null);
         $settings->embeddingModel        = $this->string($values, 'embeddingModel');
         // Through KeepAlive::normalised() rather than string() alone, because
         // this is the one writer that is not the form. A file can carry

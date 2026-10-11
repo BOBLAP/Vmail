@@ -8,6 +8,20 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**Search by meaning can use a model host of its own.** Admin → AI has a tick box, **Search uses a
+different model host**, with its own provider, address, token and extra headers. Off by default.
+It is for running the two models on different machines: a hosted model for writing and a small one
+at home for search, so the mailbox is indexed on a machine you own and nothing is billed per
+message, or the reverse.
+
+- **The index is kept** when the search model has the same name on the new host. A vector belongs
+  to its model, not to the address it was made at.
+- **Each host gets only its own token and headers.** A search host without a token is sent none.
+- **Test asks both hosts**, each for the model that lives on it.
+
+Five columns are added to `ai_settings`, unused until the box is ticked; the migration is
+reversible.
+
 **The model host can be sent extra headers.** For a reverse proxy with basic auth, a zero-trust
 gateway, a routing gateway with its own key, or a provider that takes a project or tenant header.
 Admin → AI has an **Extra headers** box under the token: one `Name: value` per line, sent with every

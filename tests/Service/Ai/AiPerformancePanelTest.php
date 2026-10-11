@@ -120,6 +120,36 @@ final class AiPerformancePanelTest extends KernelTestCase
         self::assertNull($snapshot['models'][0]['installed']);
     }
 
+    /**
+     * A search model that lives on another host is unknown here, not missing.
+     *
+     * The card reads the host that writes. "Not on this host" beside a search
+     * model that is exactly where it was put would send somebody to pull it
+     * onto the wrong machine.
+     */
+    public function testASearchModelOnAnotherHostIsNotReportedMissing(): void
+    {
+        $settings = $this->settings(AiProvider::Ollama, 'http://10.0.0.5:11434');
+        $settings->embeddingOwnConnection = true;
+        $settings->embeddingBaseUrl       = 'http://10.0.0.9:11434';
+        $this->em->flush();
+
+        $asked    = [];
+        $snapshot = $this->panel($settings, $asked, [
+            '/api/tags'    => ['models' => [['name' => 'writer:latest']]],
+            '/api/version' => ['version' => '0.6.2'],
+            '/api/ps'      => ['models' => [['name' => 'embedder:latest']]],
+        ])->snapshot(MetricWindow::Hour);
+
+        self::assertTrue($snapshot['models'][0]['installed']);
+        self::assertNull($snapshot['models'][1]['installed']);
+        self::assertFalse($snapshot['models'][1]['resident'], 'a model of that name in THIS host\'s memory is not the one search uses');
+
+        foreach ($asked as $url) {
+            self::assertStringStartsWith('http://10.0.0.5:11434/', $url, 'the card reads the host that writes');
+        }
+    }
+
     /** A refused key is a host the card cannot vouch for. */
     public function testARefusedKeyIsNotAnAnswer(): void
     {

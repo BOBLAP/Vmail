@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\ChecksCsrf;
+use App\Domain\DTO\Ai\AiProbe;
 use App\Domain\Enum\Ai\MetricWindow;
 use App\Domain\Enum\Ai\PromptSlot;
 use App\Entity\Ai\AiFeature;
+use App\Entity\Ai\AiSettings;
 use App\Form\Admin\AiSettingsType;
 use App\Repository\Ai\AiSettingsRepository;
 use App\Repository\Mail\MessageRepository;
@@ -108,7 +110,7 @@ final class AiSettingsController extends AbstractController
             'settings' => $settings,
             'form'     => $form,
             'saved'    => $saved,
-            'probe'    => null,
+            'probes'   => [],
             'prompts'  => $this->promptRows(),
             'hold'     => $this->holdDelay(),
         ]);
@@ -142,24 +144,78 @@ final class AiSettingsController extends AbstractController
         $form = $this->form($draft);
         $form->handleRequest($request);
 
-        $probe = true === $form->isSubmitted() && true === $form->isValid()
-            ? $this->assistant->probe($draft->connectionFor(AiFeature::WritingHelp))
-            : null;
-
         return $this->render('admin/ai/_frame.html.twig', [
             'settings' => $draft,
             'form'     => $form,
             'saved'    => false,
-            'probe'    => $probe,
-            // So the template can say "the model you named is not on that host",
-            // which is a completely different errand from "nothing answered".
-            'wanted'   => array_values(array_filter([
-                $draft->chatModel,
-                $draft->embeddingModel,
-            ])),
+            'probes'   => true === $form->isSubmitted() && true === $form->isValid() ? $this->probes($draft) : [],
             'prompts'  => $this->promptRows(),
             'hold'     => $this->holdDelay(),
         ]);
+    }
+
+    /**
+     * Ask every model host these settings name, and say what each should hold.
+     *
+     * One host on nearly every installation, asked for both models. Two when
+     * search has a host of its own — and then each is asked only for the model
+     * that lives on it, so that the template can say "the model you named is
+     * not on that host" about the right host. Asked for both models, a writing
+     * host would be reported as missing the search model it was never meant to
+     * have.
+     *
+     * A host that was not filled in is not asked. With search pointed at its
+     * own host and nothing typed for writing, "type an address first" about
+     * the writing host would be an error message for a field somebody left
+     * empty on purpose. If NOTHING was filled in, that is the one thing to say.
+     *
+     * @return list<array{role: string, probe: AiProbe, wanted: list<string>}>
+     */
+    private function probes(AiSettings $settings): array
+    {
+        $writing = $settings->connectionFor(AiFeature::WritingHelp);
+        $search  = $settings->connectionFor(AiFeature::Search);
+
+        if (false === $settings->embeddingOwnConnection) {
+            return [[
+                'role'   => 'writing',
+                'probe'  => $this->assistant->probe($writing),
+                'wanted' => self::named($settings->chatModel, $settings->embeddingModel),
+            ]];
+        }
+
+        $probes = [];
+
+        if (true === $writing->isSet() || false === $search->isSet()) {
+            $probes[] = [
+                'role'   => 'writing',
+                'probe'  => $this->assistant->probe($writing),
+                'wanted' => self::named($settings->chatModel),
+            ];
+        }
+
+        if (true === $search->isSet()) {
+            $probes[] = [
+                'role'   => 'search',
+                'probe'  => $this->assistant->probe($search),
+                'wanted' => self::named($settings->embeddingModel),
+            ];
+        }
+
+        return $probes;
+    }
+
+    /**
+     * The model names that were actually typed.
+     *
+     * @return list<string>
+     */
+    private static function named(?string ...$models): array
+    {
+        return array_values(array_filter(
+            $models,
+            static fn (?string $model): bool => null !== $model && '' !== trim($model),
+        ));
     }
 
     /**
@@ -369,7 +425,7 @@ final class AiSettingsController extends AbstractController
             'settings'     => $settings,
             'form'         => $this->form($settings),
             'saved'        => false,
-            'probe'        => null,
+            'probes'       => [],
             'prompts'      => $this->promptRows(),
             'hold'         => $this->holdDelay(),
             'promptsSaved' => true,

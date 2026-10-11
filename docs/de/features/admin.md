@@ -1,4 +1,4 @@
-<!-- translated-from: features/admin.md sha1:10f5ba11e28a697ef7ef4c9f0e21d4ab5005e4fe -->
+<!-- translated-from: features/admin.md sha1:bdcf84527dd58c67dc64ef2545d3631a9fce5354 -->
 
 # Administration
 
@@ -517,6 +517,37 @@ Zwei Modelle, weil die Aufgaben verschieden sind. Das **Schreib-Modell** sollte 
 sein und wird zum Entwerfen und Einsortieren benutzt; das **Such-Modell** ist ein Embedding-Modell
 und meist deutlich kleiner. `llama3.1:8b` und `qwen3-embedding:0.6b` sind brauchbare Startpunkte.
 Beide musst du vorher auf dem Host ziehen — plMail lädt nie ein Modell herunter.
+
+### Suche auf einem eigenen Modell-Host
+
+**Die Suche nutzt einen anderen Modell-Host** gibt dem Such-Modell einen eigenen Anbieter, eine
+eigene Adresse, ein eigenes Token und eigene zusätzliche Header. Das ist standardmäßig aus, und
+solange es aus ist, fragt die Suche den Modell-Host oben wie alles andere auch.
+
+Die beiden Aufgaben wollen oft verschiedene Maschinen. Schreiben will das größte Modell, das du
+betreiben oder mieten kannst. Die Suche will ein kleines, das ständig gefragt wird: bei jeder
+Suchanfrage, und einmal für jede Nachricht eines Postfachs, um sie zu indizieren. Zwei Aufteilungen
+kommen am häufigsten vor:
+
+| Schreiben | Suche | Warum |
+|---|---|---|
+| Ein gehosteter, OpenAI-kompatibler Endpunkt | Ein Ollama zu Hause | Gute Entwürfe ohne eigene große GPU, während das Postfach auf einer Maschine indiziert wird, die dir gehört, und nichts pro Nachricht abgerechnet wird |
+| Ein Ollama zu Hause | Ein anderer Host | Die GPU, die schreibt, wird nicht vom Indizieren unterbrochen |
+
+Jeder Host bekommt nur sein eigenes Token und seine eigenen Header. Ein Such-Host ohne Token
+bekommt keines; er leiht sich nie das des anderen. **Testen** fragt beide Hosts, jeden nach dem
+Modell, das bei ihm liegt.
+
+**Der Index gehört zum Modell, nicht zur Adresse.** Ziehst du die Suche auf einen anderen Host um,
+der dasselbe Modell unter demselben Namen anbietet, bleibt der vorhandene Index erhalten. Ein anderer
+Modellname ist ein neuer Index, wie schon immer: Starte einen Durchlauf über die Karte unten. Ist der
+Name gleich, das Modell aber nicht, kann plMail das nicht erkennen; gib ihm einen anderen Namen, sonst
+werden alte und neue Vektoren zusammen durchsucht und die Ergebnisse sind schlecht.
+
+Das Keep-alive des Such-Modells wird angezeigt, wenn der Host, auf dem die Suche läuft, ein Ollama
+ist, egal welcher der beiden das ist. Die Karte zum Modell-Host unter **Admin → Performance** liest
+den Host, der schreibt, und sagt nichts über ein Such-Modell, das woanders liegt. Der
+Einrichtungsassistent lässt das weg; es steht nur unter Admin → KI.
 
 ### Zum Such-Modell gehören zwei Einstellungen, und die sind nicht optional
 

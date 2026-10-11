@@ -171,6 +171,52 @@ class AiSettings
     public ?string $embeddingModel = null;
 
     /**
+     * Whether search has a model host of its own.
+     *
+     * OFF, AND OFF IS THE ORDINARY CASE. One host holds both models on nearly
+     * every installation, and while this is false the four columns below are
+     * not read at all: search asks $baseUrl like everything else does.
+     *
+     * WHY ANYBODY TURNS IT ON
+     * ───────────────────────
+     * The two jobs want different machines more often than it first appears.
+     * Writing wants the largest model somebody can afford to run or to rent.
+     * Embedding wants a small one that is asked constantly — every search, and
+     * every message of a mailbox once — which is cheap on a box in the cupboard
+     * and adds up quickly on a provider that bills per request. So: writing
+     * from a hosted endpoint and search from the Ollama at home, or the other
+     * way about for somebody whose GPU is busy writing.
+     *
+     * It is also the privacy split. Indexing sends the text of every message in
+     * the mailbox; a draft sends the one conversation somebody asked about.
+     * Keeping the first on a machine you own while renting the second is a
+     * reasonable thing to want, and one host for both cannot express it.
+     *
+     * A VECTOR BELONGS TO ITS MODEL, NOT TO ITS ADDRESS. Moving search to
+     * another host that serves the same model re-uses the index: stored vectors
+     * are filed under $embeddingModel and nothing else. A different model is a
+     * new index, as it always was.
+     */
+    #[ORM\Column(name: 'embedding_own_connection', options: ['default' => false])]
+    public bool $embeddingOwnConnection = false;
+
+    /** Which dialect $embeddingBaseUrl speaks. Read only while $embeddingOwnConnection is on. */
+    #[ORM\Column(name: 'embedding_provider', length: 16, enumType: AiProvider::class, options: ['default' => 'ollama'])]
+    public AiProvider $embeddingProvider = AiProvider::Ollama;
+
+    /** The search host's address, in the same two spellings $baseUrl takes. */
+    #[ORM\Column(name: 'embedding_base_url', length: 255, nullable: true)]
+    public ?string $embeddingBaseUrl = null;
+
+    /** The search host's token. Its own, and never the other host's: see {@see connectionFor()}. */
+    #[ORM\Column(name: 'embedding_api_token', type: EncryptedStringType::NAME, nullable: true)]
+    public ?string $embeddingApiToken = null;
+
+    /** The search host's extra headers, in $headers' format. */
+    #[ORM\Column(name: 'embedding_headers', type: EncryptedStringType::NAME, nullable: true)]
+    public ?string $embeddingHeaders = null;
+
+    /**
      * What is put in front of the search text before it is embedded.
      *
      * NOT COSMETIC, AND NOT A PROMPT. Modern embedding models are asymmetric:
@@ -376,7 +422,11 @@ class AiSettings
      */
     public function isConfigured(): bool
     {
-        return null !== $this->baseUrl && '' !== trim($this->baseUrl);
+        // Either host counts. An installation that uses only search, from a
+        // host of its own, has configured something — and a card that said
+        // "nothing set up" above a working search would be wrong.
+        return true === $this->connectionFor(AiFeature::WritingHelp)->isSet()
+            || true === $this->connectionFor(AiFeature::Search)->isSet();
     }
 
     /**
@@ -389,7 +439,10 @@ class AiSettings
      */
     public function enabledFor(AiFeature $feature): bool
     {
-        if (false === $this->isEnabled || false === $this->isConfigured()) {
+        // The host THIS feature runs on, which is not always the same one:
+        // search may have its own. A writing host on file does not make search
+        // usable when search was pointed somewhere that was never filled in.
+        if (false === $this->isEnabled || false === $this->connectionFor($feature)->isSet()) {
             return false;
         }
 
@@ -423,9 +476,24 @@ class AiSettings
      * as null. Every caller has already asked enabledFor() or isConfigured(),
      * and {@see AiConnection::isSet()} answers the same question for the one
      * that has not.
+     *
+     * SEARCH MAY HAVE ITS OWN, and when it does it gets ALL of it: address,
+     * dialect, token and headers from the four embedding columns, and nothing
+     * from the others. No falling back to the writing host's token when the
+     * search host has none — a token is issued by one host, and "none" is a
+     * perfectly good answer for an Ollama on the LAN.
      */
     public function connectionFor(AiFeature $feature): AiConnection
     {
+        if (AiFeature::Search === $feature && true === $this->embeddingOwnConnection) {
+            return new AiConnection(
+                (string) $this->embeddingBaseUrl,
+                $this->embeddingApiToken,
+                $this->embeddingProvider,
+                ConnectionHeaders::decode($this->embeddingHeaders),
+            );
+        }
+
         return new AiConnection(
             (string) $this->baseUrl,
             $this->apiToken,

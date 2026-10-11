@@ -309,9 +309,123 @@ final class AiSettingsCardTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/ai');
         $hidden  = $crawler->filter('[data-admin--ai-connection-target="ollamaOnly"][hidden]');
 
-        self::assertCount(2, $hidden, 'the writing model\'s keep-alive with its warm-up button, and the search model\'s keep-alive');
+        self::assertCount(1, $hidden, 'the writing model\'s keep-alive with its warm-up button');
         self::assertCount(1, $hidden->filter('#ai_settings_chatKeepAlive'), 'still in the form, so still submitted');
         self::assertCount(1, $hidden->filter('[data-controller="admin--ai-warmup"]'));
+
+        self::assertCount(
+            1,
+            $crawler->filter('[data-admin--ai-connection-target="searchOllamaOnly"][hidden] #ai_settings_embeddingKeepAlive'),
+            'search runs on the same host, so its keep-alive goes the same way',
+        );
+    }
+
+    /**
+     * The search model's keep-alive follows the host search runs on.
+     *
+     * Writing from an OpenAI-compatible endpoint and search from an Ollama at
+     * home is the arrangement the second host exists for — and there the
+     * search keep-alive is the one Ollama setting that still means something.
+     * Hidden along with the writing one, it could not be set at all.
+     */
+    public function testTheSearchKeepAliveFollowsTheSearchHost(): void
+    {
+        $settings = $this->settings->currentOrDefault();
+        $settings->provider               = AiProvider::OpenAi;
+        $settings->baseUrl                = 'https://api.example.test/v1';
+        $settings->embeddingOwnConnection = true;
+        $settings->embeddingProvider      = AiProvider::Ollama;
+        $settings->embeddingBaseUrl       = 'http://192.0.2.1:11434';
+
+        if (null === $settings->id) {
+            $this->em->persist($settings);
+        }
+
+        $this->em->flush();
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+
+        self::assertCount(1, $crawler->filter('[data-admin--ai-connection-target="ollamaOnly"][hidden]'));
+        self::assertCount(0, $crawler->filter('[data-admin--ai-connection-target="searchOllamaOnly"][hidden]'));
+        self::assertCount(0, $crawler->filter('[data-admin--ai-connection-target="searchOwn"][hidden]'), 'the second host is in use, so its fields are shown');
+    }
+
+    /** Off, which is nearly always: the second host's fields are put away. */
+    public function testTheSecondHostsFieldsAreHiddenUntilItIsSwitchedOn(): void
+    {
+        $settings = $this->settings->currentOrDefault();
+        $settings->embeddingOwnConnection = false;
+
+        if (null === $settings->id) {
+            $this->em->persist($settings);
+        }
+
+        $this->em->flush();
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+
+        self::assertCount(1, $crawler->filter('[data-admin--ai-connection-target="searchOwn"][hidden] #ai_settings_embeddingBaseUrl'));
+    }
+
+    /**
+     * With two hosts, Test asks both — each for the model that lives on it.
+     *
+     * Asked for both models, the writing host would be reported as missing the
+     * search model it was never meant to hold, and an administrator would go
+     * and pull an embedding model onto the wrong machine.
+     */
+    public function testTheTestButtonAsksEachHostForItsOwnModel(): void
+    {
+        $this->client->disableReboot();
+
+        /** @var \ArrayObject<int, string> $asked */
+        $asked = new \ArrayObject();
+
+        static::getContainer()->set(OpenAiClient::class, new OpenAiClient(
+            new MockHttpClient(static function (string $method, string $url) use ($asked): MockResponse {
+                $asked[] = $url;
+
+                return new MockResponse((string) json_encode(['data' => [['id' => 'a-writing-model']]]));
+            }),
+            new NullLogger(),
+        ));
+
+        static::getContainer()->set(OllamaClient::class, new OllamaClient(
+            new MockHttpClient(static function (string $method, string $url) use ($asked): MockResponse {
+                $asked[] = $url;
+
+                return new MockResponse((string) json_encode(['models' => [['name' => 'a-search-model:latest']], 'version' => '0.6.2']));
+            }),
+            new NullLogger(),
+        ));
+
+        $crawler = $this->client->request('GET', '/admin/ai');
+        $form    = $crawler->filter('form[name="ai_settings"]')->form();
+
+        $form['ai_settings[provider]']          = 'openai';
+        $form['ai_settings[baseUrl]']           = 'https://api.example.test/v1';
+        $form['ai_settings[chatModel]']         = 'a-writing-model';
+        $form['ai_settings[embeddingModel]']    = 'a-search-model';
+        $form['ai_settings[embeddingProvider]'] = 'ollama';
+        $form['ai_settings[embeddingBaseUrl]']  = 'http://192.0.2.1:11434';
+
+        // Ticked in the values rather than on the field: an unticked box is
+        // left out of a submission altogether, so "ticked" is the key existing.
+        $values = $form->getPhpValues();
+        $values['ai_settings']['embeddingOwnConnection'] = '1';
+
+        $crawler = $this->client->request('POST', '/admin/ai/test', $values);
+
+        self::assertResponseIsSuccessful();
+        self::assertContains('https://api.example.test/v1/models', $asked->getArrayCopy());
+        self::assertContains('http://192.0.2.1:11434/api/tags', $asked->getArrayCopy());
+
+        self::assertCount(2, $crawler->filter('.fa-plug-circle-check'), 'each host holds the one model asked of it');
+        self::assertCount(0, $crawler->filter('.fa-triangle-exclamation'), 'and neither is blamed for the other\'s');
+
+        $html = (string) $this->client->getResponse()->getContent();
+
+        self::assertStringContainsString('Search host', $html, 'with two results, each says which host it is about');
     }
 
     /**

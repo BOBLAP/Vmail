@@ -124,7 +124,7 @@ final readonly class AiPerformancePanel
                 'version'       => $probe?->version,
                 'reason'        => $probe?->reason,
             ],
-            'models'      => $this->models($settings->chatModel, $settings->embeddingModel, self::listing($probe, $managesMemory), $loaded),
+            'models'      => $this->models($settings->chatModel, $settings->embeddingModel, self::listing($probe, $managesMemory), $loaded, $settings->embeddingOwnConnection),
             'loaded'      => array_map(static fn (LoadedModel $model): array => self::describe($model, $now), $loaded),
             'anyPartial'  => self::anyPartial($loaded),
             'latest'      => $this->metrics->latest(),
@@ -219,24 +219,31 @@ final readonly class AiPerformancePanel
      * that would send an operator to pull a model they already have. The
      * listing is null in that case, and in the one {@see listing()} describes.
      *
+     * THE SEARCH MODEL MAY LIVE SOMEWHERE ELSE. This card reads one host, the
+     * one that writes, and when search has a host of its own that host was not
+     * asked. Its model is then neither "installed" nor "missing" here — it is
+     * unknown, the same null — and never "in memory", because the memory that
+     * was read is another machine's.
+     *
      * @param list<LoadedModel> $loaded
      *
      * @return list<array<string, mixed>>
      */
-    private function models(?string $chat, ?string $embedding, ?AiProbe $listing, array $loaded): array
+    private function models(?string $chat, ?string $embedding, ?AiProbe $listing, array $loaded, bool $searchElsewhere): array
     {
         $rows = [];
 
         foreach ([['chat', $chat], ['embedding', $embedding]] as [$role, $name]) {
             $named = null !== $name && '' !== trim($name);
+            $here  = 'chat' === $role || false === $searchElsewhere;
 
             $rows[] = [
                 'role'      => $role,
                 'name'      => $named ? trim((string) $name) : null,
-                'installed' => $named && null !== $listing
+                'installed' => $named && $here && null !== $listing
                     ? $listing->hasModel(trim((string) $name))
                     : null,
-                'resident'  => $named && self::isResident(trim((string) $name), $loaded),
+                'resident'  => $named && $here && self::isResident(trim((string) $name), $loaded),
             ];
         }
 

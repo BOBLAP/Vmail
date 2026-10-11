@@ -6,7 +6,7 @@ so anything that changes the schema irreversibly is called out explicitly.
 The published image tags: `latest` follows the most recent release below,
 `main` follows the tip of the default branch, and `sha-…` pins one commit.
 
-## Unreleased
+## v0.3.3 — 2026-10-11
 
 **The emoji picker is no longer almost empty on an iPhone or in Safari.** Nearly every cell of the
 grid was blank, with a handful of emoji scattered through it, and an emoji typed into a message

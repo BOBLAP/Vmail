@@ -2200,6 +2200,7 @@ jobs:
         snooze: Zurückstellen
         wake: Zurückholen
         move_to: Verschieben
+        purge: Endgültig löschen
         reclassify: Sortiert neueste Mail neu
     state:
         done: '%count% erledigt'
@@ -3692,6 +3693,16 @@ settings:
     language:
         heading: Sprache
         subheading: Die Sprache der plMail-Oberfläche. Deine E-Mails bleiben so, wie sie geschrieben wurden.
+    disposal:
+        delete_now: Knöpfe zum sofortigen Löschen
+        delete_now_hint: >-
+            Zeigt „Endgültig löschen“ an einer Zeile im Spam und im Papierkorb und
+            über einer Auswahl dort. Die Mail wird auch vom Mailserver entfernt und
+            lässt sich nicht zurückholen, deshalb ist es aus, bis du es einschaltest.
+        heading: Entsorgen
+        'off': Aus
+        'on': An
+        subheading: Wie Mail endgültig weggeworfen wird.
     nav:
         accounts: E-Mail-Konten
         ai: 'Assistent'
@@ -3699,6 +3710,7 @@ settings:
         app_passwords: App-Passwörter
         appearance: Darstellung
         calendars: Kalender
+        disposal: Entsorgen
         filters: Filter
         general: Allgemein
         group:
@@ -4196,9 +4208,15 @@ toolbar:
         mark_unread: Als ungelesen markieren
         more: Mehr
         move_to: Verschieben nach
+        purge: Endgültig löschen
         snooze: Zurückstellen
         spam: 'Als Spam markieren'
         star: Markieren
+    # Asked before a selection in Spam is deleted for good. Two sentences rather
+    # than one with a number swapped in, because the singular reads differently.
+    purge_confirm:
+        one: 'Diese Unterhaltung endgültig löschen? Sie lässt sich nicht zurückholen und wird auch vom Mailserver entfernt.'
+        many: 'Diese %count% Unterhaltungen endgültig löschen? Sie lassen sich nicht zurückholen und werden auch vom Mailserver entfernt.'
     filter:
         show_all: Alle anzeigen
         unread_only: Nur ungelesene

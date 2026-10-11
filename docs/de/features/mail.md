@@ -1,4 +1,4 @@
-<!-- translated-from: features/mail.md sha1:638ad69a45eb1420a172eade8e49bebc2c7cc2ea -->
+<!-- translated-from: features/mail.md sha1:d9a7adcb753fe43c9c0fd2cff88d98382f05cefb -->
 
 # Mail
 
@@ -668,6 +668,45 @@ liegt, wird der Knopf nicht gezeigt.
 Mail in den Spam zu verschieben sagt plMail nichts über die nächste Nachricht. plMail hat keinen
 eigenen Spamfilter, der lernt; ob dein Anbieter das Verschieben als Signal wertet, entscheidet
 der Anbieter. Ein Filter ist der Weg, es hier dauerhaft zu machen.
+
+### Spam endgültig löschen
+
+Mail im Spam und im Papierkorb lässt sich endgültig löschen — das einzige Löschen in plMail, das
+kein Verschieben ist. Es gibt kein Rückgängig, deshalb sind die Knöpfe dafür **aus, bis du sie
+einschaltest**: **Einstellungen → E-Mail → Entsorgen**, **Knöpfe zum sofortigen Löschen**. Das ist
+eine Entscheidung für dein eigenes Konto, und eine Konfigurationssicherung enthält sie.
+
+Ist sie an, hat jede Zeile im Spam und im Papierkorb neben **In den Posteingang** einen Knopf
+**Endgültig löschen** (die Flamme), und er fragt vorher nach. Sonst lässt sich nichts endgültig
+löschen: Eine Konversation im Posteingang oder im Archiv muss erst einmal weggeworfen worden sein,
+bevor das angeboten wird, denn es gibt kein Rückgängig, das einen Fehlklick auffängt.
+
+Im **Spam** und im Papierkorb hat die Werkzeugleiste über einer Auswahl dasselbe **Endgültig
+löschen** anstelle von **Löschen**. Im Spam ist eine Seite voll Spam so ein Klick und eine Frage
+statt eines Umwegs über den Papierkorb und eines zweiten Löschens dort; im Papierkorb konnte ein
+Löschen nur Mail wegwerfen, die schon weggeworfen war, und hätte die Zeilen aus der Liste genommen,
+während die Mail liegen blieb. Die Frage nennt, um wie viele Konversationen es geht. Die
+Mail wird auch vom Mailserver entfernt, nicht nur aus plMail, und lässt sich nicht zurückholen —
+**In den Posteingang** ist der Ausweg davor.
+
+Ist sie aus, behält der Spam sein gewöhnliches **Löschen**, das die Mail in den Papierkorb
+verschiebt, und der Papierkorb hat über einer Auswahl gar kein **Löschen**: Mail, die schon im
+Papierkorb liegt, lässt sich nicht noch einmal wegwerfen, und **In den Posteingang** ist der Weg
+hinaus. Schaltest du sie wieder aus, verschwinden die Knöpfe sofort. Der Server lehnt eine Anfrage
+zum endgültigen Löschen auch ab, solange sie aus ist; es entscheidet also deine Wahl, nicht nur,
+was gezeichnet wird.
+
+Um Spam oder den Papierkorb zu leeren, hake **Alle** an, nimm das angebotene **Alle N auswählen**
+und drücke **Endgültig löschen**. Die Rückfrage nennt dann die gesamte Anzahl, nicht die Zeilen auf
+der Seite. Ein Ordner wird im Hintergrund geleert, mit derselben Fortschrittsanzeige wie jede andere
+Aktion über eine ganze Ansicht, und eine Unterhaltung, die vorher zurück in den Posteingang
+verschoben wurde, bleibt unangetastet. Nur Spam und der Papierkorb lassen sich so leeren, eine Suche
+oder ein Label nicht.
+
+`#` drückt **Löschen**. Ist die Einstellung an, gibt es das über einer Auswahl im Spam und im
+Papierkorb nicht, und `#` tut dort nichts; die Flamme mit ihrer Frage ist der einzige Weg, dort
+eine Auswahl zu löschen. Ist sie aus, funktioniert `#` im Spam wie überall sonst und tut im
+Papierkorb nichts, der kein **Löschen** hat.
 
 ## Der Lesebereich
 

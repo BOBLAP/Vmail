@@ -2079,6 +2079,7 @@ jobs:
         snooze: Lettin' it drift
         wake: Haulin' it back from the drift
         move_to: Haulin'
+        purge: Sendin' to Davy Jones for good
         reclassify: Stowin' recent post again
     state:
         done: '%count% done'
@@ -3495,6 +3496,13 @@ settings:
     language:
         heading: Tongue
         subheading: The tongue plMail speaks to ye in. Yer bottles be left as they were writ.
+    disposal:
+        delete_now: "Davy Jones buttons"
+        delete_now_hint: "Shows 'Send to Davy Jones for good' on a bottle in Spam an' the bin, an' above a ticked pile there. It strikes the mail from the mail server too an' can't be fished back, so it be off till ye turn it on."
+        heading: Disposal
+        'off': Off
+        'on': On
+        subheading: "How bottles be sunk for good."
     nav:
         accounts: Th' crew
         ai: "Ship's Oracle"
@@ -3502,6 +3510,7 @@ settings:
         app_passwords: Spare keys
         appearance: Look o' the ship
         calendars: Almanacs
+        disposal: Disposal
         filters: Sieves
         general: General
         group:
@@ -3982,9 +3991,13 @@ toolbar:
         mark_unread: Mark as unread
         more: More besides
         move_to: Haul off to
+        purge: "Send to Davy Jones for good"
         snooze: Let it drift
         spam: 'Call it bilge'
         star: Mark
+    purge_confirm:
+        one: "Sink this conversation for good? It can't be fished back up, and it be struck from the mail server too."
+        many: "Sink these %count% conversations for good? They can't be fished back up, and they be struck from the mail server too."
     filter:
         show_all: Show every last one
         unread_only: Unread only

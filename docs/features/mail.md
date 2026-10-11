@@ -610,6 +610,42 @@ Moving mail to spam tells plMail nothing about the next message. plMail has no s
 own that learns; whether your provider treats the move as a signal is up to the provider. A filter
 is how you make it stick here.
 
+### Deleting spam for good
+
+Mail in Spam, and in the bin, can be deleted for good — the only deletion in plMail that is not a
+move. There is no Undo, so the buttons that do it are **off until you turn them on**: **Settings →
+Mail → Disposal**, **Delete-now buttons**. It is a choice you make for your own account, and a
+config backup carries it.
+
+With it on, each row in Spam and the bin has a **Delete forever** button (the flame) beside **Move
+to inbox**, and it asks first. Nothing else can be deleted for good: a conversation in the inbox or
+the archive has to be thrown away once before this is offered, because there is no Undo to catch a
+slip.
+
+In **Spam** and in the bin, the toolbar above a selection has the same **Delete forever** in place of
+**Delete**. In Spam that makes a page of spam one click and one question rather than a trip to the
+bin and a second deletion there; in the bin a Delete could only trash mail that was already
+trashed, so it would take the rows off the list and leave the mail where it was. The question says
+how many conversations it is about. It is removed from the mail server too,
+not only from plMail, and it cannot be brought back — **Move to inbox** is the way out beforehand.
+
+With it off, Spam keeps its ordinary **Delete**, which moves the mail to the bin, and the bin has no
+**Delete** above a selection at all: mail already in the bin cannot be trashed again, and **Move to
+inbox** is the way out of it. Switching it off again takes the buttons away at once. The server
+refuses a request to delete for good while it is off as well, so it is the choice that decides, not
+only what is drawn.
+
+To empty Spam or the bin, tick **All**, take the **Select all N** it offers, and press **Delete
+forever**. The question then names the whole count, not the rows on the page. A folder is emptied in
+the background, with the same progress indicator as any other action over a whole view, and a
+conversation moved back to the inbox before the job reaches it is left alone. Only Spam and the bin
+can be emptied this way; a search or a label cannot.
+
+`#` presses **Delete**. With the switch on, that button is not there above a selection in Spam or the
+bin, so `#` does nothing in those places; the flame, with its question, is the one way to delete a
+selection there. With it off, `#` works in Spam as it does elsewhere, and does nothing in the bin,
+which has no **Delete**.
+
 ## The reading pane
 
 **Settings → Reading pane** decides where the message you open goes: **Off** or **Right**. Off is how plMail

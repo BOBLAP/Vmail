@@ -2199,6 +2199,7 @@ jobs:
         snooze: Snoozing
         wake: Bringing back from snooze
         move_to: Moving
+        purge: Deleting for good
         reclassify: Sorting recent mail again
     state:
         done: '%count% done'
@@ -3679,6 +3680,16 @@ settings:
     language:
         heading: Language
         subheading: The language plMail's interface is shown in. Your mail is left as it was written.
+    disposal:
+        delete_now: Delete-now buttons
+        delete_now_hint: >-
+            Offers Delete forever on a row in Spam and the bin, and above a ticked
+            selection there. It removes the mail from your mail server too and
+            cannot be undone, so it is off until you turn it on.
+        heading: Disposal
+        'off': 'Off'
+        'on': 'On'
+        subheading: How mail is thrown away for good.
     nav:
         accounts: Mail accounts
         ai: 'Assistant'
@@ -3686,6 +3697,7 @@ settings:
         app_passwords: App passwords
         appearance: Appearance
         calendars: Calendars
+        disposal: Disposal
         filters: Filters
         general: General
         group:
@@ -4201,9 +4213,15 @@ toolbar:
         mark_unread: Mark as unread
         more: More
         move_to: Move to
+        purge: Delete forever
         snooze: Snooze
         spam: 'Mark as spam'
         star: Star
+    # Asked before a selection in Spam is deleted for good. Two sentences rather
+    # than one with a number swapped in, because "1 conversations" is not English.
+    purge_confirm:
+        one: 'Delete this conversation for good? It cannot be brought back, and it is removed from the mail server too.'
+        many: 'Delete these %count% conversations for good? They cannot be brought back, and they are removed from the mail server too.'
     filter:
         show_all: Show all
         unread_only: Unread only

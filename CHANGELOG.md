@@ -8,6 +8,14 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**An open message stays open when you change what the list shows.** With the reading pane on the
+right, choosing another folder, switching a category tab, turning the page, sorting or searching
+closed the message you were reading, although it had never covered the list. It stays now, and the
+back arrow closes it and leaves you on the folder you moved to. The open row is marked again when
+you return to the folder it is in. With one pane at a time nothing changes: there the message has
+covered the list, so choosing a folder still closes it. No migration.
+[#63](https://github.com/karatektus/pl_mail/pull/63), by @Flouss.
+
 **The "+" beside Labels and Accounts in the sidebar appears when you point at its heading.** Both
 were on screen all the time. They also appear when reached with the keyboard, and stay visible on
 a touch screen, where there is no pointer to reveal them with.

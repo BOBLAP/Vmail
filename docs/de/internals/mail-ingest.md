@@ -1,4 +1,4 @@
-<!-- translated-from: internals/mail-ingest.md sha1:dcb2b781f03c1702974cc382857086d18024e21c -->
+<!-- translated-from: internals/mail-ingest.md sha1:1ed1f4edc30cd128aba5cfad8415404aa8f4a40c -->
 # Mail-Ingest
 
 Vom Anbieter in die Datenbank: wie aus Bytes eine Zeile `Message` wird, was mit ihr geschieht,
@@ -154,6 +154,18 @@ nach der Konversationsbildung, damit Archivier- und Papierkorb-Aktionen die Konv
 Nachricht erreichen), ein Flush, ein zweiter Durchgang, der Konversations-Ids pro Konto für
 `MailChangeRecorder::threadsTouched()` einsammelt, und ein zweiter Flush für die Zeilen des
 Änderungsprotokolls.
+
+Die Filter-Aktion **In Kategorie ablegen** läuft im selben Durchgang und ist die einzige Aktion,
+die eine Kategorie schreibt. Sie schreibt nicht `Message::$category`: Fünf Dinge berechnen diese
+Spalte aus gespeicherten Daten neu (Ankunft, `app:backfill category`, die Neusortierung, die eine
+Einstellungsänderung einreiht, die Freigabe durch den Assistenten, die Gmail-Anreicherung), und jedes
+davon würde ein dort abgelegtes Urteil löschen. Das Urteil steht stattdessen in
+`Message::$ruleCategory`, das nichts neu berechnet, und `RuleCategoryFiler` lässt dann die
+Konversation über `MessageThreader::refreshCategory()` neu auflösen — neueste gewinnt, pin-bewusst,
+Hold-bewusst, wie bei der eingebauten Kategorie. `MessageThread::$userCategory` ist die Seite der
+Konversation, aufgelöst von denselben zwei Neuberechnungs-Statements wie `category`. Eine Nachricht
+wird nur abgelegt, wenn `SenderAuthentication` `Pass` sagt; wessen Urteil geglaubt wird, steht in
+dessen Docblock.
 
 Zurück kommt `PostIngestResult` — Nachrichten in Ingest-Reihenfolge, besitzende Konten nach Id
 und Konversations-Ids nach besitzendem Konto —, weil die drei Aufrufer nicht gleich zu Ende

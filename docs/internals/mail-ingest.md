@@ -136,6 +136,16 @@ threading, so archive and trash actions can reach each message's thread), a flus
 pass collecting thread ids per account for `MailChangeRecorder::threadsTouched()`, and a
 second flush for the change-log rows.
 
+A filter's **File in category** action runs in that same pass and is the one action that writes
+a category. It does not write `Message::$category`: five things recompute that column from stored
+data (arrival, `app:backfill category`, the re-sort a settings change queues, the assistant's
+release, Gmail enrichment), and every one would erase a verdict kept there. The verdict goes in
+`Message::$ruleCategory` instead, which nothing recomputes, and `RuleCategoryFiler` then has the
+thread re-resolve through `MessageThreader::refreshCategory()` — most-recent-wins, pin-aware, hold-aware,
+like the built-in category. `MessageThread::$userCategory` is the thread's side, resolved by the same
+two recompute statements as `category`. A message is filed only when `SenderAuthentication` says
+`Pass`; see its docblock for whose verdict is believed.
+
 `PostIngestResult` is what comes back — messages in ingest order, owning accounts by id, and
 thread ids by owning account — because the three callers do not finish the same way: IMAP
 publishes its Mercure update and dispatches contact harvesting one level up in

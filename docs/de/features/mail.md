@@ -1,4 +1,4 @@
-<!-- translated-from: features/mail.md sha1:d9a7adcb753fe43c9c0fd2cff88d98382f05cefb -->
+<!-- translated-from: features/mail.md sha1:081500ad5cdf77153468941a133972cd564bc472 -->
 
 # Mail
 
@@ -152,6 +152,30 @@ oder 500 Nachrichten noch einmal.
 Es ist begrenzt, weil es pro Nachricht einen Modell-Aufruf kostet — ein paar hundert sind Minuten
 auf einem warmen Host, ein ganzes Postfach Stunden. Und bei der neuesten Mail fällt ein falscher Tab
 ohnehin zuerst auf. Von allein fragt nichts noch einmal nach, und das ist auch richtig so.
+
+### Eigene Tabs
+
+Die fünf sind das, was plMail zu erkennen weiß. Willst du einen Tab für etwas, das es nicht
+erkennen kann — Pakete, Belege, die Mail eines Kunden —, lege ihn unter **Einstellungen →
+Allgemein → Deine eigenen Tabs** an: ein Name, sonst nichts. Ein eigener Tab enthält nichts, bis ein
+[Filter](filters.md#in-eigene-tabs-ablegen), dessen Aktion **In Kategorie ablegen** ist, Mail
+hineinlegt, und wie die anderen erscheint er im Posteingang nur, solange er Mail enthält.
+
+Eine Konversation steckt in genau einem Tab; Mail, die in einem deiner Tabs abgelegt wird,
+verlässt also den eingebauten Tab, in dem sie sonst gelegen hätte — die Benachrichtigung eines
+Paketdienstes, die früher in Werbung lag, liegt jetzt in Sendungen, und Werbung zählt, zeigt und
+markiert nur noch, was übrig ist. Du kannst eine Konversation auch auf einen eigenen Tab ziehen, oder von einem auf
+einen eingebauten Tab, genau wie zwischen den fünf; eine Konversation, die du von Hand verschoben
+hast, bleibt, wo du sie hingelegt hast.
+
+Der Bereich **Details** einer Nachricht nennt deinen Tab, wenn die Konversation dort liegt, und
+sagt, dass sie von einem deiner Filter dort abgelegt wurde (oder, nach einem Drag, dass du sie
+verschoben hast). Einen Tab umzubenennen benennt ihn überall zugleich um. Einen **zu löschen** legt
+seine Mail in den Tab zurück, in dem sie sonst läge; gelöscht wird nichts.
+
+Deine Tabs leben in plMail. Andere Mail-Apps, die sich per JMAP verbinden, und Gmail selbst wissen
+nichts von ihnen: Eine Konversation in deinem Sendungen-Tab erscheint ihnen in dem eingebauten Tab,
+in dem sie sonst läge.
 
 ### plMail sagen, dass es danebenlag
 

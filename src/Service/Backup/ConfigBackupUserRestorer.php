@@ -17,6 +17,7 @@ use App\Entity\Integration\Integration;
 use App\Entity\Label\Label;
 use App\Entity\Mail\Account;
 use App\Entity\Mail\EmailAlias;
+use App\Entity\Mail\InboxCategory;
 use App\Entity\Rule\MailRule;
 use App\Entity\User\ApiToken;
 use App\Entity\User\User;
@@ -179,6 +180,7 @@ final readonly class ConfigBackupUserRestorer
         $accounts     = $this->createAccounts($user, $this->rows($document, 'accounts'));
         $integrations = $this->createIntegrations($user, $this->rows($document, 'integrations'));
         $labels       = $this->createLabels($user, $this->rows($document, 'labels'));
+        $categories   = $this->createInboxCategories($user, $this->rows($document, 'inboxCategories'));
         $calendars    = $this->createCalendars($user, $this->rows($document, 'calendars'), $accounts, $integrations);
 
         $this->createAppPasswords($user, $this->rows($document, 'appPasswords'));
@@ -192,7 +194,7 @@ final readonly class ConfigBackupUserRestorer
 
         $this->retargetAccountCalendars($accounts, $calendars);
         $this->applyAliasOverrides($accounts, $this->rows($document, 'accounts'));
-        $this->createRules($user, $this->rows($document, 'rules'), $accounts, $labels, $integrations);
+        $this->createRules($user, $this->rows($document, 'rules'), $accounts, $labels, $integrations, $categories);
 
         $this->entityManager->flush();
 
@@ -538,6 +540,39 @@ final readonly class ConfigBackupUserRestorer
     }
 
     /**
+     * The inbox tabs the person made, keyed by the id they had in the file.
+     *
+     * Keyed so createRules() can rewrite a "File in category" action to the new
+     * row. A file written before categories existed has no such section, and
+     * `rows()` reads a missing section as none.
+     *
+     * @param list<array<string, mixed>> $rows
+     *
+     * @return array<int, InboxCategory>
+     */
+    private function createInboxCategories(User $user, array $rows): array
+    {
+        $created = [];
+
+        foreach ($rows as $row) {
+            $category           = new InboxCategory();
+            $category->usr      = $user;
+            $category->name     = (string) ($this->text($row, 'name') ?? '');
+            $category->position = $this->number($row, 'position') ?? 0;
+
+            $this->entityManager->persist($category);
+
+            $sourceId = $this->number($row, 'id');
+
+            if (null !== $sourceId) {
+                $created[$sourceId] = $category;
+            }
+        }
+
+        return $created;
+    }
+
+    /**
      * Filters, with every id in them rewritten.
      *
      * The three places an id hides are the account the rule is scoped to, the
@@ -550,8 +585,9 @@ final readonly class ConfigBackupUserRestorer
      * @param array<int, Account>        $accounts
      * @param array<int, Label>          $labels
      * @param array<int, Integration>    $integrations
+     * @param array<int, InboxCategory>  $categories
      */
-    private function createRules(User $user, array $rows, array $accounts, array $labels, array $integrations): void
+    private function createRules(User $user, array $rows, array $accounts, array $labels, array $integrations, array $categories): void
     {
         foreach ($rows as $row) {
             $rule = new MailRule();
@@ -560,7 +596,7 @@ final readonly class ConfigBackupUserRestorer
             $rule->name           = $this->text($row, 'name');
             $rule->account        = $accounts[$this->number($row, 'accountId') ?? 0] ?? null;
             $rule->conditions     = $this->remapConditions($this->map($row, 'conditions'), $labels);
-            $rule->actions        = $this->remapActions($this->rows($row, 'actions'), $labels, $integrations);
+            $rule->actions        = $this->remapActions($this->rows($row, 'actions'), $labels, $integrations, $categories);
             $rule->isEnabled      = true === ($row['isEnabled'] ?? true);
             $rule->sortOrder      = $this->number($row, 'sortOrder') ?? 0;
             $rule->stopProcessing = true === ($row['stopProcessing'] ?? false);
@@ -634,10 +670,11 @@ final readonly class ConfigBackupUserRestorer
      * @param list<array<string, mixed>> $actions
      * @param array<int, Label>          $labels
      * @param array<int, Integration>    $integrations
+     * @param array<int, InboxCategory>  $categories
      *
      * @return list<array<string, mixed>>
      */
-    private function remapActions(array $actions, array $labels, array $integrations): array
+    private function remapActions(array $actions, array $labels, array $integrations, array $categories): array
     {
         $remapped = [];
 
@@ -651,6 +688,21 @@ final readonly class ConfigBackupUserRestorer
                 }
 
                 $action['labelId'] = $label->id;
+            }
+
+            if (true === array_key_exists('categoryId', $action)) {
+                $categoryId = $action['categoryId'];
+                $category   = is_int($categoryId) ? ($categories[$categoryId] ?? null) : null;
+
+                // Dropped like a label the file does not carry, and for the same
+                // reason: an action with its target removed would file nothing,
+                // and one left pointing at the old number could file into a
+                // stranger's tab.
+                if (null === $category || null === $category->id) {
+                    continue;
+                }
+
+                $action['categoryId'] = $category->id;
             }
 
             if (true === array_key_exists('integrationId', $action)) {

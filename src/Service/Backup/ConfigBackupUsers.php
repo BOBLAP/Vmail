@@ -166,6 +166,10 @@ final readonly class ConfigBackupUsers
         // choice about irreversible deletion. A boolean, no id, means the same
         // on any install.
         User::SETTING_DISPOSAL_DELETE_NOW,
+        // How the topbar's calendar button moves between views. One enum
+        // value, no id, the same on any install, and a preference about one's
+        // own screen like the pane's mode and width above.
+        User::SETTING_CALENDAR_SWITCH_SKIP,
     ];
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Entity\User;
 
 use App\Domain\Enum\Calendar\CalendarPaneMode;
+use App\Domain\Enum\Calendar\CalendarSwitchSkip;
 use App\Domain\Enum\Calendar\CalendarView;
 use App\Domain\Enum\Mail\ReadingPaneMode;
 use App\Domain\Enum\Mail\SearchSortOrder;
@@ -1009,6 +1010,41 @@ class User extends UserEntityModel implements UserInterface, PasswordAuthenticat
         get => true === $this->getSetting(self::SETTING_DISPOSAL_DELETE_NOW, false);
         set(bool $on) {
             $this->setSetting(self::SETTING_DISPOSAL_DELETE_NOW, $on ? true : null);
+        }
+    }
+
+    /**
+     * Which position the topbar's calendar button leaves out — Settings →
+     * Calendar → Behaviour. None unless somebody chooses: the three-way cycle
+     * is what the button has always done, and a person who has learned it
+     * should not find it moved.
+     *
+     * One value, the enum's own, and absent for the default like every setting
+     * in the bag. It was two booleans at first, "skip the split" and "skip the
+     * full width", which could both be true and then had to be kept apart by
+     * the setters and read as neither when a backup held both anyway. One value
+     * cannot say "skip both", so none of that is here.
+     */
+    public const string SETTING_CALENDAR_SWITCH_SKIP = 'calendar.switch_skip';
+
+    /**
+     * Virtual, out of the settings bag — see SETTING_CALENDAR_SWITCH_SKIP.
+     * Anything stored that is not one of the enum's values, a hand-edited
+     * backup say, reads as the default cycle.
+     */
+    public CalendarSwitchSkip $calendarSwitchSkip {
+        get {
+            $stored = $this->getSetting(self::SETTING_CALENDAR_SWITCH_SKIP);
+
+            return true === is_string($stored)
+                ? CalendarSwitchSkip::tryFrom($stored) ?? CalendarSwitchSkip::None
+                : CalendarSwitchSkip::None;
+        }
+        set (CalendarSwitchSkip $skip) {
+            $this->setSetting(
+                self::SETTING_CALENDAR_SWITCH_SKIP,
+                CalendarSwitchSkip::None === $skip ? null : $skip->value,
+            );
         }
     }
 

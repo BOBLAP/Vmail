@@ -3571,6 +3571,14 @@ settings:
         test_failed: 'Connection test failed'
         test_ok: 'Connection is working'
         unavailable_heading: 'Not available here'
+    calendar_behaviour:
+        button: Calendar button
+        button_hint: 'Which views the button in the top bar steps through. A view it leaves out is not removed: the drag handle still reaches it.'
+        heading: Behaviour
+        option_calendar: Split only
+        option_none: All three
+        option_split: Full width only
+        subheading: 'How the calendar button in the top bar moves between views.'
     calendars:
         account_hint: Where events found in mail from %address% are filed.
         caldav:
@@ -3696,6 +3704,7 @@ settings:
         aliases: Aliases
         app_passwords: App passwords
         appearance: Appearance
+        calendar_behaviour: Behaviour
         calendars: Calendars
         disposal: Disposal
         filters: Filters

@@ -147,10 +147,10 @@ final class MessageThreaderTest extends TestCase
 
         $this->threaderWithThreadLookup(null)->assignThread($message, new Account());
 
-        self::assertSame($shipping, $message->thread?->userCategory);
+        self::assertSame($shipping, $message->thread->userCategory);
         self::assertSame(
             MessageCategory::Promotions,
-            $message->thread?->category,
+            $message->thread->category,
             'the built-in category must still be the one the rules decided',
         );
     }

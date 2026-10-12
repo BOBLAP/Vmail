@@ -67,7 +67,7 @@ final class RuleCategoryFilerTest extends TestCase
         self::assertSame($this->shipping, $message->thread?->userCategory);
         self::assertSame(
             MessageCategory::Promotions,
-            $message->thread?->category,
+            $message->thread->category,
             'filing must leave the built-in category alone: JMAP clients are served it',
         );
     }

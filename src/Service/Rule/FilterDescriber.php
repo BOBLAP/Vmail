@@ -41,7 +41,7 @@ final class FilterDescriber implements ResetInterface
     /** @var array<int, array<int,string>> userId => (integrationId => name) */
     private array $integrationNames = [];
 
-    /** @var array<int, array<int,string>> userId => (categoryId => name) */
+    /** @var array<string, array<int,string>> user identifier => (categoryId => name) */
     private array $categoryNames = [];
 
     /** Whose labels the sentence currently being built may name. */
@@ -311,13 +311,15 @@ final class FilterDescriber implements ResetInterface
             return $missing;
         }
 
-        $userId = (int) $this->subject->id;
+        // Keyed by the user identifier rather than by an id: all that is known
+        // here is a UserInterface, which has no id to read.
+        $userId = $this->subject->getUserIdentifier();
 
         if (false === array_key_exists($userId, $this->categoryNames)) {
             $map = [];
 
             foreach ($this->categoryRepository->findForUserOrdered($this->subject) as $category) {
-                $map[(int) $category->id] = (string) $category->name;
+                $map[(int) $category->id] = $category->name;
             }
 
             $this->categoryNames[$userId] = $map;

@@ -59,11 +59,6 @@ final class InboxTabQueriesTest extends KernelTestCase
     private Label $inbox;
     private InboxCategory $shipping;
 
-    private MessageThread $carrierNew;
-    private MessageThread $promoNew;
-    private MessageThread $primaryRead;
-    private MessageThread $updateRead;
-
     protected function setUp(): void
     {
         self::bootKernel();
@@ -85,10 +80,10 @@ final class InboxTabQueriesTest extends KernelTestCase
         $this->em->persist($this->shipping);
         $this->em->flush();
 
-        $this->carrierNew  = $this->inboxThread('carrier, new', MessageCategory::Promotions, $this->shipping, unread: 1);
-        $this->promoNew    = $this->inboxThread('promo, new', MessageCategory::Promotions, null, unread: 1);
-        $this->primaryRead = $this->inboxThread('primary, read', MessageCategory::Primary, null, unread: 0);
-        $this->updateRead  = $this->inboxThread('update, read', MessageCategory::Updates, $this->shipping, unread: 0);
+        $this->inboxThread('carrier, new', MessageCategory::Promotions, $this->shipping, unread: 1);
+        $this->inboxThread('promo, new', MessageCategory::Promotions, null, unread: 1);
+        $this->inboxThread('primary, read', MessageCategory::Primary, null, unread: 0);
+        $this->inboxThread('update, read', MessageCategory::Updates, $this->shipping, unread: 0);
     }
 
     protected function tearDown(): void

@@ -70,7 +70,7 @@ final class InboxTabsTest extends TestCase
         $tabs = new InboxTabs($repository);
 
         self::assertSame('c12', $tabs->resolve($this->user('reader'), 'c12')?->value);
-        self::assertSame('Shipping', $tabs->resolve($this->user('reader'), 'c12')?->name);
+        self::assertSame('Shipping', $tabs->resolve($this->user('reader'), 'c12')->name);
         self::assertNull($tabs->resolve($this->user('stranger'), 'c12'), 'resolved a category the asking reader does not own');
     }
 

@@ -63,13 +63,7 @@ final readonly class InboxCategoryManager
      */
     public function rename(InboxCategory $category, string $name): void
     {
-        $owner = $category->usr;
-
-        if (null === $owner) {
-            throw new \LogicException('A category with no owner cannot be renamed.');
-        }
-
-        $category->name = $this->validName($owner, $name, $category);
+        $category->name = $this->validName($category->usr, $name, $category);
 
         $this->em->flush();
     }
@@ -113,7 +107,7 @@ final readonly class InboxCategoryManager
                 continue;
             }
 
-            if (mb_strtolower((string) $existing->name) === mb_strtolower($name)) {
+            if (mb_strtolower($existing->name) === mb_strtolower($name)) {
                 throw new InvalidInboxCategoryException('settings.categories.error.taken');
             }
         }

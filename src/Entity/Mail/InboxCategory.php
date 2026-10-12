@@ -50,10 +50,10 @@ class InboxCategory
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    public ?User $usr = null;
+    public User $usr;
 
     #[ORM\Column(length: self::NAME_MAX_LENGTH)]
-    public ?string $name = null;
+    public string $name;
 
     /** Left to right among the user's own tabs; ties break on id. */
     #[ORM\Column(options: ['default' => 0])]

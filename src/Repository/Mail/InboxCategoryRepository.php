@@ -20,6 +20,25 @@ class InboxCategoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Where a new category goes: after every one the reader already has.
+     *
+     * One past the largest position rather than a count, because removing a
+     * category leaves a gap and a count would then collide with the tab at the
+     * end of the strip.
+     */
+    public function nextPositionFor(UserInterface $user): int
+    {
+        $largest = $this->createQueryBuilder('c')
+            ->select('MAX(c.position)')
+            ->where('c.usr = :user')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return null === $largest ? 0 : (int) $largest + 1;
+    }
+
+    /**
      * Every category the user made, in the order their tabs are drawn.
      *
      * @return list<InboxCategory>

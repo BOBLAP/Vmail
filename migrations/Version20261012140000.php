@@ -45,7 +45,6 @@ final class Version20261012140000 extends AbstractMigration
                 id SERIAL NOT NULL,
                 usr_id INT NOT NULL,
                 name VARCHAR(40) NOT NULL,
-                color VARCHAR(30) DEFAULT NULL,
                 position INT DEFAULT 0 NOT NULL,
                 created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
                 updated_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,

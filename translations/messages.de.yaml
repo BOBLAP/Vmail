@@ -3920,6 +3920,26 @@ settings:
         save: 'Signatur speichern'
         saved: 'Gespeichert.'
         subheading: 'Was am Ende der Nachrichten steht, die du schreibst.'
+    categories:
+        add: Hinzufügen
+        created: 'Kategorie „%name%“ angelegt.'
+        delete: Kategorie löschen
+        delete_confirm: 'Kategorie „%name%“ löschen? Die dort abgelegte Mail kommt zurück in den Tab, in dem sie sonst wäre. Es wird keine Mail gelöscht.'
+        deleted: 'Kategorie „%name%“ gelöscht.'
+        empty: 'Du hast noch keine eigenen Tabs.'
+        error:
+            empty: 'Eine Kategorie braucht einen Namen.'
+            reserved: 'Dieser Name gehört zu einem der eingebauten Tabs.'
+            taken: 'Du hast bereits eine Kategorie mit diesem Namen.'
+            too_long: 'Dieser Name ist zu lang (höchstens 40 Zeichen).'
+        filters_link: 'Einstellungen → Filter.'
+        heading: Deine eigenen Tabs
+        hint: 'Ein Tab erscheint im Posteingang, solange er Mail enthält. Mail kommt über einen Filter mit der Aktion „In Kategorie ablegen“ hinein — richte einen ein unter'
+        name_label: Name
+        placeholder: 'z. B. Sendungen'
+        rename: Umbenennen
+        renamed: 'Umbenannt in „%name%“.'
+        subheading: 'Posteingangs-Tabs, die du selbst benennst, neben den fünf, die plMail mitbringt.'
     sorting:
         again:
             button: Nochmal fragen

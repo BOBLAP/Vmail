@@ -55,12 +55,6 @@ class InboxCategory
     #[ORM\Column(length: self::NAME_MAX_LENGTH)]
     public ?string $name = null;
 
-    /**
-     * A palette token, the way Label::$color is. Null takes the neutral tone.
-     */
-    #[ORM\Column(length: 30, nullable: true)]
-    public ?string $color = null;
-
     /** Left to right among the user's own tabs; ties break on id. */
     #[ORM\Column(options: ['default' => 0])]
     public int $position = 0;

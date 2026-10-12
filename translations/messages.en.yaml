@@ -3901,6 +3901,26 @@ settings:
         save: 'Save signature'
         saved: 'Saved.'
         subheading: 'What is added to the bottom of the messages you write.'
+    categories:
+        add: Add
+        created: 'Created "%name%".'
+        delete: Delete category
+        delete_confirm: 'Delete "%name%"? Mail filed there goes back to the tab it would otherwise be in. No mail is deleted.'
+        deleted: 'Deleted "%name%".'
+        empty: 'You have no tabs of your own yet.'
+        error:
+            empty: 'A category needs a name.'
+            reserved: 'That name belongs to one of the built-in tabs.'
+            taken: 'You already have a category with that name.'
+            too_long: 'That name is too long (40 characters at most).'
+        filters_link: 'Settings → Filters.'
+        heading: Your own tabs
+        hint: 'A tab shows in the inbox while it holds mail. Mail goes into it through a filter whose action is "File in category" — set one up under'
+        name_label: Name
+        placeholder: 'e.g. Shipping'
+        rename: Rename
+        renamed: 'Renamed to "%name%".'
+        subheading: 'Inbox tabs you name yourself, beside the five that come with plMail.'
     sorting:
         again:
             button: Ask again

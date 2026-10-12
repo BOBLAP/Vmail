@@ -448,6 +448,31 @@ class Message extends MessageModel
     public ?MessageCategory $aiCategory = null;
 
     /**
+     * The category a FILTER filed this message under, when it is one the
+     * reader made themselves.
+     *
+     * A THIRD OPINION, AND THE REASON IT IS ITS OWN COLUMN
+     * ────────────────────────────────────────────────────
+     * Not written into $category, for the reason $aiCategory is not, and for a
+     * sharper one besides. $category is a pure function of persisted data that
+     * five writers recompute — arrival, the backfill, the re-sort a settings
+     * change triggers, the assistant's release, Gmail enrichment — and every one
+     * of them overwrites it. A filter's verdict written there would be erased by
+     * the next re-sort. Here nothing recomputes it: only a filter's action
+     * writes it, and only removing the category clears it.
+     *
+     * $category keeps the built-in the rules decided, which is also what a JMAP
+     * client is served: its tab vocabulary is closed, so a message filed in a
+     * tab of the reader's own still reads as the built-in it would have been in.
+     *
+     * ON DELETE SET NULL: removing the category un-files its mail in the
+     * database, with no sweep for the application to forget.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'rule_category_id', nullable: true, onDelete: 'SET NULL')]
+    public ?InboxCategory $ruleCategory = null;
+
+    /**
      * The Gmail account that can act on this message, when it is not this
      * message's own account.
      *

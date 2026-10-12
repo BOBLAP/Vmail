@@ -47,6 +47,26 @@ class MessageThread
     public ?MessageCategory $category = null;
 
     /**
+     * The conversation's tab when it is one the reader made themselves.
+     *
+     * Beside $category rather than instead of it: that column stays one of the
+     * five built-ins, so its enum mapping, every recompute that writes it and
+     * the JMAP vocabulary built on it are untouched. The tab a thread is SHOWN
+     * in is this when set, else $category.
+     *
+     * Resolved like $category — most-recent-wins over the thread's messages'
+     * Message::$ruleCategory — and pinned by the same $categoryPinnedAt, so a
+     * conversation dragged onto one of the reader's own tabs stays there.
+     *
+     * ON DELETE SET NULL: the thread falls back to its built-in tab when the
+     * category is removed. A pin cannot be cleared by a foreign key; see
+     * InboxCategoryRemover.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'user_category_id', nullable: true, onDelete: 'SET NULL')]
+    public ?InboxCategory $userCategory = null;
+
+    /**
      * When somebody put this conversation in its category by hand.
      *
      * Null — every row, until a person drags one onto a tab — means the

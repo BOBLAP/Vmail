@@ -257,10 +257,16 @@ mailed-by and signed-by were silently missing from every IMAP message.
                        the problem: a conversation sitting in Primary, described
                        here as Updates, because a sibling message carried the
                        thread and this panel was reading a column no tab shows. #}
-                    {{ ('tabs.' ~ (category.filed ?? category.effective.category))|trans }}
+                    {# A tab the reader made wins the row: it is where the
+                       conversation is shown, while `filed` is only the built-in
+                       category underneath it. Both are true; this is the one
+                       the reader is looking at. #}
+                    {% if category.own %}{{ category.own }}{% else %}{{ ('tabs.' ~ (category.filed ?? category.effective.category))|trans }}{% endif %}
                     <span class="text-ink-faint">
                         {%- if category.pinnedAt %}
                             — {{ 'message.details.categorised.pinned'|trans }}
+                        {%- elseif category.own %}
+                            — {{ 'message.details.categorised.own_filter'|trans }}
                         {%- else %}
                             — {{ ('message.details.categorised.' ~ category.effective.reason)|trans }}
                             {%- if category.effective.signal %}
@@ -275,7 +281,7 @@ mailed-by and signed-by were silently missing from every IMAP message.
                        is the difference between "give it a moment" and a bug
                        report. Never shown for a pinned thread, where the two
                        are SUPPOSED to differ. #}
-                    {% if not category.pinnedAt and category.filed and category.filed != category.effective.category %}
+                    {% if not category.pinnedAt and not category.own and category.filed and category.filed != category.effective.category %}
                         <span class="block text-ink-faint">{{ 'message.details.categorised.awaiting_resort'|trans }}</span>
                     {% endif %}
 

@@ -2166,6 +2166,7 @@ message:
             ai: "an oracle, for no rule knew it: "
             ai_differs: 'the rules say otherwise'
             awaiting_resort: "Bein' re-stowed — ye changed how post be sorted, an' this one has not shifted yet."
+            own_filter: "stowed there by one o' yer sieves"
             gmail_overruled: "not used — ye asked plMail to stow this itself"
             in_force: 'this one decides'
             ai_no_answer: 'asked, naught useful back'

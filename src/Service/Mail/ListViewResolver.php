@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Mail;
 
+use App\Domain\DTO\Mail\InboxTab;
 use App\Domain\Enum\Mail\LabelRole;
 use App\Domain\Enum\Mail\MessageCategory;
 use App\Entity\Mail\MessageThread;
@@ -60,6 +61,7 @@ final readonly class ListViewResolver
     public function __construct(
         private MessageThreadRepository $threads,
         private LabelRepository         $labels,
+        private InboxTabs               $tabs,
     ) {
     }
 
@@ -109,8 +111,12 @@ final readonly class ListViewResolver
             // all, delete" has to mean the list the server would have drawn —
             // all of it for somebody without tabs, never Primary alone because
             // the page sent an empty string (#29).
+            //
+            // The reader's own tabs count: the value is a tab key, and one of
+            // theirs resolves to their category's conversations, while a key
+            // that is not theirs falls back to Primary like any unknown one.
             $category = true === $user->categorySorting->tabs
-                ? MessageCategory::tryFrom($value) ?? MessageCategory::Primary
+                ? $this->tabs->resolve($user, $value) ?? InboxTab::builtIn(MessageCategory::Primary)
                 : null;
 
             return $this->threads->findForUnifiedInbox($user, $category, $page, self::CHUNK, unreadOnly: $unreadOnly);

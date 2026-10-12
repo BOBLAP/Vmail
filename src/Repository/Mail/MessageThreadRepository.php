@@ -8,6 +8,7 @@ use App\Domain\DTO\ParsedSearchQuery;
 use App\Domain\Enum\Ai\SemanticSkipReason;
 use App\Domain\Enum\Mail\LabelRole;
 use App\Domain\Enum\Mail\ListSortOrder;
+use App\Domain\DTO\Mail\InboxTab;
 use App\Domain\Enum\Mail\MessageCategory;
 use App\Domain\Enum\Mail\SearchSortOrder;
 use App\Entity\Label\Label;
@@ -135,7 +136,7 @@ class MessageThreadRepository extends ServiceEntityRepository
      * tabs off — see CategorySorting::$tabs. Null and not a default argument,
      * so that every caller has to say which of the two it means.
      */
-    public function findForUnifiedInbox(UserInterface $user, ?MessageCategory $category, int $page = 1, int $perPage = 50, ListSortOrder $sort = ListSortOrder::Newest, bool $unreadOnly = false): array
+    public function findForUnifiedInbox(UserInterface $user, MessageCategory|InboxTab|null $category, int $page = 1, int $perPage = 50, ListSortOrder $sort = ListSortOrder::Newest, bool $unreadOnly = false): array
     {
         $offset = ($page - 1) * $perPage;
 
@@ -166,18 +167,81 @@ class MessageThreadRepository extends ServiceEntityRepository
      * count so the two cannot come to mean different things — a pager offering
      * a page the list does not have is what that looks like.
      */
-    private function narrowToCategory(QueryBuilder $qb, ?MessageCategory $category): void
+    private function narrowToCategory(QueryBuilder $qb, MessageCategory|InboxTab|null $category): void
     {
         if (null === $category) {
             return;
         }
 
-        $qb->andWhere('t.category = :category')
-            ->setParameter('category', $category);
+        $tab = $category instanceof MessageCategory ? InboxTab::builtIn($category) : $category;
+
+        // A thread is in exactly ONE tab: the reader's own when it has been
+        // filed in one, else the built-in one. So a custom tab is a plain match
+        // on the reader's column, and a built-in tab must also exclude whatever
+        // has left it for one of the reader's — otherwise a carrier's notice is
+        // listed in Promotions AND in Shipping, and the tab counts stop adding
+        // up to the inbox.
+        if (true === $tab->isCustom()) {
+            $qb->andWhere('IDENTITY(t.userCategory) = :userCategory')
+                ->setParameter('userCategory', $tab->categoryId);
+
+            return;
+        }
+
+        $qb->andWhere('t.userCategory IS NULL')
+            ->andWhere('t.category = :category')
+            ->setParameter('category', $tab->builtIn);
+    }
+
+    /**
+     * Which tab a grouped row belongs to: the reader's own when the thread is
+     * filed in one, else the built-in category.
+     *
+     * One definition, because the three grouped counts and the sender hint must
+     * key a tab identically or the strip's numbers and its dots describe
+     * different tabs. The key is InboxTab's, which for a built-in is the value
+     * it always was.
+     */
+    private function tabKeyOf(mixed $category, mixed $userCategoryId): string
+    {
+        if (null !== $userCategoryId) {
+            return InboxTab::CUSTOM_PREFIX . (int) $userCategoryId;
+        }
+
+        if ($category instanceof MessageCategory) {
+            return $category->value;
+        }
+
+        return (string) $category;
+    }
+
+    /**
+     * Fold grouped rows into tab => count.
+     *
+     * Added up rather than assigned: the query groups by the built-in category
+     * AND the reader's tab, so one of the reader's tabs arrives as several rows
+     * — one per built-in category its threads happen to have — and keeping the
+     * last of them would report a fraction of the tab.
+     *
+     * @param iterable<array<string,mixed>> $rows
+     *
+     * @return array<string,int>
+     */
+    private function foldByTab(iterable $rows, string $countField): array
+    {
+        $counts = [];
+
+        foreach ($rows as $row) {
+            $key = $this->tabKeyOf($row['category'], $row['userCategory'] ?? null);
+
+            $counts[$key] = ($counts[$key] ?? 0) + (int) $row[$countField];
+        }
+
+        return $counts;
     }
 
     /** Same two joins as findForUnifiedInbox(), so the same reason to keep it. */
-    public function countForUnifiedInbox(UserInterface $user, ?MessageCategory $category, bool $unreadOnly = false): int
+    public function countForUnifiedInbox(UserInterface $user, MessageCategory|InboxTab|null $category, bool $unreadOnly = false): int
     {
         // COUNT(DISTINCT t.id), not select-DISTINCT: the label join is to-many,
         // and ->distinct() would put the DISTINCT on the aggregate rather than
@@ -221,33 +285,20 @@ class MessageThreadRepository extends ServiceEntityRepository
     public function countByCategoryForUnifiedInbox(UserInterface $user): array
     {
         $qb = $this->createQueryBuilder('t')
-            ->select('t.category AS category', 'COUNT(DISTINCT t.id) AS threadCount')
+            ->select('t.category AS category', 'IDENTITY(t.userCategory) AS userCategory', 'COUNT(DISTINCT t.id) AS threadCount')
             ->join('t.account', 'a')
             ->join('t.labels', 'l')
             ->where('a.usr = :user')
             ->andWhere('a.isActive = true')
             ->andWhere('l.role = :inbox')
             ->groupBy('t.category')
+            ->addGroupBy('t.userCategory')
             ->setParameter('user', $user)
             ->setParameter('inbox', LabelRole::Inbox);
 
         $this->excludeTrashed($qb);
 
-        $rows = $qb->getQuery()->getResult();
-
-        $counts = [];
-
-        foreach ($rows as $row) {
-            $categoryValue = $row['category'];
-
-            if ($categoryValue instanceof MessageCategory) {
-                $categoryValue = $categoryValue->value;
-            }
-
-            $counts[$categoryValue] = (int) $row['threadCount'];
-        }
-
-        return $counts;
+        return $this->foldByTab($qb->getQuery()->getResult(), 'threadCount');
     }
 
     /**
@@ -268,7 +319,7 @@ class MessageThreadRepository extends ServiceEntityRepository
     public function countUnreadByCategoryForUnifiedInbox(UserInterface $user): array
     {
         $qb = $this->createQueryBuilder('t')
-            ->select('t.category AS category', 'COUNT(DISTINCT t.id) AS threadCount')
+            ->select('t.category AS category', 'IDENTITY(t.userCategory) AS userCategory', 'COUNT(DISTINCT t.id) AS threadCount')
             ->join('t.account', 'a')
             ->join('t.labels', 'l')
             ->where('a.usr = :user')
@@ -276,26 +327,13 @@ class MessageThreadRepository extends ServiceEntityRepository
             ->andWhere('l.role = :inbox')
             ->andWhere('t.unreadCount > 0')
             ->groupBy('t.category')
+            ->addGroupBy('t.userCategory')
             ->setParameter('user', $user)
             ->setParameter('inbox', LabelRole::Inbox);
 
         $this->excludeTrashed($qb);
 
-        $rows = $qb->getQuery()->getResult();
-
-        $counts = [];
-
-        foreach ($rows as $row) {
-            $categoryValue = $row['category'];
-
-            if ($categoryValue instanceof MessageCategory) {
-                $categoryValue = $categoryValue->value;
-            }
-
-            $counts[$categoryValue] = (int) $row['threadCount'];
-        }
-
-        return $counts;
+        return $this->foldByTab($qb->getQuery()->getResult(), 'threadCount');
     }
 
     /**
@@ -931,32 +969,21 @@ class MessageThreadRepository extends ServiceEntityRepository
     public function countNewByCategoryForUnifiedInbox(UserInterface $user, \DateTimeImmutable $now): array
     {
         $qb = $this->createQueryBuilder('t')
-            ->select('t.category AS category', 'COUNT(DISTINCT t.id) AS newCount')
+            ->select('t.category AS category', 'IDENTITY(t.userCategory) AS userCategory', 'COUNT(DISTINCT t.id) AS newCount')
             ->join('t.account', 'a')
             ->join('t.labels', 'l')
             ->where('a.usr = :user')
             ->andWhere('a.isActive = true')
             ->andWhere('l.role = :inbox')
             ->groupBy('t.category')
+            ->addGroupBy('t.userCategory')
             ->setParameter('user', $user)
             ->setParameter('inbox', LabelRole::Inbox);
 
         $this->restrictToNew($qb, $now);
         $this->excludeTrashed($qb);
 
-        $counts = [];
-
-        foreach ($qb->getQuery()->getResult() as $row) {
-            $category = $row['category'];
-
-            if ($category instanceof MessageCategory) {
-                $category = $category->value;
-            }
-
-            $counts[(string) $category] = (int) $row['newCount'];
-        }
-
-        return $counts;
+        return $this->foldByTab($qb->getQuery()->getResult(), 'newCount');
     }
 
     /**
@@ -986,6 +1013,7 @@ class MessageThreadRepository extends ServiceEntityRepository
             ->select(
                 't.id AS threadId',
                 't.category AS category',
+                'IDENTITY(t.userCategory) AS userCategory',
                 't.lastMessageAt AS arrivedAt',
                 'm.fromName AS fromName',
                 'm.fromAddress AS fromAddress',
@@ -1018,12 +1046,6 @@ class MessageThreadRepository extends ServiceEntityRepository
                 continue;
             }
 
-            $category = $row['category'];
-
-            if ($category instanceof MessageCategory) {
-                $category = $category->value;
-            }
-
             $name = trim((string) ($row['fromName'] ?? ''));
 
             if ('' === $name) {
@@ -1031,7 +1053,7 @@ class MessageThreadRepository extends ServiceEntityRepository
             }
 
             $threads[$id] = [
-                'category'  => (string) $category,
+                'category'  => $this->tabKeyOf($row['category'], $row['userCategory'] ?? null),
                 'arrivedAt' => $row['arrivedAt'],
                 'name'      => $name,
                 'at'        => $at,

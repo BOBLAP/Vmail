@@ -3075,6 +3075,7 @@ settings:
         action:
             applyLabel: Label vergeben
             archive: Posteingang überspringen
+            fileInCategory: In Kategorie ablegen
             markRead: Als gelesen markieren
             markSpam: Als Spam markieren
             removeLabel: Label entfernen
@@ -3143,6 +3144,7 @@ settings:
             draft: ein Entwurf
             flagged: markiert
             seen: gelesen
+        category_missing: '(gelöschte Kategorie)'
         integration_missing: '(getrennter Dienst)'
         label_missing: '(gelöschtes Label)'
         move_down: '"%name%" nach hinten'
@@ -3152,6 +3154,7 @@ settings:
         new_title: Neuer Filter
         no: Nein
         no_actions: Noch keine Aktionen
+        no_categories: 'Noch keine Kategorien — leg zuerst eine an.'
         no_integrations: 'Keine Dienste verbunden — zuerst unter Integrationen einrichten.'
         of_the_following: der folgenden
         op:

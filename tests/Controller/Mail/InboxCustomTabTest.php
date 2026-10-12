@@ -146,8 +146,11 @@ final class InboxCustomTabTest extends WebTestCase
         $key     = 'c' . $this->shipping->id;
 
         self::assertSame(1, $payload['category:' . $key] ?? null, 'the unread count of the tab is missing');
-        self::assertArrayHasKey('new:category:' . $key, $payload);
-        self::assertArrayHasKey('senders:category:' . $key, $payload);
+        // The values, not only the keys: the thread is unread and just arrived,
+        // so it is new, and the hint names who it is from.
+        self::assertSame(1, $payload['new:category:' . $key] ?? null);
+        self::assertSame('sender@example.test', $payload['senders:category:' . $key] ?? null);
+        self::assertSame(0, $payload['new:category:promotions'] ?? null, 'the built-in tab it left is still counting it as new');
         // And the built-in it was filed away from is not counting it.
         self::assertSame(0, $payload['category:promotions'] ?? null);
     }

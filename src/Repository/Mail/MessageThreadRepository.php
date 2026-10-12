@@ -2469,8 +2469,19 @@ class MessageThreadRepository extends ServiceEntityRepository
                 -- MessageThread::$userCategory.
                 user_category_id = sub.rule_category_id
             FROM (
-                SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category, m.rule_category_id
+                SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category,
+                       CASE
+                           -- Google's mail is in the reader's own tab only while
+                           -- they have asked plMail to overrule Google: the
+                           -- rule the filter applied when it filed the message,
+                           -- kept true afterwards, because switching the
+                           -- setting off queues exactly this re-sort.
+                           WHEN m.gmail_label_ids IS NOT NULL AND NOT u.category_override_provider THEN NULL
+                           ELSE m.rule_category_id
+                       END AS rule_category_id
                 FROM message m
+                JOIN account a ON a.id = m.account_id
+                JOIN "user" u ON u.id = a.usr_id
                 WHERE m.category IS NOT NULL
                   -- A message held for the assistant has no say yet: its
                   -- category is the rules' guess, and adopting it is the
@@ -2494,8 +2505,14 @@ class MessageThreadRepository extends ServiceEntityRepository
         SET category = sub.category,
             user_category_id = sub.rule_category_id
         FROM (
-            SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category, m.rule_category_id
+            SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category,
+                   CASE
+                       WHEN m.gmail_label_ids IS NOT NULL AND NOT u.category_override_provider THEN NULL
+                       ELSE m.rule_category_id
+                   END AS rule_category_id
             FROM message m
+            JOIN account a ON a.id = m.account_id
+            JOIN "user" u ON u.id = a.usr_id
             WHERE m.category IS NOT NULL
               AND (m.category_held_at IS NULL OR m.category_released_at IS NOT NULL)
             ORDER BY m.thread_id, m.received_at DESC NULLS LAST

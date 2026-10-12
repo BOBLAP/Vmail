@@ -82,11 +82,30 @@ final class ListViewResolverCustomTabTest extends KernelTestCase
         self::assertSame(['a normal one'], $this->subjects('primary'), 'a conversation filed elsewhere is in the built-in view as well');
     }
 
-    public function testAKeyThatIsNotTheirsFallsBackToPrimaryRatherThanReachingAnotherReadersMail(): void
+    /**
+     * A tab that has gone — deleted on another device while this page was open,
+     * or somebody else's — selects NOTHING. It must not fall back to Primary the
+     * way a mistyped built-in name does: a whole-view action is queued from the
+     * stale page and runs later, and "archive everything" over a view that no
+     * longer exists would archive up to ten thousand Primary conversations that
+     * were never on screen. The same answer a label that is not yours gets.
+     */
+    public function testATabThatHasGoneSelectsNothingRatherThanReachingPrimary(): void
     {
         $this->thread('a normal one', unread: 1);
 
-        self::assertSame(['a normal one'], $this->subjects('c999999'));
+        self::assertSame([], $this->subjects('c999999'));
+    }
+
+    /**
+     * The fall-back that stays, as the companion: an unknown NAME is a mistyped
+     * built-in and keeps meaning Primary, exactly as before custom tabs.
+     */
+    public function testAnUnknownBuiltInNameStillMeansPrimary(): void
+    {
+        $this->thread('a normal one', unread: 1);
+
+        self::assertSame(['a normal one'], $this->subjects('quatsch'));
     }
 
     /** @return list<string> */

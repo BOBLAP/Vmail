@@ -113,11 +113,25 @@ final readonly class ListViewResolver
             // the page sent an empty string (#29).
             //
             // The reader's own tabs count: the value is a tab key, and one of
-            // theirs resolves to their category's conversations, while a key
-            // that is not theirs falls back to Primary like any unknown one.
-            $category = true === $user->categorySorting->tabs
-                ? $this->tabs->resolve($user, $value) ?? InboxTab::builtIn(MessageCategory::Primary)
-                : null;
+            // theirs resolves to their category's conversations.
+            //
+            // A key that LOOKS like one of theirs and does not resolve — the
+            // category was deleted since the page was drawn, or never was theirs
+            // — selects nothing. Falling back to Primary, as a mistyped built-in
+            // name does, would point a whole-view archive or trash at up to ten
+            // thousand conversations that were never on screen, because the job
+            // resolves the view when it RUNS, not when the button was pressed.
+            $category = null;
+
+            if (true === $user->categorySorting->tabs) {
+                $category = $this->tabs->resolve($user, $value);
+
+                if (null === $category && true === InboxTab::looksCustom($value)) {
+                    return [];
+                }
+
+                $category ??= InboxTab::builtIn(MessageCategory::Primary);
+            }
 
             return $this->threads->findForUnifiedInbox($user, $category, $page, self::CHUNK, unreadOnly: $unreadOnly);
         }

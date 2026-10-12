@@ -136,6 +136,42 @@ final class ThreadUserCategoryResolutionTest extends KernelTestCase
         self::assertNull($this->userCategoryOf($unpinned), 'the unpinned twin was not resolved');
     }
 
+    /**
+     * A verdict on Gmail-labelled mail counts only while the reader has asked
+     * plMail to overrule Google — the same rule the filter applied when it filed
+     * the message, kept true afterwards. Switching the setting OFF later queues
+     * exactly this re-sort, and a statement that copied the verdict regardless
+     * would leave Google's mail in a tab of the reader's own, against the
+     * setting they just chose.
+     *
+     * Both directions in one test, each starting from the opposite of the
+     * expected answer, so neither "never copies it" nor "always copies it"
+     * passes.
+     */
+    #[DataProvider('bothStatements')]
+    public function testAVerdictOnGmailLabelledMailOnlyCountsWhileTheReaderOverrulesGoogle(string $which): void
+    {
+        $shipping = $this->category('Shipping');
+
+        $thread = $this->thread('gmail notice');
+        $message = $this->message($thread, '2026-03-02 09:00', MessageCategory::Promotions, $shipping);
+        $message->gmailLabelIds = ['INBOX', 'CATEGORY_PROMOTIONS'];
+        $thread->userCategory   = $shipping;
+        $this->em->flush();
+
+        // Google's categories are respected: the verdict does not count.
+        $this->resolve($which, [$thread]);
+        self::assertNull($this->userCategoryOf($thread), 'a verdict on Gmail mail was kept although the reader does not overrule Google');
+
+        // The reader overrules Google: now it does.
+        $this->account->usr->categorySorting->overrideProvider = true;
+        $thread->userCategory = null;
+        $this->em->flush();
+
+        $this->resolve($which, [$thread]);
+        self::assertSame($shipping->id, $this->userCategoryOf($thread), 'a verdict was dropped although the reader overrules Google');
+    }
+
     // ── fixture ──────────────────────────────────────────────────────────────
 
     /** @param list<MessageThread> $threads */

@@ -8,6 +8,16 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**A message with a stray non-UTF-8 byte in the wrong place was never stored.** Over IMAP, a mail
+whose text was labelled `us-ascii` but written in Latin-1 — "Grüße" from a mailer nobody configured
+— was refused by the database ("invalid byte sequence for encoding UTF8: 0xfc"), asked for again
+on each of the next syncs and then given up on, so it never appeared. The same happened with such
+a byte in a Message-ID, In-Reply-To or References header, and in an attachment's content type or
+content ID. All of them are now read the way a subject or a file name with that byte already was,
+and the message arrives with its umlauts. A message that was given up on before this is not
+fetched again by itself. No migration.
+[#81](https://github.com/karatektus/pl_mail/issues/81)
+
 **The envelope on a row's read button shows what pressing it does.** On an unread row, "Mark as
 read" wore the closed envelope, while the same action above a selection wears the open one — which
 looked like a Promotions problem only because that is where mail is unread. A row's button now

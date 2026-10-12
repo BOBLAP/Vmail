@@ -44,7 +44,11 @@ final class InboxCategoryManagerTest extends KernelTestCase
         $this->connection = $container->get(Connection::class);
         // Built by hand rather than fetched: a service with one consumer is
         // inlined into it when the container is compiled, and cannot be asked for.
-        $this->manager    = new InboxCategoryManager($container->get(InboxCategoryRepository::class), $this->em);
+        $this->manager    = new InboxCategoryManager(
+            $container->get(InboxCategoryRepository::class),
+            $container->get(MessageThreadRepository::class),
+            $this->em,
+        );
 
         $this->connection->beginTransaction();
 
@@ -195,10 +199,15 @@ final class InboxCategoryManagerTest extends KernelTestCase
     }
 
     /**
-     * Why the pin has to go, shown rather than argued: once it is gone the
-     * conversation is resolved from its messages again and lands in the
-     * built-in tab its newest message belongs in. Pinned, the same statement
-     * would have skipped it.
+     * Why the pin has to go, shown rather than argued — and that removing the
+     * category is what re-resolves the conversation, with nothing else to ask.
+     *
+     * Dragging a conversation into a tab of the reader's own leaves its built-in
+     * category at whatever it was when it was dragged. Once the pin is cleared
+     * the conversation is free to follow its messages again, but nothing would
+     * re-resolve it until its next message arrived: it would sit in a stale
+     * built-in tab for days, in the one place the removal was meant to put it
+     * right. So the removal re-resolves exactly the conversations it freed.
      */
     public function testAConversationPinnedIntoARemovedCategoryIsResolvedAgainAfterwards(): void
     {
@@ -212,8 +221,6 @@ final class InboxCategoryManagerTest extends KernelTestCase
         $this->em->flush();
 
         $this->manager->remove($c);
-
-        self::getContainer()->get(MessageThreadRepository::class)->recomputeCategoriesForThreads([(int) $thread->id]);
 
         self::assertSame(
             'promotions',

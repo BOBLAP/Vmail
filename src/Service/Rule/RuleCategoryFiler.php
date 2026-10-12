@@ -29,8 +29,22 @@ use Psr\Log\LoggerInterface;
  * not Unknown: an account whose receiving server plMail cannot identify files
  * nothing, because "we could not tell" is exactly what a forgery relies on. The
  * cost is that such an account cannot use the feature; docs/features/filters.md
- * says so. What this does NOT cover is a Pass that a believed server gave
- * wrongly — see SenderAuthentication for whose word counts.
+ * says so.
+ *
+ * WHAT THIS DOES NOT COVER, because its blind spots will be assumed covered
+ * otherwise:
+ *  - A Pass that a believed server gave wrongly — see SenderAuthentication for
+ *    whose word counts.
+ *  - The filter's own conditions. Authentication proves a message came from the
+ *    domain it claims, not that the domain is the one the reader meant, so a
+ *    filter that does not pin the sender ("subject contains parcel") files a
+ *    lookalike domain that authenticates for itself.
+ *  - The conversation. This gates the MESSAGE being filed, and a tab holds
+ *    conversations: a forged message that replies into a genuine conversation
+ *    (same sender address, a "Re:" subject) can join it, and a conversation the
+ *    reader pinned into a tab keeps it whatever joins it. Unpinned, such a
+ *    message is the newest and so takes the conversation OUT of the tab, unless
+ *    a genuine message lands after it in the same provider conversation.
  *
  * What a refusal does is nothing: the message is left to the ordinary rules,
  * which is where it would have been had no filter matched. Filing only ever

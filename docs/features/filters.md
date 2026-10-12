@@ -164,9 +164,10 @@ What the action will and will not file:
 - **Only mail whose sender passes authentication.** The receiving mail server records whether the
   message really came from the domain in its From line, and plMail reads that verdict (the same one
   that decides whether a calendar invitation may be applied without asking). A forged "your parcel
-  is waiting" from a carrier's domain therefore does not land in your Shipping tab looking like the
-  real ones — it stays where the ordinary rules put it. Mail that fails the check is not filed, and
-  neither is mail plMail cannot check; see "Things that bite".
+  is waiting" from a carrier's domain is therefore not filed by this filter — it stays where the
+  ordinary rules put it, instead of sitting in your Shipping tab beside the real ones. Mail that
+  fails the check is not filed, and neither is mail plMail cannot check; see "Things that bite" for
+  what this does and does not guarantee.
 - **On a Gmail account, only if you have told plMail to sort over Google.** Otherwise Gmail's own
   category decides, as it does everywhere else — the switch is **Settings → General → Categories →
   On Gmail accounts**.
@@ -230,6 +231,14 @@ an IMAP account, one whose name is on the same domain as the account's IMAP host
 where that cannot be told (a host that stamps nothing, or stamps under another name), a filter
 that files into a tab matches, runs and files nothing. That is the price of a tab that cannot be
 filled with forgeries, and it is chosen, not a bug.
+
+**The check is about the message, and it only helps if the filter names the sender.** A filter whose
+conditions do not pin the sender — "Subject contains parcel", say — files any sender whose own
+domain passes authentication, a lookalike domain included: authentication proves a message came from
+the domain it claims, not that the domain is the one you meant. Pin the sender with **Sender's
+domain is**. And a tab holds conversations, not messages: a forged message that replies into a
+genuine conversation (the same sender address, a "Re:" subject) can join it, and a conversation you
+dragged into a tab stays there whatever joins it afterwards.
 
 **A filing is remembered, and editing or deleting the filter does not undo it.** Like every other
 action, it acts on mail and leaves the result: mail a filter filed stays filed. To re-file, change

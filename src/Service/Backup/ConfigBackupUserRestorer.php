@@ -555,9 +555,20 @@ final readonly class ConfigBackupUserRestorer
         $created = [];
 
         foreach ($rows as $row) {
+            // A hand-edited file is not trusted: the column is forty characters
+            // wide and a name that long would abort this person's whole restore
+            // on a varchar error. Trimmed and cut to length, and a row with no
+            // name left is skipped — the filters that named it lose that action,
+            // as for any category the file does not carry.
+            $name = mb_substr(trim((string) ($this->text($row, 'name') ?? '')), 0, InboxCategory::NAME_MAX_LENGTH);
+
+            if ('' === $name) {
+                continue;
+            }
+
             $category           = new InboxCategory();
             $category->usr      = $user;
-            $category->name     = (string) ($this->text($row, 'name') ?? '');
+            $category->name     = $name;
             $category->position = $this->number($row, 'position') ?? 0;
 
             $this->entityManager->persist($category);

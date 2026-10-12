@@ -25,7 +25,7 @@ use Doctrine\ORM\Mapping as ORM;
  * MessageThread::$userCategory — and both references are ON DELETE SET NULL, so
  * the database un-files the mail when a category goes and nothing is left
  * pointing at a row that no longer exists. Pins are the one thing that cannot
- * be left to a foreign key; see InboxCategoryRemover.
+ * be left to a foreign key; see InboxCategoryManager::remove().
  *
  * Name uniqueness per user is the service layer's job (case-insensitively), not
  * a constraint: an expression index cannot be written in Doctrine attributes

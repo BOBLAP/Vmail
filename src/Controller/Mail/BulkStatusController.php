@@ -219,8 +219,8 @@ final class BulkStatusController extends AbstractController
             // made-up one: see InboxTabs::resolve().
             $category = $this->inboxTabs->resolve($user, (string) ($body['category'] ?? ''));
 
-            // tryFrom and a refusal, where MailController falls back to Primary
-            // on the same input. The difference is what the two are: `?tab=` is
+            // A refusal, where MailController falls back to Primary on the same
+            // input. The difference is what the two are: `?tab=` is
             // a URL somebody may have mistyped, and showing them the inbox is
             // the kind answer. This is a write, and "filed it under Primary
             // because I did not recognise what you asked for" is not something

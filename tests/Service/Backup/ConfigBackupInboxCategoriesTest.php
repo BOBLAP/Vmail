@@ -150,6 +150,37 @@ final class ConfigBackupInboxCategoriesTest extends KernelTestCase
         self::assertSame([], static::getContainer()->get(InboxCategoryRepository::class)->findForUserOrdered($user));
     }
 
+    /**
+     * A hand-edited file is not trusted. A name longer than the column would
+     * abort the whole person's restore on a varchar error, and a category with no
+     * name is no tab; the one beside them restores, so "skips everything" cannot
+     * pass.
+     */
+    public function testAnOverlongNameIsCutAndANamelessCategoryIsSkipped(): void
+    {
+        $this->seedReader();
+
+        $document = $this->exporter->document();
+        $document['users'][self::EMAIL]['inboxCategories'] = [
+            ['id' => 1, 'name' => str_repeat('x', 60), 'position' => 0],
+            ['id' => 2, 'name' => '   ', 'position' => 1],
+            ['id' => 3, 'name' => 'Receipts', 'position' => 2],
+        ];
+
+        $this->becomeADifferentInstallation();
+        $this->importer->apply($document);
+        $this->entityManager->flush();
+        $this->entityManager->clear();
+
+        $user  = static::getContainer()->get(UserRepository::class)->findOneBy(['email' => self::EMAIL]);
+        $names = array_map(
+            static fn (InboxCategory $c): string => $c->name,
+            static::getContainer()->get(InboxCategoryRepository::class)->findForUserOrdered($user),
+        );
+
+        self::assertSame([str_repeat('x', 40), 'Receipts'], $names);
+    }
+
     // ── fixtures ─────────────────────────────────────────────────────────────
 
     /**

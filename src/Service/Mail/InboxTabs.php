@@ -19,12 +19,15 @@ use Symfony\Contracts\Service\ResetInterface;
  * custom key resolves only against the categories THIS reader owns, so another
  * person's category, or one that has since been deleted, is simply not a tab.
  *
- * NOBODY WHO NEVER MADE A CATEGORY PAYS FOR THIS. A key that could not be a
- * custom one — every built-in name, an empty string, a mistyped URL — is
- * answered without a query, and the reader's categories are read at most once
- * per request however many callers ask. The inbox page has a query budget
- * (ThreadListQueryBudgetTest) and this feature must not spend it on the people
- * it is not for.
+ * WHAT THIS COSTS, STATED PLAINLY. A key that could not be a custom one —
+ * every built-in name, an empty string, a mistyped URL — is answered without a
+ * query, and the reader's categories are read at most once per request however
+ * many callers ask. But a reader with tabs switched on pays that ONE indexed
+ * read on every inbox render and every sidebar-counts poll, whether or not they
+ * ever made a category: the strip has to know whether there is a tab of theirs
+ * to draw, and only the table can say. The inbox page has a query budget
+ * (ThreadListQueryBudgetTest), and that single read is why the inbox's own
+ * ceiling is one higher than the other lists'.
  *
  * Memoised for the request, and resettable for the reason NewMailMarkers is: a
  * worker serves many readers one after another, and a memo that outlived its

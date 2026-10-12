@@ -9,6 +9,7 @@ use App\Domain\Exception\InvalidInboxCategoryException;
 use App\Entity\Mail\InboxCategory;
 use App\Entity\User\User;
 use App\Repository\Mail\InboxCategoryRepository;
+use App\Repository\Mail\MessageThreadRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -38,6 +39,7 @@ final readonly class InboxCategoryManager
 {
     public function __construct(
         private InboxCategoryRepository $categories,
+        private MessageThreadRepository $threads,
         private EntityManagerInterface $em,
     ) {
     }
@@ -69,18 +71,40 @@ final readonly class InboxCategoryManager
     }
 
     /**
-     * Remove the category, un-file everything in it and free the pins into it.
+     * Remove the category, un-file everything in it, free the pins into it, and
+     * put the conversations it held back in the tab they belong in.
      */
     public function remove(InboxCategory $category): void
     {
         $this->em->wrapInTransaction(function () use ($category): void {
-            $this->em->getConnection()->executeStatement(
+            $connection = $this->em->getConnection();
+
+            // Taken BEFORE the delete, because the delete is what empties the
+            // column this is read from.
+            $held = array_map(
+                intval(...),
+                $connection->fetchFirstColumn(
+                    'SELECT id FROM message_thread WHERE user_category_id = :id',
+                    ['id' => $category->id],
+                ),
+            );
+
+            $connection->executeStatement(
                 'UPDATE message_thread SET category_pinned_at = NULL WHERE user_category_id = :id',
                 ['id' => $category->id],
             );
 
             $this->em->remove($category);
             $this->em->flush();
+
+            // Freed is not the same as resolved. A conversation dragged into the
+            // category kept whatever built-in category it had when it was
+            // dragged, and with its pin gone nothing would look at it again
+            // until its next message — it would sit in a stale tab for days, in
+            // the one place this removal was meant to put right. The foreign
+            // keys have already emptied the verdicts, so this resolves each of
+            // them from its messages like any other conversation.
+            $this->threads->recomputeCategoriesForThreads($held);
         });
     }
 

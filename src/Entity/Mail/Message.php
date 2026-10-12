@@ -29,6 +29,12 @@ use Doctrine\ORM\Mapping as ORM;
 // for one mailbox), and no query looks up a bare UID.
 #[ORM\UniqueConstraint(name: 'uniq_message_mailbox_imap_uid', columns: ['mailbox_id', 'imap_uid'])]
 #[ORM\Index(name: 'idx_message_search_vector', columns: ['search_vector'])]
+// Partial, and declared here so the mapping and the migration agree: without an
+// index of its own on this foreign-key column Doctrine would go on wanting a
+// full one, on the largest table in the schema, for a column that is NULL on
+// nearly every row. Serves "which mail is in this category" and the SET NULL a
+// category's removal performs.
+#[ORM\Index(name: 'idx_message_rule_category', columns: ['rule_category_id'], options: ['where' => 'rule_category_id IS NOT NULL'])]
 // Threading reads both of these on every synced message. message_id is looked up
 // by value across an account (parent lookup for References threading); the
 // provider key is looked up account-scoped, so account trails it the same way

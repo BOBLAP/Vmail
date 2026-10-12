@@ -116,16 +116,8 @@ class NewMailMarkers implements ResetInterface
         return $this->now ??= new \DateTimeImmutable();
     }
 
-    public function forCategory(MessageCategory $category): int
-    {
-        return $this->forTab(InboxTab::builtIn($category));
-    }
-
     /**
      * New conversations in one tab — a built-in one, or one the reader made.
-     *
-     * forCategory() above is this for a built-in, kept because every existing
-     * caller names one.
      */
     public function forTab(InboxTab $tab): int
     {
@@ -141,21 +133,13 @@ class NewMailMarkers implements ResetInterface
     }
 
     /**
-     * Who the new mail in a category is from — the sender hint on its tab.
+     * Who the new mail in a tab is from — the sender hint under it.
      *
-     * Reads the same clock as forCategory() so the names and the number they
-     * sit beside describe the same instant; a thread that ages out of the
-     * window between two reads would otherwise be counted by one and named by
-     * the other.
+     * Reads the same clock as forTab() so the names and the number they sit
+     * beside describe the same instant; a thread that ages out of the window
+     * between two reads would otherwise be counted by one and named by the
+     * other.
      *
-     * @return list<string> newest arrival first, at most three
-     */
-    public function sendersForCategory(MessageCategory $category): array
-    {
-        return $this->sendersForTab(InboxTab::builtIn($category));
-    }
-
-    /**
      * @return list<string> newest arrival first, at most three
      */
     public function sendersForTab(InboxTab $tab): array

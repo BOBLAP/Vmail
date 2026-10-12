@@ -78,17 +78,25 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * starred ones differ by `listed_at IS NULL`, which is new-mail markers
      * against plain unread, and they are two answers rather than one asked
      * twice.
+     */
+    private const int BUDGET = 27;
+
+    /**
+     * The ceiling for the INBOX alone: twenty-eight, and the one read that moved
+     * it.
      *
-     * ── Twenty-eight, and the one read that moved it ────────────────────────
      * The inbox was at twenty-seven exactly, so the one read the reader's own
      * tabs need — `SELECT … FROM inbox_category WHERE usr_id = ?`, an indexed
      * lookup of a table that is empty for most people — took it over. It is the
      * only statement added, it is made once per request however many callers ask
      * (App\Service\Mail\InboxTabs), and resolving `?tab=` does not add a second
-     * one: a key that could not be a custom tab is answered without asking. The
-     * other five lists are unchanged.
+     * one: a key that could not be a custom tab is answered without asking.
+     *
+     * Its own constant rather than a raised BUDGET, so the other five lists keep
+     * the ceiling they had: a shared ceiling raised for one view would let each
+     * of the others regress by a query and still pass.
      */
-    private const int BUDGET = 28;
+    private const int INBOX_BUDGET = 28;
 
     /**
      * The ceiling for the same list NAVIGATED rather than visited.
@@ -121,13 +129,19 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * to accumulate. Something that pushes a role list over this is chrome
      * creeping back in, and finding out what is the exercise.
      *
-     * SIXTEEN since the reader's own tabs, and not chrome: the category strip is
-     * inside the inbox's frame, so the one read that names the reader's own
-     * categories (`inbox_category`, indexed, empty for most people, made once per
-     * request) is list work and the inbox is the only view that pays for it. The
-     * inbox was at fifteen exactly; every other view is unchanged.
      */
-    private const int FRAME_BUDGET = 16;
+    private const int FRAME_BUDGET = 15;
+
+    /**
+     * The same ceiling for the INBOX frame alone: sixteen, since the reader's own
+     * tabs, and not chrome. The category strip is inside the inbox's frame, so
+     * the one read that names the reader's own categories (`inbox_category`,
+     * indexed, empty for most people, made once per request) is list work, and
+     * the inbox is the only view that pays for it. It was at fifteen exactly.
+     * Separate from FRAME_BUDGET for the reason INBOX_BUDGET is separate from
+     * BUDGET.
+     */
+    private const int INBOX_FRAME_BUDGET = 16;
 
     private KernelBrowser $client;
     private Connection $connection;
@@ -179,7 +193,7 @@ final class ThreadListQueryBudgetTest extends WebTestCase
         $queries = $this->queriesFor('/mail/inbox?tab=promotions');
 
         self::assertLessThanOrEqual(
-            self::BUDGET,
+            self::INBOX_BUDGET,
             $queries,
             sprintf(
                 'the inbox spent %d queries on %d rows — a per-row lazy load is back',
@@ -188,7 +202,7 @@ final class ThreadListQueryBudgetTest extends WebTestCase
             ),
         );
 
-        $this->assertNavigatingCostsFarLess('/mail/inbox?tab=promotions', $queries);
+        $this->assertNavigatingCostsFarLess('/mail/inbox?tab=promotions', $queries, self::INBOX_FRAME_BUDGET);
     }
 
     /**
@@ -275,16 +289,18 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * the only way the ceiling below can honestly be a ceiling — it is drawn
      * over the busiest of the six, not the cheapest.
      *
-     * @param int $page  what the same URI cost as an ordinary visit, so the two
-     *                   numbers in a failure message are from the same fixtures
-     *                   on the same run.
+     * @param int $page    what the same URI cost as an ordinary visit, so the two
+     *                     numbers in a failure message are from the same fixtures
+     *                     on the same run.
+     * @param int $ceiling the absolute ceiling for the navigation; the inbox's own
+     *                     where it differs, see INBOX_FRAME_BUDGET.
      */
-    private function assertNavigatingCostsFarLess(string $uri, int $page): void
+    private function assertNavigatingCostsFarLess(string $uri, int $page, int $ceiling = self::FRAME_BUDGET): void
     {
         $frame = $this->queriesFor($uri, ['HTTP_TURBO_FRAME' => 'inbox-list-frame']);
 
         self::assertLessThanOrEqual(
-            self::FRAME_BUDGET,
+            $ceiling,
             $frame,
             sprintf('%s spent %d queries navigated, where the visit spends %d', $uri, $frame, $page),
         );

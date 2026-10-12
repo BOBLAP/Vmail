@@ -243,7 +243,10 @@ Get these wrong and things fail quietly rather than loudly.
   `threadCategory` still refuses anything outside the five. The consequence is
   stated rather than hidden: for a reader who uses own tabs, the web and a JMAP
   client differ about which tab such a conversation is in, and the JMAP client
-  shows it where it always would have.
+  shows it where it always would have. One consequence of dragging: a
+  conversation the reader drags onto a tab of their own is pinned, and a pin
+  stops the built-in category beneath it following new messages, so a JMAP
+  client keeps seeing it in the tab it was in when it was dragged.
 - **A JMAP CalendarEvent id is a `calendar_event` id — the series.** The query
   that finds events is a `tsrange &&` overlap over `calendar_event_occurrence`,
   so the ids the database hands back are *occurrence* ids and

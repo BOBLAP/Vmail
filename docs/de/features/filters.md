@@ -1,4 +1,4 @@
-<!-- translated-from: features/filters.md sha1:a3b21b46fafc80d99ce41ad85f612a22a558bdbe -->
+<!-- translated-from: features/filters.md sha1:b4f7b78a3ddcd2f435e6401e64d1a052d6c75036 -->
 
 # Filter
 
@@ -185,10 +185,11 @@ Was die Aktion ablegt und was nicht:
 - **Nur Mail, deren Absender die Authentifizierung besteht.** Der empfangende Mailserver hält
   fest, ob die Nachricht wirklich von der Domain in ihrer Absenderzeile kam, und plMail liest dieses
   Urteil (dasselbe, das entscheidet, ob eine Kalendereinladung ohne Nachfrage übernommen werden
-  darf). Ein gefälschtes „Ihr Paket wartet“ von der Domain eines Paketdienstes landet deshalb nicht
-  in deinem Sendungen-Tab und sieht aus wie die echten — es bleibt, wo die gewöhnlichen Regeln es
-  hinlegen. Mail, die die Prüfung nicht besteht, wird nicht abgelegt, und Mail, die plMail nicht
-  prüfen kann, ebenso wenig; siehe „Fallstricke“.
+  darf). Ein gefälschtes „Ihr Paket wartet“ von der Domain eines Paketdienstes wird deshalb von
+  diesem Filter nicht abgelegt — es bleibt, wo die gewöhnlichen Regeln es hinlegen, statt neben den
+  echten in deinem Sendungen-Tab zu sitzen. Mail, die die Prüfung nicht besteht, wird nicht
+  abgelegt, und Mail, die plMail nicht prüfen kann, ebenso wenig; siehe „Fallstricke“ dafür, was das
+  zusichert und was nicht.
 - **Bei einem Gmail-Konto nur, wenn du plMail gesagt hast, es solle Google überstimmen.** Sonst
   entscheidet Gmails eigene Kategorie, wie überall sonst — der Schalter steht unter **Einstellungen
   → Allgemein → Kategorien → Bei Gmail-Konten**.
@@ -258,6 +259,15 @@ derselben Domain liegt wie der IMAP-Host des Kontos. Bei einem Postfach, wo sich
 lässt (ein Host, der nichts einträgt oder unter anderem Namen einträgt), trifft ein Filter, der in
 einen Tab ablegt, zu, läuft und legt nichts ab. Das ist der Preis für einen Tab, der sich nicht
 mit Fälschungen füllen lässt, und er ist gewählt, kein Fehler.
+
+**Die Prüfung betrifft die Nachricht, und sie hilft nur, wenn der Filter den Absender nennt.** Ein
+Filter, dessen Bedingungen den Absender nicht festlegen — etwa „Betreff enthält Paket“ —, legt jeden
+Absender ab, dessen eigene Domain die Authentifizierung besteht, auch eine ähnlich klingende Domain:
+Authentifizierung belegt, dass eine Nachricht von der Domain kam, die sie angibt, nicht dass es die
+Domain ist, die du meintest. Lege den Absender mit **Absender-Domain ist** fest. Und ein Tab enthält
+Konversationen, nicht Nachrichten: Eine gefälschte Nachricht, die in eine echte Konversation
+antwortet (dieselbe Absenderadresse, ein „Re:“-Betreff), kann ihr beitreten, und eine Konversation,
+die du in einen Tab gezogen hast, bleibt dort, was auch immer ihr danach beitritt.
 
 **Ein Ablegen wird gemerkt, und den Filter zu ändern oder zu löschen macht es nicht rückgängig.**
 Wie jede andere Aktion wirkt sie auf Mail und lässt das Ergebnis stehen: Was ein Filter abgelegt

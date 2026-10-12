@@ -392,8 +392,16 @@ mailed-by and signed-by were silently missing from every IMAP message.
 
            It posts and stays put: this is pressed inside a popover on a thread
            the reader is in the middle of, and navigating them away to
-           acknowledge a button would cost more than the button is worth. #}
-        {% if category %}
+           acknowledge a button would cost more than the button is worth.
+
+           NOT FOR A CONVERSATION IN A TAB THE READER MADE. The report is
+           evidence about plMail's own rules, and that conversation is where it
+           is because of the reader's own filter or their own drag — nothing of
+           the rules' to fix. Offered anyway it was also wrong in a way the
+           reader could not get out of: the built-in category underneath may be
+           the very answer they want to give, and "should be where it is" is
+           refused as no report. #}
+        {% if category and not category.own %}
             <div class="border-t border-line px-4 py-2"
                  data-controller="mail--category-report"
                  data-mail--category-report-url-value="{{ path('app_mail_category_report', {'id': message.id}) }}"

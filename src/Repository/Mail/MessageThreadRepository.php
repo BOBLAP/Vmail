@@ -2440,9 +2440,14 @@ class MessageThreadRepository extends ServiceEntityRepository
         return (int) $this->getEntityManager()->getConnection()->executeStatement(
             <<<'SQL'
             UPDATE message_thread t
-            SET category = sub.category
+            SET category = sub.category,
+                -- The reader's own tab, resolved by the same newest-message
+                -- rule in the same pass — and to NULL when that message was
+                -- filed nowhere, which is how a conversation leaves it. See
+                -- MessageThread::$userCategory.
+                user_category_id = sub.rule_category_id
             FROM (
-                SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category
+                SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category, m.rule_category_id
                 FROM message m
                 WHERE m.category IS NOT NULL
                   -- A message held for the assistant has no say yet: its
@@ -2464,9 +2469,10 @@ class MessageThreadRepository extends ServiceEntityRepository
     {
         $sql = <<<'SQL'
         UPDATE message_thread t
-        SET category = sub.category
+        SET category = sub.category,
+            user_category_id = sub.rule_category_id
         FROM (
-            SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category
+            SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category, m.rule_category_id
             FROM message m
             WHERE m.category IS NOT NULL
               AND (m.category_held_at IS NULL OR m.category_released_at IS NOT NULL)

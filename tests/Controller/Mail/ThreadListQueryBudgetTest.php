@@ -78,8 +78,17 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * starred ones differ by `listed_at IS NULL`, which is new-mail markers
      * against plain unread, and they are two answers rather than one asked
      * twice.
+     *
+     * ── Twenty-eight, and the one read that moved it ────────────────────────
+     * The inbox was at twenty-seven exactly, so the one read the reader's own
+     * tabs need — `SELECT … FROM inbox_category WHERE usr_id = ?`, an indexed
+     * lookup of a table that is empty for most people — took it over. It is the
+     * only statement added, it is made once per request however many callers ask
+     * (App\Service\Mail\InboxTabs), and resolving `?tab=` does not add a second
+     * one: a key that could not be a custom tab is answered without asking. The
+     * other five lists are unchanged.
      */
-    private const int BUDGET = 27;
+    private const int BUDGET = 28;
 
     /**
      * The ceiling for the same list NAVIGATED rather than visited.
@@ -111,8 +120,14 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * the whole point here is that there is no furniture left inside the frame
      * to accumulate. Something that pushes a role list over this is chrome
      * creeping back in, and finding out what is the exercise.
+     *
+     * SIXTEEN since the reader's own tabs, and not chrome: the category strip is
+     * inside the inbox's frame, so the one read that names the reader's own
+     * categories (`inbox_category`, indexed, empty for most people, made once per
+     * request) is list work and the inbox is the only view that pays for it. The
+     * inbox was at fifteen exactly; every other view is unchanged.
      */
-    private const int FRAME_BUDGET = 15;
+    private const int FRAME_BUDGET = 16;
 
     private KernelBrowser $client;
     private Connection $connection;

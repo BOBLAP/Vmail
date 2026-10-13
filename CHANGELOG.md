@@ -6,6 +6,13 @@ so anything that changes the schema irreversibly is called out explicitly.
 The published image tags: `latest` follows the most recent release below,
 `main` follows the tip of the default branch, and `sha-…` pins one commit.
 
+## Unreleased
+
+**plMail speaks French.** Choose **Français** under **Settings → General → Language**, or when
+creating the first account. The whole interface is translated, including the admin panel, the
+validation and sign-in messages and the emoji picker's search; French also defaults to the
+24-hour clock, as German does. No migration.
+
 ## v0.3.5 — 2026-10-13
 
 **Browsers and password managers kept offering your logins in client-secret fields.** Opening

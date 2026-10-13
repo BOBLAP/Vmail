@@ -13,6 +13,17 @@ import { Controller } from "@hotwired/stimulus";
  * in a few seconds is a lot of requests to say something that changed by two
  * percent. A trailing reload keeps the last one, so the FINAL state — the one
  * that says done, or failed — always lands.
+ *
+ * AND ON A TIMER WHILE AN IMPORT IS SHOWN. A job publishes as it goes; an
+ * import publishes when a page of its listing is done, and a Gmail import
+ * spends most of its hours fetching what the listing named, saying nothing.
+ * Its line also carries figures that move by themselves — messages a minute,
+ * the seconds until Google lets it continue — and a countdown that only
+ * changes when something else happens is not one. So while the indicator has
+ * an import line in it, it is re-read every few seconds: often with the list
+ * open, where somebody is watching, and seldom with it shut. Not at all in a
+ * tab nobody is looking at, and not at all when nothing is importing, which
+ * is nearly always.
  */
 /** The list of work inside the indicator, and the button that opens it. */
 const MENU = "[data-ui--dropdown-target='menu']";
@@ -24,13 +35,36 @@ export default class extends Controller {
     /** Milliseconds between reloads while a job is running. */
     static THROTTLE = 1500;
 
+    /** Milliseconds between looks at an import: list open, and list shut. */
+    static WATCHED = 5000;
+    static UNWATCHED = 30000;
+
     connect() {
         this._lastAt = 0;
         this._pending = null;
+        this._watch = setInterval(() => this.#watchImport(), this.constructor.WATCHED);
     }
 
     disconnect() {
         clearTimeout(this._pending);
+        clearInterval(this._watch);
+    }
+
+    #watchImport() {
+        const frame = document.getElementById("jobs-indicator");
+
+        if (true === document.hidden || null === frame || null === frame.querySelector("[data-import-line]")) {
+            return;
+        }
+
+        const open = null !== frame.querySelector(`${MENU}:not([hidden])`);
+        const due = true === open ? this.constructor.WATCHED : this.constructor.UNWATCHED;
+
+        // A little under, so a timer that fires a few milliseconds early does
+        // not wait a whole round more.
+        if (Date.now() - this._lastAt >= due - 250) {
+            this.refresh();
+        }
     }
 
     refresh() {

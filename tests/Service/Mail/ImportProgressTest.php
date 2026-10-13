@@ -190,15 +190,16 @@ final class ImportProgressTest extends KernelTestCase
         $this->em->flush();
 
         $pacer = static::getContainer()->get(GmailQuotaPacer::class);
-        $pacer->spend($this->account, 2000);
+        // Within the reserve, so the pacer does not make the test wait.
+        $pacer->spend($this->account, 400);
 
         $line = $this->progress->forUser($this->user)[0];
 
         self::assertNotNull($line->quota);
         self::assertSame(15_000, $line->quota->limit);
         self::assertFalse($line->quota->learnt);
-        self::assertSame(2000, $line->quota->used);
-        self::assertSame(100, $line->quota->messagesPerMinute, '2,000 units at twenty a message');
+        self::assertSame(400, $line->quota->used);
+        self::assertSame(20, $line->quota->messagesPerMinute, '400 units at twenty a message');
         self::assertFalse($line->quota->isPaused());
 
         $running = static::getContainer()->get(Environment::class)->render('mail/_jobs_indicator.html.twig', [
@@ -206,7 +207,7 @@ final class ImportProgressTest extends KernelTestCase
             'imports' => [$line],
         ]);
 
-        self::assertStringContainsString('About 100 messages a minute', $running);
+        self::assertStringContainsString('About 20 messages a minute', $running);
         // 9,000 messages at 450 a minute, which is three fifths of 15,000
         // units at twenty a message.
         self::assertSame(20, $line->quota->minutesLeft);

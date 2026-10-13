@@ -2502,8 +2502,17 @@ class MessageRepository extends ServiceEntityRepository
                 'm.sentAt',
                 'm.createdAt',
                 'm.submissionSendAt',
+                // Whether the message is filed under Sent or Drafts, for
+                // ThreadRowMessage::$filedAsSent. A count in the same statement
+                // rather than a join: a join would repeat the row per label,
+                // and a second statement would be one more query on every list
+                // page for a column most rows never have read.
+                '(SELECT COUNT(sentLabel.id) FROM ' . Message::class . ' filed
+                    JOIN filed.labels sentLabel
+                    WHERE filed.id = m.id AND sentLabel.role IN (:sentRoles)) AS filedAsSent',
             )
             ->where('m.thread IN (:threads)')
+            ->setParameter('sentRoles', [LabelRole::Sent, LabelRole::Drafts])
             ->setParameter('threads', $threadIds)
             ->addOrderBy('m.receivedAt', 'ASC')
             ->addOrderBy('m.id', 'ASC')

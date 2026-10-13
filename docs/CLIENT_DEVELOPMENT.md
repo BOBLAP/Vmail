@@ -1007,6 +1007,35 @@ on a submission decides the From address the mail really goes out with, and one 
 identity of that account is refused with `forbiddenFrom` rather than falling back to the account
 address.
 
+**Which identity answers a mail** is the server's to say, and it says it in `replyFrom` — a plMail
+property of `Email/get`. Ask for it by name when you fetch the message a reply or a forward is built
+from; it is left out of a get with no `properties`, because it carries a signature:
+
+```json
+["Email/get", {"accountId": "1", "ids": ["42"], "properties": ["subject", "from", "to", "replyFrom"]}, "g"]
+```
+
+```json
+"replyFrom": {
+  "id": "addr-eW9Ac2hvcC5leGFtcGxl", "name": "John Smith", "email": "yo@shop.example",
+  "replyTo": null, "bcc": null, "textSignature": "", "htmlSignature": "", "mayDelete": false
+}
+```
+
+It is a whole Identity, or `null`. Open the reply on it — sender, name and signature — and pass its
+`id` as the submission's `identityId`; on `null`, or against a server that does not know the
+property and leaves it out, stay on the primary identity. It is the address the mail was sent to:
+the same answer the web composer opens a reply on, so do not work it out from To and Cc yourself.
+
+- For mail that came in for an alias it is that alias's identity, with the `id` it has in
+  `Identity/get`.
+- For mail that came in for an address at one of the account's **catch-all domains** it is an
+  identity `Identity/get` does not list — there is one per address anybody ever writes to. Its `id`
+  is good in `EmailSubmission/set` like any other, for as long as the account still has the domain;
+  after that it is `forbiddenFrom`. Show it in your From picker beside the listed ones for this one
+  message, and do not store it as something to offer on the next.
+- On a draft it is the address the draft is already written from, which is what to reopen it on.
+
 ### Templates
 
 Reusable messages: the user writes one in **Settings → Templates** (or in your app) and inserts it

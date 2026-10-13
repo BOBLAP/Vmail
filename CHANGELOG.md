@@ -22,7 +22,11 @@ every address reaches the mailbox can be added under Settings → Aliases → Ca
 mail to any address at it is then answered from that address without adding each one as an alias
 (not offered for Gmail and Outlook accounts, which send only as addresses the provider knows).
 Reopening a draft saved from an alias no longer puts it back on the primary address. Typing an
-arbitrary From address into a new message is not part of this. No
+arbitrary From address into a new message is not part of this. The phone apps build their replies
+themselves and get the same answer from the server: `Email/get` has a `replyFrom` property, the
+identity that answers a mail, returned when asked for by name, and `EmailSubmission/set` accepts
+the identity it names for a catch-all address. Apps already installed are unaffected and go on
+answering from the primary address until they are updated. No
 migration. [#41](https://github.com/karatektus/pl_mail/issues/41), reported by @YoGo9.
 
 **A signature can be pasted as HTML, and its images travel with the mail.** The signature editor

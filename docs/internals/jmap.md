@@ -435,6 +435,34 @@ from the `Message`.
 happened when the call returns. The web composer's undo window is deliberately **not** applied
 — a JMAP client asked to send now.
 
+### `replyFrom` on `Email/get` — an extension
+
+The web composer opens a reply on the address the mail was sent to
+(`App\Service\Mail\ReplyFromResolver`). A client that builds its replies itself has no way to reach
+that answer, and a copy of the rule in Kotlin and another in Swift would be two more places for it
+to drift. So `Email/get` publishes the answer: `replyFrom`, the Identity that answers this Email,
+or `null`. `EmailGetMethod` asks the resolver for the address and
+`App\Jmap\Mail\IdentityResolver::forAddress()` for the identity.
+
+**It is returned only when named in `properties`.** The value carries a signature, which can be
+hundreds of kilobytes with images embedded, and a client written before the property existed asks
+for everything and reads none of it.
+
+For an alias the value is the identity `Identity/get` lists. For an address at a catch-all domain
+(`Account::$catchAllDomains`) there is no alias row and so no listed identity — the list cannot
+hold one per local part — and the value is an **address identity**, whose id is `addr-` followed by
+the base64url of the address. `IdentityResolver::addressFor()`, which `EmailSubmission/set` spends
+an `identityId` through, decodes such an id and asks `Account::maySendAs()` whether the account may
+send as that address *now*. The id is therefore a spelling, not a grant: one a client computed for a
+domain the account does not catch is `forbiddenFrom` like any unknown id, and one handed out
+yesterday stops working when the domain is removed.
+
+Two alternatives were turned down. RFC 8621 §6 has `*@example.com` as an identity's `email` for
+exactly this, but every installed app would list it in its From picker as an address. And accepting
+`from` in `Email/set` with no `identityId` on the submission would check the address in two places,
+and against an older server the client's `from` is refused or dropped and the mail leaves from the
+primary address in silence.
+
 ## Push
 
 Two mechanisms, and both are driven by the same drained set.

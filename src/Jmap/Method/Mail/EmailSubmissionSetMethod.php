@@ -54,6 +54,10 @@ use Symfony\Component\Messenger\Stamp\DelayStamp;
  *   IdentityResolver against the account's sendable aliases. Unresolvable ids
  *   are refused (forbiddenFrom) rather than quietly sent as the account's own
  *   address, which is what this method did before it read the property at all.
+ *   The one id that is not in Identity/get's list is the address identity
+ *   Email/get's `replyFrom` hands out for an address at a catch-all domain;
+ *   the resolver checks that against Account::maySendAs() each time, so it is
+ *   refused the same way once the domain is gone.
  * - **When it leaves** — FUTURERELEASE parameters on the envelope, parsed by
  *   SubmissionEnvelope and honoured as a DelayStamp on the bus.
  * - **Whether it still leaves** — an update of `undoStatus` to "canceled",

@@ -1,4 +1,4 @@
-<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:db4d4e0dc67011afa4300ba033154448d882dc2b -->
+<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:3bfd3cc89802c74ed610ea05a210d9bd901535fe -->
 # Einen Client für plMail bauen
 
 Alles, was eine Entwicklerin (oder ein Agent) braucht, um einen *neuen* plMail-Client zu schreiben
@@ -1105,6 +1105,39 @@ voreingestellt ist das primäre: Die `identityId` einer Submission entscheidet �
 Absenderadresse, mit der die Nachricht tatsächlich hinausgeht, und eine, die keine Identität
 dieses Kontos ist, wird mit `forbiddenFrom` abgelehnt, statt auf die Kontoadresse
 zurückzufallen.
+
+**Welche Identität eine Nachricht beantwortet**, sagt der Server, und zwar in `replyFrom` — einer
+plMail-Eigenschaft von `Email/get`. Frag sie namentlich an, wenn du die Nachricht holst, aus der
+eine Antwort oder eine Weiterleitung gebaut wird; bei einem Get ohne `properties` fehlt sie, weil
+sie eine Signatur mitbringt:
+
+```json
+["Email/get", {"accountId": "1", "ids": ["42"], "properties": ["subject", "from", "to", "replyFrom"]}, "g"]
+```
+
+```json
+"replyFrom": {
+  "id": "addr-eW9Ac2hvcC5leGFtcGxl", "name": "John Smith", "email": "yo@shop.example",
+  "replyTo": null, "bcc": null, "textSignature": "", "htmlSignature": "", "mayDelete": false
+}
+```
+
+Es ist eine vollständige Identität oder `null`. Öffne die Antwort damit — Absender, Name und
+Signatur — und gib ihre `id` als `identityId` der Submission mit; bei `null`, oder gegenüber einem
+Server, der die Eigenschaft nicht kennt und sie weglässt, bleibst du bei der primären Identität.
+Es ist die Adresse, an die die Nachricht ging: dieselbe Antwort, mit der auch der Web-Editor eine
+Antwort öffnet — leite sie also nicht selbst aus An und Cc ab.
+
+- Bei einer Nachricht, die für einen Alias ankam, ist es die Identität dieses Alias, mit der `id`,
+  die sie in `Identity/get` hat.
+- Bei einer Nachricht, die für eine Adresse an einer der **Catch-all-Domains** des Kontos ankam,
+  ist es eine Identität, die `Identity/get` nicht auflistet — es gibt eine pro Adresse, an die je
+  jemand schreibt. Ihre `id` gilt in `EmailSubmission/set` wie jede andere, solange das Konto die
+  Domain noch hat; danach gibt es `forbiddenFrom`. Zeig sie für diese eine Nachricht in deinem
+  Von-Auswahlfeld neben den aufgelisteten, und speichere sie nicht als etwas, das du bei der
+  nächsten wieder anbietest.
+- Bei einem Entwurf ist es die Adresse, von der der Entwurf bereits geschrieben ist — damit
+  öffnest du ihn wieder.
 
 ### Vorlagen
 

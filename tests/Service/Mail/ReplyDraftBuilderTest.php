@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Service\Mail;
 
+use App\Domain\Enum\Account\EmailAliasSource;
+use App\Domain\Enum\Account\EmailAliasStatus;
 use App\Entity\Mail\Account;
+use App\Entity\Mail\EmailAlias;
 use App\Entity\Mail\Message;
 use App\Entity\Mail\MessageThread;
 use App\Entity\User\User;
@@ -401,6 +404,52 @@ final class ReplyDraftBuilderTest extends TestCase
         self::assertStringNotContainsString(
             'data-pl-signature',
             (string) $this->builder->reply($this->original(), $this->account())->bodyHtml,
+        );
+    }
+
+    // ── the address it answers from ──────────────────────────────────────────
+
+    /** ReplyFromResolverTest has the rules; this is that the draft carries the answer. */
+    public function testAReplyIsAddressedFromTheAliasTheOriginalWasSentTo(): void
+    {
+        $account = $this->account();
+        $account->addAlias(new EmailAlias($account, 'me@example.test', EmailAliasSource::Manual, EmailAliasStatus::Primary));
+        $sales = new EmailAlias($account, 'sales@example.test', EmailAliasSource::Manual, EmailAliasStatus::Active);
+        $account->addAlias($sales);
+
+        $original              = $this->original();
+        $original->toAddresses = [['name' => '', 'address' => 'sales@example.test']];
+
+        self::assertSame('sales@example.test', $this->builder->reply($original, $account)->fromAddress);
+    }
+
+    public function testAReplyToMailThatNamesNoAddressOfOursLeavesFromUnset(): void
+    {
+        $original              = $this->original();
+        $original->toAddresses = [['name' => '', 'address' => 'list@elsewhere.test']];
+        $original->ccAddresses = [];
+
+        self::assertNull($this->builder->reply($original, $this->account())->fromAddress);
+    }
+
+    /** yo@shop.test is in no list of aliases, and is still the user: not in their own Cc. */
+    public function testAReplyAllLeavesOutTheCatchAllAddressTheMailCameInFor(): void
+    {
+        $account                  = $this->account();
+        $account->catchAllDomains = ['shop.test'];
+
+        $original              = $this->original();
+        $original->toAddresses = [
+            ['name' => '', 'address' => 'yo@shop.test'],
+            ['name' => 'Tanja', 'address' => 'tanja@example.test'],
+        ];
+
+        $draft = $this->builder->reply($original, $account, replyAll: true);
+
+        self::assertSame('yo@shop.test', $draft->fromAddress);
+        self::assertSame(
+            ['tanja@example.test', 'cc@example.test'],
+            array_column($draft->ccAddresses ?? [], 'address'),
         );
     }
 

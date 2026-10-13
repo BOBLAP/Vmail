@@ -1059,9 +1059,16 @@ admin:
         hint: The build this ship be sailin' — the release, an' the commit she were built from.
 alias:
     added: 'Address added, arr!'
+    catch_all_added: 'Catch-all harbour added, arr!'
+    catch_all_duplicate: 'That harbour already catches all for this crew member.'
+    catch_all_invalid: 'That be no harbour name. Write it like example.com.'
+    catch_all_removed: 'Catch-all harbour struck from the charts.'
+    catch_all_unsupported: 'Gmail and Outlook only sail under addresses their harbourmaster knows, so a catch-all harbour be no use to this crew member.'
     deleted: 'Address struck from the roster.'
     duplicate: 'That address already sails with this crew member.'
     invalid: 'That don''t look like a proper parrot address.'
+    name_cleared: 'Sender name struck. This address sails under the crew member''s name again.'
+    name_set: 'Sender name stowed.'
     primary_set: 'Flagship address changed.'
     refreshed: 'Fetched anew from the harbourmaster.'
     status_blocked: 'The flagship address can''t be struck — name another flagship first.'
@@ -2666,6 +2673,12 @@ settings:
     aliases:
         add: 'Add'
         add_placeholder: 'Add another address…'
+        catch_all:
+            add: 'Make it catch all'
+            hint: 'If every address at a harbour lands in this hold, add the harbour here. A reply then sails from the address the letter was sent to, without adding each one above.'
+            label: 'Catch-all harbours'
+            placeholder: 'example.com'
+            remove: 'Strike %domain%'
         delete: 'Strike it'
         disable: 'Furl it'
         empty: 'No addresses yet.'
@@ -2674,6 +2687,9 @@ settings:
         make_primary: 'Make it the flagship'
         ms_sender_hint: 'Outlook always sails under yer crew member''s flagship alias, whatever ye pick here — change it in yer'
         ms_sender_hint_link: 'Microsoft account settings'
+        name_for: 'Sender name for %alias%'
+        name_placeholder: 'Sender name'
+        name_save: 'Stow the name'
         primary: 'Flagship'
         refresh: 'Fetch from the harbourmaster'
         subheading: 'Addresses this crew member sends and receives under.'
@@ -3705,6 +3721,17 @@ settings:
         reverted: 'Back to the ship''s own mark.'
         save: 'Set down yer mark'
         saved: 'Set down.'
+        source:
+            clean: 'Nothing was thrown overboard.'
+            embedded: 'Pictures stowed in the signature: %count%.'
+            failed: 'The signature could not be drawn. Yer HTML be untouched. Try again.'
+            html: 'HTML'
+            label: '%label% as HTML'
+            placeholder: 'Paste or scrawl the HTML of yer signature…'
+            remote: 'Pictures that could not be stowed and stay linked: %count%. They do not show here, and some recipients must allow them first.'
+            removed: 'Thrown overboard, for letter readers would not show it or it be not safe to send: %items%.'
+            rendered: 'Drawn'
+            toggle: 'Signature view'
         subheading: 'What be carved at the foot o'' the scrolls ye write.'
     sorting:
         again:

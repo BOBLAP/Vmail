@@ -1,4 +1,4 @@
-<!-- translated-from: features/mail.md sha1:d9a7adcb753fe43c9c0fd2cff88d98382f05cefb -->
+<!-- translated-from: features/mail.md sha1:74ff626a6379dafc150e11f5b19e81b76abfc40d -->
 
 # Mail
 
@@ -837,7 +837,9 @@ materialisiert.
 Konversation heraus, öffnet sich der Editor auf einem breiten Bildschirm stattdessen am Fuß der
 Konversation; darunter fällt er auf das angedockte Fenster zurück. So oder so bietet das
 Fenster formatierten Text, Kontakt-Vervollständigung in den Adressfeldern und eine
-**From**-Auswahl, die jedes aktive Konto und jede Absendeadresse darauf auflistet.
+**From**-Auswahl, die jedes aktive Konto und jede Absendeadresse darauf auflistet. Eine Antwort
+öffnet sich mit der Adresse, an die die Mail gerichtet war; siehe
+[Konten und Aliase](accounts.md).
 
 Die Vervollständigung bietet ausschließlich **deine eigenen** gesammelten Kontakte an. Auf einer
 Installation mit mehreren Personen sind die Korrespondenten der einen für die andere unsichtbar, und
@@ -920,6 +922,27 @@ Empfängerin geht eine Weiterleitung nirgendwohin; **Signatur einfügen** holt d
 willst. Dieser Knopf ersetzt den Block an Ort und Stelle, statt einen zweiten anzuhängen, und
 dasselbe tut ein Wechsel des Kontos in der **From**-Auswahl: Der Signaturblock wird getauscht, ein
 bereits getippter Absatz überlebt den Wechsel.
+
+**Eine Signatur, die du schon als HTML hast** — aus einem Generator, einem Markenhandbuch, einem
+anderen Mailprogramm — kommt über die **HTML**-Ansicht des Editors hinein. **Darstellung** und
+**HTML** über dem Feld wechseln zwischen beiden: HTML ist die Signatur als Quelltext, zum Einfügen
+oder Bearbeiten; Darstellung ist die Signatur so, wie sie gespeichert wird. Der Wechsel zur
+Darstellung ist nicht der Browser, der zeichnet, was du eingefügt hast. Der Quelltext geht an den
+Server, durch dieselbe Bereinigung, durch die jede Signatur gespeichert wird, und was zurückkommt,
+ist das, was du siehst — die Darstellung kann also nicht besser aussehen als das, was Empfänger
+bekommen. Eine Zeile unter dem Editor nennt alles, was entfernt wurde: typischerweise einen
+`<style>`-Block und die `class`-Attribute, die darauf verwiesen, denn die meisten Mailprogramme
+ignorieren beides. Schreib die Gestaltung an die Elemente selbst (`style="…"`), das bleibt
+erhalten. Speichern aus beiden Ansichten legt dasselbe ab.
+
+**Bilder in einer Signatur werden in der Signatur gespeichert.** Ein Bild, auf das per Adresse
+verwiesen wird (`<img src="https://…">`), wird geholt, wenn du darstellst oder speicherst, und in
+der Signatur selbst abgelegt. Es reist dann mit jeder Mail als eingebettetes Bild mit — die
+Empfängerin sieht dein Logo, ohne externe Inhalte laden zu müssen, und es funktioniert auch dann
+noch, wenn die Webadresse verschwindet. Ein Bild bleibt stattdessen ein bloßer Verweis, wenn es
+sich nicht über https holen lässt, kein PNG, JPEG, GIF oder WebP ist oder größer als 256 KB ist
+(768 KB für eine Signatur insgesamt); die Zeile unter dem Editor zählt diese, und im Editor
+erscheinen sie nicht, weil er keine Bilder von anderswo lädt.
 
 Schreibst du direkt in der Konversation, bekommst du eine **verkürzte Kopfzeile**: das
 **An**-Feld selbst, tippbar, und dahinter — hinter dem Pfeil daneben — eingeklappt Absender, Cc,
@@ -1111,12 +1134,11 @@ zurückzugeben, die bereits unterwegs ist, und das liest sich wie ein Abbruch, d
 ist kein „aus dieser Ansicht entfernen“ — der Dialog ist eine Abkürzung zu genau derselben Operation,
 über alle Konten hinweg, untergeordnete Labels eingeschlossen.
 
-**Ein Bild in der Signatur kann kein eingebettetes Bild sein.** Ein Bild in einer *Signatur* wird
-als gewöhnlicher Bildverweis gespeichert und nicht als `cid:`-Teil: Die Bereinigung, durch die
-jede Signatur geschrieben wird, entfernt bewusst genau das Attribut, das daraus eines machen
-würde — damit eine Signatur nichts einschmuggeln kann, das aussieht wie eines der eingebetteten
-Bilder der Nachricht selbst. Eingebettete Bilder funktionieren im Nachrichtentext, dort, wo du sie
-hinsetzt.
+**Ein Bild in der Signatur muss klein sein, um mit der Mail zu reisen.** Ein Bild in einer
+*Signatur* wird in ihr gespeichert und als eingebetteter Teil verschickt, bis 256 KB je Bild und
+768 KB je Signatur; siehe den Abschnitt *Signatur* weiter oben. Alles Größere, ein SVG oder ein
+Bild, das sich nicht holen ließ, bleibt ein Verweis auf seine Webadresse, den Empfänger
+möglicherweise erst erlauben müssen.
 
 **„Neu“ ist nicht „ungelesen“, und das Fähnchen zu verlieren heißt nicht, etwas gelesen zu
 haben.** An einer Zeile im Posteingang vorbeizuscrollen räumt ihr „Neu“ ab, denn die Zeile wurde

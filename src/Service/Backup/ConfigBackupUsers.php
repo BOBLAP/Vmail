@@ -198,6 +198,10 @@ final readonly class ConfigBackupUsers
         // allowlist silently stops carrying anything that ships after it.
         Account::SETTING_SIGNATURE,
         Account::SETTING_READ_RECEIPT_DEFAULT,
+        // A list of domain names, with nothing in it that belongs to one
+        // host: the mailbox is a catch-all for the same domains wherever
+        // plMail reads it from.
+        Account::SETTING_CATCH_ALL_DOMAINS,
     ];
 
     /**

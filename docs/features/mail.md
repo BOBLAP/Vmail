@@ -763,7 +763,8 @@ attachment has never touched plMail's disk; it is materialised on first access.
 **Compose** opens a window docked at the bottom right. Replying from inside a thread opens the
 editor at the foot of the conversation instead, on a wide screen; below that it falls back to the
 dock. Either way the window offers rich text, contact autocomplete on the address fields, and a
-**From** selector listing every active account and every sending alias on it.
+**From** selector listing every active account and every sending alias on it. A reply opens on the
+address the mail was sent to; see [Accounts and aliases](accounts.md#sending-aliases).
 
 Autocomplete only ever offers **your own** harvested contacts. On an install with more than one
 person, nobody's correspondents are visible to anybody else, and an address belonging to another
@@ -838,6 +839,24 @@ on, and the caret starts in the **To** row, since the recipient is the one thing
 leave without; **Insert signature** adds the block when you want it. That button replaces the block
 in place instead of adding a second one, and so does changing the **From** account: the signature
 block is swapped and a paragraph you have already typed survives the change.
+
+**A signature you already have as HTML** — from a generator, a brand guide, another mail client —
+goes in through the **HTML** view of the editor. **Rendered** and **HTML** above the field switch
+between the two: HTML is the signature as source, to paste or edit; Rendered is the signature as it
+will be stored. Switching to Rendered is not the browser drawing what you pasted. The source goes to
+the server, through the same clean-up every signature is saved through, and what comes back is what
+you see — so the rendered view cannot look better than what recipients get. A line under the editor
+names anything that was taken out: typically a `<style>` block and the `class` attributes that
+pointed into it, since most mail clients ignore both. Put the styling on the elements themselves
+(`style="…"`), which is kept. Saving from either view stores the same thing.
+
+**Images in a signature are stored in the signature.** A picture referenced by address
+(`<img src="https://…">`) is fetched when you render or save and kept inside the signature
+itself. It then travels with every mail as an attached inline image — the recipient sees your logo
+without being asked to load remote content, and it keeps working after the web address stops. An
+image stays a plain reference instead when it cannot be fetched over https, is not a PNG, JPEG, GIF
+or WebP, or is larger than 256 KB (768 KB for one signature in all); the line under the editor
+counts those, and they do not show in the editor, which loads no images from elsewhere.
 
 Writing inside a conversation gets a **reduced header**: the **To** field itself, typable, with
 From, Cc, Bcc and the subject folded away behind the chevron beside it. Replying rarely means
@@ -1013,11 +1032,10 @@ the search box says how far it has got, and until it says nothing at all, "meani
 from this view" — the dialog is a shortcut to the same operation, across every account, nested labels
 included.
 
-**A signature image cannot be an inline image.** A picture placed in a *signature* is stored as an
-ordinary image reference, not as a `cid:` part: the sanitiser every signature is written through
-drops the marker attribute that would make it one, deliberately, so a signature cannot smuggle in
-something that looks like one of the message's own inline pictures. Inline images work in the
-message body, where you put them.
+**A signature image has to be small to travel with the mail.** A picture in a *signature* is stored
+inside it and sent as an inline part, up to 256 KB each and 768 KB per signature; see
+[Signature](#signature). Anything larger, an SVG, or an image that could not be fetched stays a
+reference to its web address, which recipients may have to allow before it shows.
 
 **"New" is not "unread", and losing the badge is not reading anything.** Scrolling past a row in the
 inbox retires its New badge, because the row was put in front of you. The conversation stays unread

@@ -1138,9 +1138,16 @@ admin:
         hint: The build this installation is running — the release, and the commit it was built from.
 alias:
     added: 'Address added.'
+    catch_all_added: 'Catch-all domain added.'
+    catch_all_duplicate: 'That domain is already a catch-all on this account.'
+    catch_all_invalid: "That doesn't look like a domain. Enter it like example.com."
+    catch_all_removed: 'Catch-all domain removed.'
+    catch_all_unsupported: 'Gmail and Outlook only send as addresses the provider knows, so a catch-all domain cannot be used on this account.'
     deleted: 'Address removed.'
     duplicate: 'That address is already on this account.'
     invalid: "That doesn't look like a valid email address."
+    name_cleared: 'Sender name removed. This address sends under the account name again.'
+    name_set: 'Sender name saved.'
     primary_set: 'Primary address updated.'
     refreshed: 'Refreshed from provider.'
     status_blocked: "The primary address can't be disabled — make another primary first."
@@ -2821,6 +2828,12 @@ settings:
     aliases:
         add: 'Add'
         add_placeholder: 'Add another address…'
+        catch_all:
+            add: 'Set as catch-all'
+            hint: 'If every address at a domain reaches this mailbox, add the domain here. A reply then goes out from the address the mail was sent to, without adding each one above.'
+            label: 'Catch-all domains'
+            placeholder: 'example.com'
+            remove: 'Remove %domain%'
         delete: 'Remove'
         disable: 'Disable'
         empty: 'No addresses yet.'
@@ -2829,6 +2842,9 @@ settings:
         make_primary: 'Make primary'
         ms_sender_hint: 'Outlook sends as your account’s primary alias regardless of the address chosen here — change it in your'
         ms_sender_hint_link: 'Microsoft account settings'
+        name_for: 'Sender name for %alias%'
+        name_placeholder: 'Sender name'
+        name_save: 'Save name'
         primary: 'Primary'
         refresh: 'Refresh from provider'
         subheading: 'Addresses this account sends and receives as.'
@@ -3903,6 +3919,17 @@ settings:
         reverted: 'Back to the account signature.'
         save: 'Save signature'
         saved: 'Saved.'
+        source:
+            clean: 'Nothing was removed.'
+            embedded: 'Images stored in the signature: %count%.'
+            failed: 'The signature could not be rendered. Your HTML is unchanged. Try again.'
+            html: 'HTML'
+            label: '%label% as HTML'
+            placeholder: 'Paste or write the HTML of your signature…'
+            remote: 'Images that could not be stored and stay linked: %count%. They do not show here and some recipients have to allow them first.'
+            removed: 'Removed, because mail clients would not show it or it is not safe to send: %items%.'
+            rendered: 'Rendered'
+            toggle: 'Signature view'
         subheading: 'What is added to the bottom of the messages you write.'
     sorting:
         again:

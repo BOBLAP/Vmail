@@ -1152,9 +1152,16 @@ admin:
         hint: Der Build, den diese Installation ausführt — die Version und der Commit, aus dem sie gebaut wurde.
 alias:
     added: 'Adresse hinzugefügt.'
+    catch_all_added: 'Catch-all-Domain hinzugefügt.'
+    catch_all_duplicate: 'Diese Domain ist in diesem Konto bereits als Catch-all eingetragen.'
+    catch_all_invalid: 'Das sieht nicht nach einer Domain aus. Gib sie so ein: example.com.'
+    catch_all_removed: 'Catch-all-Domain entfernt.'
+    catch_all_unsupported: 'Gmail und Outlook senden nur über Adressen, die der Anbieter kennt. Eine Catch-all-Domain lässt sich in diesem Konto deshalb nicht nutzen.'
     deleted: 'Adresse entfernt.'
     duplicate: 'Diese Adresse ist bereits in diesem Konto vorhanden.'
     invalid: 'Das sieht nicht nach einer gültigen E-Mail-Adresse aus.'
+    name_cleared: 'Absendername entfernt. Diese Adresse sendet wieder unter dem Namen des Kontos.'
+    name_set: 'Absendername gespeichert.'
     primary_set: 'Hauptadresse aktualisiert.'
     refreshed: 'Vom Anbieter aktualisiert.'
     status_blocked: 'Die Hauptadresse kann nicht deaktiviert werden — lege zuerst eine andere als Hauptadresse fest.'
@@ -2810,6 +2817,12 @@ settings:
     aliases:
         add: 'Hinzufügen'
         add_placeholder: 'Weitere Adresse hinzufügen…'
+        catch_all:
+            add: 'Als Catch-all eintragen'
+            hint: 'Wenn jede Adresse einer Domain in diesem Postfach ankommt, trage die Domain hier ein. Eine Antwort geht dann von der Adresse aus, an die die Mail gerichtet war, ohne dass du jede einzeln oben hinzufügst.'
+            label: 'Catch-all-Domains'
+            placeholder: 'example.com'
+            remove: '%domain% entfernen'
         delete: 'Entfernen'
         disable: 'Deaktivieren'
         empty: 'Noch keine Adressen.'
@@ -2818,6 +2831,9 @@ settings:
         make_primary: 'Als Hauptadresse festlegen'
         ms_sender_hint: 'Outlook versendet unabhängig von der hier gewählten Adresse immer über den primären Alias deines Kontos — ändere ihn in deinen'
         ms_sender_hint_link: 'Microsoft-Kontoeinstellungen'
+        name_for: 'Absendername für %alias%'
+        name_placeholder: 'Absendername'
+        name_save: 'Namen speichern'
         primary: 'Primär'
         refresh: 'Vom Anbieter aktualisieren'
         subheading: 'Adressen, unter denen dieses Konto sendet und empfängt.'
@@ -3922,6 +3938,17 @@ settings:
         reverted: 'Wieder die Signatur des Kontos.'
         save: 'Signatur speichern'
         saved: 'Gespeichert.'
+        source:
+            clean: 'Es wurde nichts entfernt.'
+            embedded: 'In der Signatur gespeicherte Bilder: %count%.'
+            failed: 'Die Signatur konnte nicht dargestellt werden. Dein HTML ist unverändert. Versuch es noch einmal.'
+            html: 'HTML'
+            label: '%label% als HTML'
+            placeholder: 'Füge das HTML deiner Signatur ein oder schreib es hier…'
+            remote: 'Bilder, die nicht gespeichert werden konnten und verlinkt bleiben: %count%. Sie werden hier nicht angezeigt, und manche Empfänger müssen sie erst erlauben.'
+            removed: 'Entfernt, weil Mailprogramme es nicht anzeigen würden oder es nicht sicher zu versenden ist: %items%.'
+            rendered: 'Darstellung'
+            toggle: 'Ansicht der Signatur'
         subheading: 'Was am Ende der Nachrichten steht, die du schreibst.'
     sorting:
         again:

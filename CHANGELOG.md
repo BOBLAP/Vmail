@@ -6,6 +6,34 @@ so anything that changes the schema irreversibly is called out explicitly.
 The published image tags: `latest` follows the most recent release below,
 `main` follows the tip of the default branch, and `sha-…` pins one commit.
 
+## Unreleased
+
+**An address can send under its own name.** Settings → Aliases has a sender name field under each
+address; left empty, the address sends under the account's name as before. The name was already
+shown in the From selector for an alias that had one (a phone app could set it), but the mail
+itself went out under the account's name regardless — the selector and the recipient now see the
+same one, in the browser and from the apps. No
+migration. [#70](https://github.com/karatektus/pl_mail/issues/70), reported by @Node815.
+
+**A reply goes out from the address the mail was sent to.** Mail that came in for an alias is
+answered from that alias, with that alias's signature, instead of every reply opening on the
+primary address; answering your own sent mail keeps the address it was sent from. A domain whose
+every address reaches the mailbox can be added under Settings → Aliases → Catch-all domains, and
+mail to any address at it is then answered from that address without adding each one as an alias
+(not offered for Gmail and Outlook accounts, which send only as addresses the provider knows).
+Reopening a draft saved from an alias no longer puts it back on the primary address. Typing an
+arbitrary From address into a new message is not part of this. No
+migration. [#41](https://github.com/karatektus/pl_mail/issues/41), reported by @YoGo9.
+
+**A signature can be pasted as HTML, and its images travel with the mail.** The signature editor
+has two views, Rendered and HTML. HTML takes the source; Rendered shows it as it will be stored,
+cleaned by the server, with a line underneath naming what was removed (usually a `<style>` block
+and `class` attributes). An image a signature links to is fetched and kept in the signature — up
+to 256 KB each — so it shows in the editor, which it could not before, and is sent as an attached
+inline image instead of a link recipients have to allow. Existing signatures are unchanged until
+they are next saved. No
+migration. [#32](https://github.com/karatektus/pl_mail/issues/32), reported by @eatcodeplay.
+
 ## v0.3.4 — 2026-10-13
 
 **A Gmail import no longer runs into Google's quota and stays there.** Google lowered the

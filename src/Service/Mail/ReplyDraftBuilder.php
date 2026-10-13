@@ -30,6 +30,7 @@ final class ReplyDraftBuilder
     public function __construct(
         private readonly SignatureProvider $signatures,
         private readonly MailBodySanitizer $sanitizer,
+        private readonly ReplyFromResolver $replyFrom = new ReplyFromResolver(),
     ) {
     }
 
@@ -41,15 +42,13 @@ final class ReplyDraftBuilder
     {
         $draft = $this->draft($original, $account, 'Re', 'reply');
 
-        $own = $account->ownedAddresses;
-
         // Answering mail you sent yourself is continuing that conversation with
         // the people you wrote to — every client does this, and without it
         // Reply on a message in Sent addressed the reply to you.
-        if (true === $this->isOwn($original->fromAddress, $own) && [] !== $this->withoutOwn($original->toAddresses ?? [], $own)) {
-            $draft->toAddresses = $this->withoutOwn($original->toAddresses ?? [], $own);
+        if (true === $account->ownsAddress($original->fromAddress) && [] !== $this->withoutOwn($original->toAddresses ?? [], $account)) {
+            $draft->toAddresses = $this->withoutOwn($original->toAddresses ?? [], $account);
             $draft->ccAddresses = true === $replyAll
-                ? $this->withoutOwn($original->ccAddresses ?? [], $own)
+                ? $this->withoutOwn($original->ccAddresses ?? [], $account)
                 : [];
 
             $this->linkToOriginal($draft, $original);
@@ -95,23 +94,22 @@ final class ReplyDraftBuilder
         ]];
     }
 
-    /** @param list<string> $own */
-    private function isOwn(?string $address, array $own): bool
-    {
-        return in_array(strtolower($address ?? ''), $own, true);
-    }
-
     /**
+     * A list of addresses minus the account's own.
+     *
+     * Asked of the account rather than compared against a list, because "own"
+     * is not only a list: an address at a catch-all domain is the user's too,
+     * and no list of aliases contains it. See Account::ownsAddress().
+     *
      * @param array<array<string,mixed>> $addresses
-     * @param list<string>               $own
      *
      * @return list<array<string,mixed>>
      */
-    private function withoutOwn(array $addresses, array $own): array
+    private function withoutOwn(array $addresses, Account $account): array
     {
         return array_values(array_filter(
             $addresses,
-            fn (array $address): bool => false === $this->isOwn($address['address'] ?? null, $own),
+            static fn (array $address): bool => false === $account->ownsAddress($address['address'] ?? null),
         ));
     }
 
@@ -132,7 +130,10 @@ final class ReplyDraftBuilder
             $already,
         );
 
-        return $this->withoutOwn($addresses, $taken);
+        return array_values(array_filter(
+            $addresses,
+            static fn (array $address): bool => false === in_array(strtolower($address['address'] ?? ''), $taken, true),
+        ));
     }
 
     /**
@@ -198,16 +199,10 @@ final class ReplyDraftBuilder
      */
     private function everyoneElse(Message $original, Account $account): array
     {
-        $own  = $account->ownedAddresses;
-        $seen = [];
-
-        foreach (array_merge($original->toAddresses ?? [], $original->ccAddresses ?? []) as $address) {
-            if (false === in_array(strtolower($address['address'] ?? ''), $own, true)) {
-                $seen[] = $address;
-            }
-        }
-
-        return $seen;
+        return $this->withoutOwn(
+            array_merge($original->toAddresses ?? [], $original->ccAddresses ?? []),
+            $account,
+        );
     }
 
     private function draft(Message $original, ?Account $account, string $prefix, string $mode, bool $signed = true): Message
@@ -216,10 +211,17 @@ final class ReplyDraftBuilder
         // paragraph that is the writing space, so the unsigned body already
         // starts with somewhere to type — a second one would render as a
         // blank line above the caret.
-        $lead = $signed ? $this->signature($account) : '';
+        // Chosen before the signature, because the signature follows it: an
+        // alias with a sign-off of its own signs the reply it sends.
+        $from = null !== $account ? $this->replyFrom->addressFor($original, $account) : null;
+        $lead = $signed ? $this->signature($account, $from) : '';
 
         $draft                 = new Message();
         $draft->account        = $account;
+        // Null when the original names none of the account's addresses, which
+        // leaves the window on the primary one — SenderResolver::tokenFor()
+        // reads this back when it pre-selects From.
+        $draft->fromAddress    = $from;
         $draft->subject        = $this->prefixSubject($prefix, $original->subject);
         $draft->bodyHtml       = $lead . $this->quote($original, $mode);
         $draft->hasAttachments = false;
@@ -243,19 +245,19 @@ final class ReplyDraftBuilder
      * the quote follows that. Exactly the arrangement every other mail client
      * uses.
      *
-     * The account's own display address rather than a chosen alias, because
-     * nothing has been chosen yet — the window opens on the token
-     * SenderResolver::token() builds, which is that address. Picking a
-     * different From afterwards swaps the block, which is what the
-     * `data-pl-signature` marker on it is for.
+     * For the address the reply goes out from — ReplyFromResolver's answer —
+     * and the account's display address when there is none, which is the
+     * option the window then opens on. Picking a different From afterwards
+     * swaps the block, which is what the `data-pl-signature` marker on it is
+     * for.
      */
-    private function signature(?Account $account): string
+    private function signature(?Account $account, ?string $from = null): string
     {
         if (null === $account) {
             return '';
         }
 
-        $block = $this->signatures->blockFor($account, $account->displayAddress);
+        $block = $this->signatures->blockFor($account, $from ?? $account->displayAddress);
 
         return '' === $block ? '' : '<p><br></p>' . $block;
     }

@@ -463,6 +463,25 @@ exactly this, but every installed app would list it in its From picker as an add
 and against an older server the client's `from` is refused or dropped and the mail leaves from the
 primary address in silence.
 
+### `identityId` on `Email/set` — an extension
+
+A draft an app saved had no sender of its own: `JmapDraftWriter` stored every one from the account's
+address, and the identity only arrived with the submission. So `replyFrom` on a draft could not say
+what the user had picked, and a reply autosaved from an alias reopened on the primary address.
+
+`Email/set` therefore accepts `identityId` on a create and in an update patch (it is in
+`EmailPatchApplier::DRAFT_PROPERTIES`, so only a draft takes it). `JmapDraftWriter::senderFor()`
+resolves it through `IdentityResolver::addressFor()` — the submission's resolver, so there is still
+one answer to what an account may send as — and writes `fromAddress` and `fromName`.
+
+An id that does not resolve is **ignored**, where the submission refuses it. The patch is an
+autosave; refusing it over a sender disabled since the draft was opened would lose the text, and
+the submission names its identity again and refuses there.
+
+The account's `urn:ietf:params:jmap:mail` capability carries `draftIdentity: true`. A client needs
+to know before it sends the key, because a server from before this answers `invalidPatch` to an
+update naming a property it cannot change, and that takes the rest of the autosave with it.
+
 ## Push
 
 Two mechanisms, and both are driven by the same drained set.

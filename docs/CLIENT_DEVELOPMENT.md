@@ -1036,6 +1036,27 @@ the same answer the web composer opens a reply on, so do not work it out from To
   message, and do not store it as something to offer on the next.
 - On a draft it is the address the draft is already written from, which is what to reopen it on.
 
+**Say which identity a draft is written from when you save it.** RFC 8621 names the identity on the
+submission only, so a draft would otherwise have no sender until it is sent, and one written from an
+alias would come back from Drafts on the primary address. plMail takes `identityId` on `Email/set`
+too, on a create and in an update patch:
+
+```json
+["Email/set", {"accountId": "1", "update": {"87": {"identityId": "addr-eW9Ac2hvcC5leGFtcGxl", "subject": "Re: Order"}}}, "s"]
+```
+
+The draft is then stored from that address, `from` and `replyFrom` report it, and it is what the
+draft reopens on, on any device. Send the id with every save, and include it in whatever decides
+that a draft has unsaved changes — a From menu that changes nothing else must still save.
+
+- The ids are the ones `EmailSubmission/set` takes, an address identity included.
+- An id the account may not send as is **ignored**, and the rest of the save goes through: this is
+  an autosave, and losing the text over the sender would be the worse failure. The submission still
+  names its identity and is where `forbiddenFrom` is answered.
+- **Check the session first.** A server that knows the property says so with `"draftIdentity": true`
+  in the account's `urn:ietf:params:jmap:mail` capability. One that does not refuses the whole
+  update patch as `invalidPatch` for naming a property it cannot change, so leave the key out there.
+
 ### Templates
 
 Reusable messages: the user writes one in **Settings → Templates** (or in your app) and inserts it

@@ -1,4 +1,4 @@
-<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:3bfd3cc89802c74ed610ea05a210d9bd901535fe -->
+<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:e5b7f30a39d80384afd9adcc2750f854b0792c3d -->
 # Einen Client für plMail bauen
 
 Alles, was eine Entwicklerin (oder ein Agent) braucht, um einen *neuen* plMail-Client zu schreiben
@@ -1138,6 +1138,30 @@ Antwort öffnet — leite sie also nicht selbst aus An und Cc ab.
   nächsten wieder anbietest.
 - Bei einem Entwurf ist es die Adresse, von der der Entwurf bereits geschrieben ist — damit
   öffnest du ihn wieder.
+
+**Sag beim Speichern, von welcher Identität ein Entwurf geschrieben ist.** RFC 8621 nennt die
+Identität nur an der Submission; ein Entwurf hätte sonst bis zum Senden keinen Absender, und einer,
+der von einem Alias geschrieben wurde, käme aus den Entwürfen mit der primären Adresse zurück.
+plMail nimmt `identityId` auch in `Email/set` an, beim Anlegen und im Patch eines Updates:
+
+```json
+["Email/set", {"accountId": "1", "update": {"87": {"identityId": "addr-eW9Ac2hvcC5leGFtcGxl", "subject": "Re: Order"}}}, "s"]
+```
+
+Der Entwurf wird dann von dieser Adresse gespeichert, `from` und `replyFrom` melden sie, und mit
+ihr öffnet sich der Entwurf wieder, auf jedem Gerät. Schick die id bei jedem Speichern mit, und
+nimm sie in das auf, was entscheidet, ob ein Entwurf ungespeicherte Änderungen hat — ein
+Von-Auswahlfeld, das sonst nichts ändert, muss trotzdem speichern.
+
+- Die ids sind die, die `EmailSubmission/set` annimmt, eine Adress-Identität eingeschlossen.
+- Eine id, unter der das Konto nicht senden darf, wird **ignoriert**, und der Rest des Speicherns
+  geht durch: Das hier ist ein automatisches Speichern, und den Text wegen des Absenders zu
+  verlieren, wäre der schlimmere Fehler. Die Submission nennt ihre Identität weiterhin selbst, und
+  dort wird mit `forbiddenFrom` geantwortet.
+- **Prüf zuerst die Session.** Ein Server, der die Eigenschaft kennt, sagt das mit
+  `"draftIdentity": true` in der `urn:ietf:params:jmap:mail`-Capability des Kontos. Einer, der sie
+  nicht kennt, lehnt den ganzen Update-Patch als `invalidPatch` ab, weil er eine Eigenschaft nennt,
+  die er nicht ändern kann — lass den Schlüssel dort also weg.
 
 ### Vorlagen
 

@@ -28,8 +28,10 @@ Reopening a draft saved from an alias no longer puts it back on the primary addr
 arbitrary From address into a new message is not part of this. The phone apps build their replies
 themselves and get the same answer from the server: `Email/get` has a `replyFrom` property, the
 identity that answers a mail, returned when asked for by name, and `EmailSubmission/set` accepts
-the identity it names for a catch-all address. Apps already installed are unaffected and go on
-answering from the primary address until they are updated. No
+the identity it names for a catch-all address. A draft saved by an app now keeps its sender: `Email/set`
+takes `identityId` on a draft (announced as `draftIdentity` in the session), so a reply written
+from an alias no longer comes back from Drafts on the primary address. Apps already installed are
+unaffected and go on answering from the primary address until they are updated. No
 migration. [#41](https://github.com/karatektus/pl_mail/issues/41), reported by @YoGo9.
 
 **A signature can be pasted as HTML, and its images travel with the mail.** The signature editor

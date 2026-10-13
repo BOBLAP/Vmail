@@ -6,7 +6,7 @@ so anything that changes the schema irreversibly is called out explicitly.
 The published image tags: `latest` follows the most recent release below,
 `main` follows the tip of the default branch, and `sha-…` pins one commit.
 
-## Unreleased
+## v0.3.4 — 2026-10-13
 
 **A Gmail import no longer runs into Google's quota and stays there.** Google lowered the
 per-user limit to 6,000 units a minute for projects created since May 2026 and raised the cost

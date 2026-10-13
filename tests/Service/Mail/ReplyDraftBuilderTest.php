@@ -439,6 +439,7 @@ final class ReplyDraftBuilderTest extends TestCase
         $account->catchAllDomains = ['shop.test'];
 
         $original              = $this->original();
+        $original->account     = $account;
         $original->toAddresses = [
             ['name' => '', 'address' => 'yo@shop.test'],
             ['name' => 'Tanja', 'address' => 'tanja@example.test'],
@@ -451,6 +452,50 @@ final class ReplyDraftBuilderTest extends TestCase
             ['tanja@example.test', 'cc@example.test'],
             array_column($draft->ccAddresses ?? [], 'address'),
         );
+    }
+
+    /**
+     * A catch-all catches what has no mailbox; Anna has one. The delivery
+     * header says the mail came in for yo@, so Anna is a colleague and stays
+     * in the reply-all instead of being dropped as though she were the user.
+     */
+    public function testAReplyAllKeepsAColleagueAtTheCatchAllDomain(): void
+    {
+        $account                  = $this->account();
+        $account->catchAllDomains = ['shop.test'];
+
+        $original              = $this->original();
+        $original->account     = $account;
+        $original->headers     = ['Delivered-To' => 'yo@shop.test'];
+        $original->toAddresses = [
+            ['name' => '', 'address' => 'yo@shop.test'],
+            ['name' => 'Anna', 'address' => 'anna@shop.test'],
+        ];
+
+        $draft = $this->builder->reply($original, $account, replyAll: true);
+
+        self::assertSame('yo@shop.test', $draft->fromAddress);
+        self::assertSame(
+            ['anna@shop.test', 'cc@example.test'],
+            array_column($draft->ccAddresses ?? [], 'address'),
+        );
+    }
+
+    /** Mail from a colleague at the catch-all domain is answered TO them, not treated as the user's own. */
+    public function testMailFromAColleagueAtTheCatchAllDomainIsAnsweredToThem(): void
+    {
+        $account                  = $this->account();
+        $account->catchAllDomains = ['shop.test'];
+
+        $original              = $this->original();
+        $original->account     = $account;
+        $original->fromName    = 'Anna';
+        $original->fromAddress = 'anna@shop.test';
+
+        $draft = $this->builder->reply($original, $account);
+
+        self::assertSame([['name' => 'Anna', 'address' => 'anna@shop.test']], $draft->toAddresses);
+        self::assertNotSame('anna@shop.test', $draft->fromAddress);
     }
 
     private function signedAccount(string $signature): Account

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Mail;
 
+use App\Domain\Helper\OwnAddressHelper;
 use App\Domain\Helper\RecipientHeaderHelper;
 use App\Entity\Mail\Account;
 use App\Entity\Mail\Message;
@@ -42,13 +43,23 @@ final class ReplyDraftBuilder
     {
         $draft = $this->draft($original, $account, 'Re', 'reply');
 
+        // The account's aliases, the catch-all addresses this mail came in
+        // for, and the address the reply goes out from — not every address at
+        // a catch-all domain, where a colleague with a mailbox of their own
+        // would be dropped from the reply. See OwnAddressHelper.
+        $own = OwnAddressHelper::forMessage($original);
+
+        if (null !== $draft->fromAddress) {
+            $own[] = $draft->fromAddress;
+        }
+
         // Answering mail you sent yourself is continuing that conversation with
         // the people you wrote to — every client does this, and without it
         // Reply on a message in Sent addressed the reply to you.
-        if (true === $account->ownsAddress($original->fromAddress) && [] !== $this->withoutOwn($original->toAddresses ?? [], $account)) {
-            $draft->toAddresses = $this->withoutOwn($original->toAddresses ?? [], $account);
+        if (true === OwnAddressHelper::sentByAccount($original) && [] !== $this->withoutOwn($original->toAddresses ?? [], $own)) {
+            $draft->toAddresses = $this->withoutOwn($original->toAddresses ?? [], $own);
             $draft->ccAddresses = true === $replyAll
-                ? $this->withoutOwn($original->ccAddresses ?? [], $account)
+                ? $this->withoutOwn($original->ccAddresses ?? [], $own)
                 : [];
 
             $this->linkToOriginal($draft, $original);
@@ -59,7 +70,7 @@ final class ReplyDraftBuilder
         $draft->toAddresses = $this->replyAddresses($original);
 
         $draft->ccAddresses = true === $replyAll
-            ? $this->withoutAddresses($this->everyoneElse($original, $account), $draft->toAddresses)
+            ? $this->withoutAddresses($this->everyoneElse($original, $own), $draft->toAddresses)
             : [];
 
         $this->linkToOriginal($draft, $original);
@@ -97,19 +108,16 @@ final class ReplyDraftBuilder
     /**
      * A list of addresses minus the account's own.
      *
-     * Asked of the account rather than compared against a list, because "own"
-     * is not only a list: an address at a catch-all domain is the user's too,
-     * and no list of aliases contains it. See Account::ownsAddress().
-     *
      * @param array<array<string,mixed>> $addresses
+     * @param list<string>               $own       lowercased
      *
      * @return list<array<string,mixed>>
      */
-    private function withoutOwn(array $addresses, Account $account): array
+    private function withoutOwn(array $addresses, array $own): array
     {
         return array_values(array_filter(
             $addresses,
-            static fn (array $address): bool => false === $account->ownsAddress($address['address'] ?? null),
+            static fn (array $address): bool => false === in_array(strtolower($address['address'] ?? ''), $own, true),
         ));
     }
 
@@ -191,17 +199,19 @@ final class ReplyDraftBuilder
     /**
      * Everyone the original reached except the person now answering it.
      *
-     * Compared against the account's owned addresses rather than its primary
-     * one: an alias is still the user, and replying to all should not put them
-     * in their own Cc.
+     * Compared against every address that is the user's in this mail rather
+     * than the primary one: an alias is still the user, and replying to all
+     * should not put them in their own Cc.
+     *
+     * @param list<string> $own lowercased
      *
      * @return list<array<string,mixed>>
      */
-    private function everyoneElse(Message $original, Account $account): array
+    private function everyoneElse(Message $original, array $own): array
     {
         return $this->withoutOwn(
             array_merge($original->toAddresses ?? [], $original->ccAddresses ?? []),
-            $account,
+            $own,
         );
     }
 

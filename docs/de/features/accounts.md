@@ -1,4 +1,4 @@
-<!-- translated-from: features/accounts.md sha1:c4ffdb6325cb4ee4e9c2accbaa93cec3e4400496 -->
+<!-- translated-from: features/accounts.md sha1:e3b70a077702b079166c724d88537caef5fba35f -->
 
 # Konten und Aliase
 
@@ -257,7 +257,18 @@ Wenn dein Anbieter **jede** Adresse einer Domain in dieses Postfach zustellt, tr
 **Catch-all-Domains** ein. plMail behandelt dann jede Adresse dieser Domain beim Antworten als
 deine: Eine Antwort auf eine Mail an `irgendwas@example.com` geht von `irgendwas@example.com` aus,
 mit dem Namen und der Signatur des Kontos, und in deinem eigenen „Allen antworten“ stehst du nicht
-selbst. Du musst vorher keinen Alias anlegen, und an eingehender Mail ändert sich nichts.
+selbst. Eine Termineinladung an eine solche Adresse ist deine, und deine Antwort geht von ihr aus
+zurück. Du musst vorher keinen Alias anlegen, und an eingehender Mail ändert sich nichts.
+
+**Nicht jede Adresse der Domain gilt als du.** Ein Catch-all fängt auf, was kein eigenes Postfach
+hat, und auf einer Familien- oder Firmendomain haben andere eines: `anna@example.com` liegt auf
+deiner Catch-all-Domain und ist jemand anderes. Eine Adresse zählt deshalb nur bei einer Mail als
+deine, mit der sie dich erreicht hat — die Adresse, an die dein Server sie laut seinem Vermerk
+zugestellt hat, oder, wenn der Server keinen hinterlassen hat, die Adressen dieser Domain in An und
+Cc. Anna bleibt in deinem „Allen antworten“, ihre Mail wird an sie beantwortet und nicht als sie,
+und eine Einladung, die sie nennt, wird dir nicht angeboten. Nennt eine Mail euch beide und trägt
+keinen Zustellvermerk, kann plMail nicht unterscheiden, welche deine war, und behandelt beide als
+dich.
 
 Drei Dinge tut es nicht. Es gilt für genau eine Domain — `example.com` deckt `mail.example.com`
 nicht ab. Es gilt für Antworten und Weiterleitungen; eine neue Nachricht geht weiterhin von einer

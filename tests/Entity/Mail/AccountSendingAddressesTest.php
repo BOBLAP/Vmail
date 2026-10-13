@@ -107,18 +107,6 @@ final class AccountSendingAddressesTest extends TestCase
         self::assertFalse($account->maySendAs('orders@other.test'));
     }
 
-    /** Leaving yourself out of a reply-all has to know a catch-all address is you. */
-    public function testAnAddressAtACatchAllDomainIsTheAccountsOwn(): void
-    {
-        $account = $this->account();
-        $this->alias($account, 'me@example.test', EmailAliasStatus::Primary);
-        $account->catchAllDomains = ['shop.test'];
-
-        self::assertTrue($account->ownsAddress('me@example.test'));
-        self::assertTrue($account->ownsAddress('orders@shop.test'));
-        self::assertFalse($account->ownsAddress('someone@elsewhere.test'));
-    }
-
     // ── the name mail goes out under ─────────────────────────────────────────
 
     public function testAnAliasWithANameOfItsOwnSendsUnderIt(): void

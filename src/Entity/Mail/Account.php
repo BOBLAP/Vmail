@@ -1146,22 +1146,6 @@ class Account extends AccountModel
     }
 
     /**
-     * Whether an address is this account's own, for leaving the user out of
-     * their own replies: ownedAddresses, plus anything a catch-all domain
-     * delivers here.
-     */
-    public function ownsAddress(?string $address): bool
-    {
-        $address = strtolower(trim((string) $address));
-
-        if ('' === $address) {
-            return false;
-        }
-
-        return in_array($address, $this->ownedAddresses, true) || $this->catchesAddress($address);
-    }
-
-    /**
      * The display name mail from one address goes out under.
      *
      * The alias's own name when it has one, the account's otherwise — the same

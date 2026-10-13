@@ -226,8 +226,17 @@ Smith". The From selector shows the same name the mail goes out with.
 If your provider delivers **every** address at a domain to this mailbox, add the domain under
 **Catch-all domains**. plMail then treats any address at that domain as yours for answering: a
 reply to mail sent to `anything@example.com` goes out from `anything@example.com`, with the
-account's name and signature, and you are left out of your own reply-all. No alias has to be added
+account's name and signature, and you are left out of your own reply-all. A meeting invitation sent
+to such an address is yours to answer, and the answer goes back from it. No alias has to be added
 first, and nothing changes for mail that arrives.
+
+**Not every address at the domain is treated as you.** A catch-all catches what has no mailbox of
+its own, and on a family or company domain other people have one: `anna@example.com` is at your
+catch-all domain and is somebody else. So an address counts as yours only for a mail it reached you
+by — the address your server recorded delivering it to, or, where the server recorded none, the
+addresses at that domain in To and Cc. Anna stays in your reply-all, her mail is answered to her
+rather than as her, and an invitation naming her is not offered to you. Where a mail names both of
+you and carries no delivery record, plMail cannot tell which was yours and treats both as you.
 
 Three things it does not do. It is one domain exactly — `example.com` does not cover
 `mail.example.com`. It applies to replies and forwards; a new message is still sent from an address

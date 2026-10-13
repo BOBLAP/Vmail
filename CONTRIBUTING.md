@@ -859,7 +859,7 @@ php bin/mirror-wiki.php --check
 | `app:push:cancel-subscription` | Cancel a Graph subscription by id, for one Microsoft still delivers and plMail no longer recognises |
 | `app:push:generate-vapid-keys` | Generate a VAPID keypair for Web Push |
 | `app:graph:diagnose` | Probe Microsoft Graph access for one account and report what works |
-| `app:gmail:quota-probe <account-id> [--mode=all] [--count=30]` | Fetch a fixed number of stored Gmail messages one way per minute (batched as an import does, or singly in each format), holding the account's import meanwhile, so the cost Google charges for each can be read off the Cloud console's quota chart. Stores and changes nothing |
+| `app:gmail:quota-probe [account] [--mode=all] [--count=30]` | Without an account, list the Gmail accounts and ask which. Fetch a fixed number of stored Gmail messages one way per minute (batched as an import does, or singly in each format), holding the account's import meanwhile, so the cost Google charges for each can be read off the Cloud console's quota chart. Stores and changes nothing |
 | `app:attachments:reclassify` | Recompute inline/attachment classification for stored parts |
 | `app:prune:blobs [--days=N] [--dry-run]` | Expire staged JMAP uploads and delete files orphaned by deleted rows |
 | `app:user:promote <email> [--revoke]` | Grant or revoke `ROLE_ADMIN` |

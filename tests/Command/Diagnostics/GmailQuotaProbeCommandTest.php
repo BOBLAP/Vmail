@@ -54,7 +54,7 @@ final class GmailQuotaProbeCommandTest extends TestCase
 
         $tester = $this->tester($this->account(), $this->ids(12), $http, $pacer, $clock);
 
-        self::assertSame(Command::SUCCESS, $tester->execute(['account-id' => '7', '--count' => '12']));
+        self::assertSame(Command::SUCCESS, $tester->execute(['account' => '7', '--count' => '12']));
 
         $posts   = array_values(array_filter($calls, static fn (array $call): bool => 'POST' === $call['method']));
         $singles = array_values(array_filter($calls, static fn (array $call): bool => 'GET' === $call['method']));
@@ -87,7 +87,7 @@ final class GmailQuotaProbeCommandTest extends TestCase
         });
 
         $this->tester($account, $this->ids(3), $http, $pacer, $clock)
-            ->execute(['account-id' => '7', '--mode' => 'single-minimal', '--count' => '3']);
+            ->execute(['account' => '7', '--mode' => 'single-minimal', '--count' => '3']);
 
         self::assertSame([true, true, true], $held);
         self::assertSame(450, $pacer->messagesPerMinute($account), 'held, not refused: its pace is what it was');
@@ -103,7 +103,7 @@ final class GmailQuotaProbeCommandTest extends TestCase
         ]);
 
         $tester = $this->tester($this->account(), $this->ids(2), $http, new GmailQuotaPacer(new MockClock()), new MockClock('2026-10-13 08:00:40 UTC'));
-        $tester->execute(['account-id' => '7', '--mode' => 'single-full', '--count' => '2']);
+        $tester->execute(['account' => '7', '--mode' => 'single-full', '--count' => '2']);
 
         self::assertStringContainsString('Quota exceeded', $tester->getDisplay());
     }
@@ -114,7 +114,35 @@ final class GmailQuotaProbeCommandTest extends TestCase
 
         $tester = $this->tester($account, [], new MockHttpClient(), new GmailQuotaPacer(new MockClock()), new MockClock());
 
-        self::assertSame(Command::FAILURE, $tester->execute(['account-id' => '7']));
+        self::assertSame(Command::FAILURE, $tester->execute(['account' => '7']));
+    }
+
+    /**
+     * Nobody knows an account's id, and the web interface does not show one.
+     * Without an argument the command says which accounts there are.
+     */
+    public function testWithoutAnAccountItListsTheGmailAccountsThereAre(): void
+    {
+        $calls = 0;
+        $http  = new MockHttpClient(function () use (&$calls): MockResponse {
+            ++$calls;
+
+            return new MockResponse('{}');
+        });
+
+        $tester = $this->tester($this->account(), $this->ids(3), $http, new GmailQuotaPacer(new MockClock()), new MockClock());
+
+        self::assertSame(Command::FAILURE, $tester->execute([], ['interactive' => false]));
+        self::assertStringContainsString('someone@gmail.com', $tester->getDisplay());
+        self::assertMatchesRegularExpression('/\b7\b/', $tester->getDisplay());
+        self::assertSame(0, $calls, 'and fetches nothing until it is told which');
+    }
+
+    public function testAnAccountCanBeNamedByItsAddress(): void
+    {
+        $tester = $this->tester($this->account(), $this->ids(1), new MockHttpClient(new MockResponse('{}')), new GmailQuotaPacer(new MockClock()), new MockClock('2026-10-13 08:00:40 UTC'));
+
+        self::assertSame(Command::SUCCESS, $tester->execute(['account' => 'Someone@Gmail.com', '--mode' => 'single-minimal', '--count' => '1']));
     }
 
     /**
@@ -123,7 +151,7 @@ final class GmailQuotaProbeCommandTest extends TestCase
     private function tester(Account $account, array $ids, MockHttpClient $http, GmailQuotaPacer $pacer, MockClock $clock): CommandTester
     {
         $accounts = $this->createStub(AccountRepository::class);
-        $accounts->method('find')->willReturn($account);
+        $accounts->method('findBy')->willReturn(true === $account->isGmail() ? [$account] : []);
 
         $messages = $this->createStub(MessageRepository::class);
         $messages->method('findSomeGmailIdsForAccount')->willReturn($ids);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command\Diagnostics;
 
+use App\Domain\Enum\Account\AuthType;
 use App\Entity\Mail\Account;
 use App\Repository\Mail\AccountRepository;
 use App\Repository\Mail\MessageRepository;
@@ -96,7 +97,7 @@ final class GmailQuotaProbeCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('account-id', InputArgument::REQUIRED, 'The Gmail account to fetch from')
+            ->addArgument('account', InputArgument::OPTIONAL, 'The Gmail account to fetch from, by id or address; leave it out to be shown the list')
             ->addOption('mode', null, InputOption::VALUE_REQUIRED, 'One of ' . implode(', ', array_keys(self::MODES)) . ', or all', 'all')
             ->addOption('count', null, InputOption::VALUE_REQUIRED, 'How many messages each mode fetches', '30');
     }
@@ -104,11 +105,9 @@ final class GmailQuotaProbeCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io      = new SymfonyStyle($input, $output);
-        $account = $this->accounts->find((int) $input->getArgument('account-id'));
+        $account = $this->accountFor($input, $io);
 
-        if (null === $account || false === $account->isGmail()) {
-            $io->error('That is not a Gmail account.');
-
+        if (null === $account) {
             return Command::FAILURE;
         }
 
@@ -196,6 +195,77 @@ final class GmailQuotaProbeCommand extends Command
         ]);
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * The account named on the command line, or one picked from the list.
+     *
+     * An id is not something anybody knows: the web interface shows an
+     * address. So the argument takes either, and without one the command
+     * lists the Gmail accounts there are — and asks, when there is somebody
+     * to ask.
+     */
+    private function accountFor(InputInterface $input, SymfonyStyle $io): ?Account
+    {
+        /** @var list<Account> $gmail */
+        $gmail = $this->accounts->findBy(
+            ['authType' => AuthType::OAuth2->value, 'oauthProvider' => 'google', 'isActive' => true],
+            ['id' => 'ASC'],
+        );
+
+        $named = $input->getArgument('account');
+
+        if (true === is_string($named) && '' !== trim($named)) {
+            $named = trim($named);
+
+            foreach ($gmail as $account) {
+                if ((string) $account->id === $named || 0 === strcasecmp((string) $account->email, $named)) {
+                    return $account;
+                }
+            }
+
+            $io->error(sprintf('"%s" is not an active Gmail account here.', $named));
+        }
+
+        if ([] === $gmail) {
+            $io->error('There is no active Gmail account on this installation.');
+
+            return null;
+        }
+
+        $io->table(
+            ['Id', 'Address', 'Belongs to'],
+            array_map(
+                static fn (Account $account): array => [(string) $account->id, (string) $account->email, (string) $account->usr?->email],
+                $gmail,
+            ),
+        );
+
+        if (false === $input->isInteractive()) {
+            $io->text('Run it again with one of these ids or addresses.');
+
+            return null;
+        }
+
+        if (1 === count($gmail)) {
+            return true === $io->confirm(sprintf('Probe %s?', $gmail[0]->email), true) ? $gmail[0] : null;
+        }
+
+        $choices = [];
+
+        foreach ($gmail as $account) {
+            $choices[(string) $account->id] = (string) $account->email;
+        }
+
+        $picked = $io->choice('Which account?', $choices);
+
+        foreach ($gmail as $account) {
+            if ((string) $account->id === (string) $picked || (string) $account->email === (string) $picked) {
+                return $account;
+            }
+        }
+
+        return null;
     }
 
     /**

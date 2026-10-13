@@ -61,6 +61,28 @@ domain keeps their name. No migration.
 cell falls back to when there is no room for the title stacked the two colours on top of each other
 in a few pixels of height. No migration.
 
+**An IMAP folder whose server closes idle connections no longer burns a CPU core.** Some servers
+(Lark, QQ) end an idling connection after a few minutes. plMail read that as a quiet mailbox and
+kept reading a connection that was gone, as fast as it could, until the 29-minute refresh — a core
+per folder. It now sees that the connection has ended and reconnects. No
+migration. [#94](https://github.com/karatektus/pl_mail/issues/94), reported by @montywei.
+
+**An import no longer sticks one message short of the end.** A server can list a message it will
+not hand over (iCloud does, for a draft deleted but not yet purged). Left alone on the last page,
+it made the import fail before its tries were counted, so it was retried every few minutes for good
+at 486 of 487 and the account's remaining folders waited behind it. It is given up on after five
+tries now. The same answer — nothing — from a folder that really is empty was also taken for the
+server not answering, so mail deleted from an emptied folder elsewhere stayed in plMail; an empty
+folder is read as empty. No
+migration. [#96](https://github.com/karatektus/pl_mail/issues/96), reported by @montywei.
+
+**One slow mail server can no longer hold up every import.** A server sending a trickle of data
+never tripped the 30-second read timeout, which is per read, so one fetch could occupy an import
+worker for as long as the trickle lasted while every other account waited. A worker now gives a
+message it is handling five minutes; after that its IMAP connections are closed, the message is
+retried later and the queue moves on. No
+migration. [#95](https://github.com/karatektus/pl_mail/issues/95), reported by @montywei.
+
 ## v0.3.4 — 2026-10-13
 
 **A Gmail import no longer runs into Google's quota and stays there.** Google lowered the

@@ -69,7 +69,6 @@ final class IntegrationProviderConfigType extends AbstractType
                 'required' => false,
                 'mapped'   => false,
                 'attr'     => [
-                    'autocomplete' => 'off',
                     'placeholder'  => $config instanceof IntegrationProviderConfig && $config->hasClientSecret()
                         ? 'admin.integrations.secret_unchanged'
                         : 'admin.integrations.secret_none',

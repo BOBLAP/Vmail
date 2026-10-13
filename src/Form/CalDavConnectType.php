@@ -105,7 +105,6 @@ final class CalDavConnectType extends AbstractType
                 'required' => false,
                 'mapped'   => false,
                 'attr'     => [
-                    'autocomplete' => 'off',
                     'placeholder'  => true === $isNew ? '' : 'settings.integrations.field.secret_unchanged',
                 ] + PasswordManagerIgnore::SECRET,
             ]);

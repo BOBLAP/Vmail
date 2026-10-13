@@ -8,6 +8,13 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**The browser filled your own login into client-secret fields.** Opening Admin → SSO, or a Google,
+Microsoft or integration provider form, could put your mail address in the client ID and your
+password in the secret field, one press of Save away from being stored. An earlier fix told Chrome
+these are not the saved login, but six of the fields also set `autocomplete="off"` of their own,
+which won — and Chrome ignores `off` on a password field. They now send `new-password` as intended,
+and a test reads every form for the same mistake.
+
 **Sign in through Authentik, Keycloak or any other OpenID Connect provider.** Enter the provider's
 issuer, client ID and secret under the new **Admin → SSO** and the login page offers a "Sign in with
 …" button above the password form, which stays; the `OIDC_*` variables do the same for an install

@@ -67,7 +67,6 @@ class AccountType extends AbstractType
                 'attr' => [
                     'placeholder' => '••••••••',
                     'class' => 'form-input',
-                    'autocomplete' => 'new-password',
                 ] + PasswordManagerIgnore::SECRET,
                 'label' => 'Password',
                 'always_empty' => true,
@@ -149,7 +148,6 @@ class AccountType extends AbstractType
                 'attr' => [
                     'placeholder'  => '••••••••',
                     'class'        => 'form-input',
-                    'autocomplete' => 'new-password',
                 ] + PasswordManagerIgnore::SECRET,
                 'label'        => 'account.form.smtp.password',
                 'always_empty' => true,

@@ -45,16 +45,17 @@ final class MailProviderConfigType extends AbstractType
                 'attr'     => ['autocomplete' => 'off'] + PasswordManagerIgnore::ATTR,
             ])
             // Not a password anyone signs in with — it is a value pasted out
-            // of a provider's console. `new-password` invited password managers
-            // to offer generation, and in a wizard that renders one provider at
-            // a time, to fill fields that were not on screen. There is no
-            // standard way to say "this is not a login", hence the vendor hints.
+            // of a provider's console. There is no standard way to say "this is
+            // not a login", hence the vendor hints for the extensions and
+            // `new-password` for the browser, both from PasswordManagerIgnore.
+            // No `autocomplete` of its own here: this array is the left side of
+            // the `+`, so an `off` written in it wins and the browser's opt-out
+            // never reaches the field — which is how it stayed unfixed once.
             ->add('clientSecret', PasswordType::class, [
                 'label'    => 'admin.integrations.field.client_secret',
                 'required' => false,
                 'mapped'   => false,
                 'attr'     => [
-                    'autocomplete' => 'off',
                     'placeholder'  => $config instanceof MailProviderConfig && $config->hasClientSecret()
                         ? 'admin.integrations.secret_unchanged'
                         : 'admin.integrations.secret_none',
@@ -87,7 +88,6 @@ final class MailProviderConfigType extends AbstractType
                     'mapped'   => false,
                     'help'     => 'admin.integrations.field.push_token_help',
                     'attr'     => [
-                        'autocomplete' => 'off',
                         'placeholder'  => $config instanceof MailProviderConfig && null !== $config->pushVerificationToken
                             ? 'admin.integrations.secret_unchanged'
                             : 'admin.integrations.secret_none',

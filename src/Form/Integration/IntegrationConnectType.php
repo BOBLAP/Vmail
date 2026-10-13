@@ -69,7 +69,6 @@ final class IntegrationConnectType extends AbstractType
             'required' => $isNew,
             'mapped'   => false,
             'attr'     => [
-                'autocomplete' => 'off',
                 'placeholder'  => $isNew ? '' : 'settings.integrations.field.secret_unchanged',
             ] + PasswordManagerIgnore::SECRET,
         ]);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Form;
 
+use App\Entity\Oidc\OidcConfig;
+use App\Form\Admin\OidcConfigType;
 use App\Form\Setup\FirstAdminType;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
@@ -100,6 +102,62 @@ final class PasswordManagerIgnoreTest extends KernelTestCase
 
         self::assertStringContainsString('data-bwignore', $html);
         self::assertStringContainsString('data-form-type', $html);
+    }
+
+    /**
+     * A secret field has to reach the browser as `new-password`.
+     *
+     * PasswordManagerIgnore::SECRET carries it, and six credential fields
+     * never sent it: each wrote `'autocomplete' => 'off'` in the array it
+     * unioned SECRET onto, and with `+` the left side wins. Chrome ignores
+     * `off` on a password field, so Admin → SSO took the administrator's own
+     * mail address as its client ID and their password as its client secret —
+     * the very autofill the constant was introduced to stop, in every form but
+     * the one it was reported from.
+     *
+     * Read from the source rather than rendered form by form: the mistake is in
+     * how the array is written, and a new form can make it without appearing
+     * in any list a test keeps.
+     */
+    public function testNoSecretFieldOverridesTheBrowsersOptOut(): void
+    {
+        $offenders = [];
+
+        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(\dirname(__DIR__, 2) . '/src/Form')) as $file) {
+            if (false === $file->isFile() || 'php' !== $file->getExtension()) {
+                continue;
+            }
+
+            $source = (string) file_get_contents($file->getPathname());
+
+            // Every array literal that is the left side of `+ SECRET`.
+            preg_match_all('/\[(?:[^\[\]]|\[[^\[\]]*\])*\]\s*\+\s*PasswordManagerIgnore::SECRET/', $source, $matches);
+
+            foreach ($matches[0] as $literal) {
+                if (1 === preg_match("/'autocomplete'\s*=>/", $literal)) {
+                    $offenders[] = $file->getFilename();
+                }
+            }
+        }
+
+        self::assertSame([], $offenders, 'These forms set their own `autocomplete` on a field that takes PasswordManagerIgnore::SECRET; theirs wins and the browser fills in the saved login.');
+    }
+
+    public function testTheSingleSignOnSecretIsNotOfferedTheSavedLogin(): void
+    {
+        self::bootKernel();
+
+        $container = self::getContainer();
+
+        $form = $container->get(FormFactoryInterface::class)
+            ->create(OidcConfigType::class, new OidcConfig(), ['csrf_protection' => false])
+            ->createView();
+
+        $html = $container->get(Environment::class)
+            ->createTemplate('{{ form_widget(field) }}')
+            ->render(['field' => $form['clientSecret']]);
+
+        self::assertStringContainsString('autocomplete="new-password"', $html);
     }
 
     private static function renderField(string $field): string

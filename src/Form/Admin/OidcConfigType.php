@@ -73,7 +73,6 @@ final class OidcConfigType extends AbstractType
                 'required' => false,
                 'mapped'   => false,
                 'attr'     => [
-                    'autocomplete' => 'off',
                     'placeholder'  => true === $hasSecret ? 'admin.integrations.secret_unchanged' : 'admin.integrations.secret_none',
                 ] + PasswordManagerIgnore::SECRET,
             ]);

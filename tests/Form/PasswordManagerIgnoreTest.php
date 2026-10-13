@@ -165,6 +165,34 @@ final class PasswordManagerIgnoreTest extends KernelTestCase
         self::assertSame([], $others, 'These forms use a password input for something that is not this site\'s login. Use App\Form\SecretType, or a browser fills in the saved login.');
     }
 
+    /**
+     * Nothing follows an input as a sibling — its help text least of all.
+     *
+     * Bitwarden takes the text after a field as part of the field's label. The
+     * help text was the next element after the input, so a help that explained
+     * the `email` scope made Scopes an identity's email address to it, and it
+     * opened its menu there whatever the field's own attributes said.
+     */
+    public function testHelpTextIsNotTheInputsNextSibling(): void
+    {
+        self::bootKernel();
+
+        $container = self::getContainer();
+
+        $form = $container->get(FormFactoryInterface::class)
+            ->create(OidcConfigType::class, new OidcConfig(), ['csrf_protection' => false])
+            ->createView();
+
+        $html = $container->get(Environment::class)
+            ->createTemplate('{{ form_row(field) }}')
+            ->render(['field' => $form['scopes']]);
+
+        $crawler = new \Symfony\Component\DomCrawler\Crawler($html);
+
+        self::assertGreaterThan(0, $crawler->filter('p')->count(), 'the field under test has to have help text');
+        self::assertSame(0, $crawler->filter('input')->nextAll()->count());
+    }
+
     private static function renderField(string $field): string
     {
         $container = self::getContainer();

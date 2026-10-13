@@ -8,6 +8,20 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**A parcel, a code or a date in an Outlook mail was only found if it sat in the first few lines.**
+For an HTML mail, Microsoft Graph gives the text as a preview cut at 255 characters, and that
+preview is what the card extractors (parcels, codes, flights, tickets, invoices) read instead of
+the mail. A tracking number further down — in a Pickup or IKEA relay notice, say, or a GLS mail
+with the number under a heading — never produced a card. They now read the mail's HTML for an
+Outlook account, and the preview only when the HTML has no words in it. Mail already stored is
+read again by `app:backfill insights --since=…`. No migration.
+
+**A GLS France parcel never appeared on the radar.** GLS France prints no tracking number of a
+recognisable shape: its mails carry an eight-character code under "Numéro de colis" (`Q7XK2M4P`),
+and the sender was not known either. Mail from gls-france.com is now read for that code, behind
+that label only, and the card links to GLS France's own tracking page. Eight bare digits, or a
+code in mail from anyone else, are still not read. No migration.
+
 **An invoice card could be numbered "TIFICATIONS", and two bills from one sender became one
 card.** A billing mail whose footer says "Manage invoice notifications" had that line read as an
 invoice number: "invoice no" matched the start of "notifications" and the rest of the word became

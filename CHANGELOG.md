@@ -21,6 +21,9 @@ primary address; answering your own sent mail keeps the address it was sent from
 every address reaches the mailbox can be added under Settings → Aliases → Catch-all domains, and
 mail to any address at it is then answered from that address without adding each one as an alias
 (not offered for Gmail and Outlook accounts, which send only as addresses the provider knows).
+A meeting invitation sent to such an address is yours to answer. Only the address a mail actually
+reached you by counts as yours, not the whole domain, so somebody else with a mailbox at the same
+domain stays in your reply-all and is never answered as.
 Reopening a draft saved from an alias no longer puts it back on the primary address. Typing an
 arbitrary From address into a new message is not part of this. The phone apps build their replies
 themselves and get the same answer from the server: `Email/get` has a `replyFrom` property, the

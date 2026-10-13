@@ -1,4 +1,4 @@
-<!-- translated-from: internals/mail-ingest.md sha1:7329297e0b7553b6e0fb3e23948afdcff155a609 -->
+<!-- translated-from: internals/mail-ingest.md sha1:e6630b7c2f371b937d8dd3a6ff7318bbfb74a57d -->
 # Mail-Ingest
 
 Vom Anbieter in die Datenbank: wie aus Bytes eine Zeile `Message` wird, was mit ihr geschieht,
@@ -96,8 +96,10 @@ die Vorgeschichte gehört `App\Service\Mail\MailImporter`, auf der Warteschlange
 - **Gmails Kontingent wird gelernt, nicht eingestellt.** Google erlaubt einem Nutzer eine Zahl
   von Kontingent-Einheiten pro Minute und sagt erst, wie viele, wenn es eine Anfrage ablehnt.
   `GmailQuotaPacer` beginnt bei 15.000, liest das Limit aus der ersten Ablehnung (ein seit Mai
-  2026 angelegtes Projekt hat 6.000) und taktet von da an jedes Konto auf vier Fünftel davon;
-  ein gelerntes Limit wird nach einem Tag vergessen, damit ein angehobenes wiedergefunden wird.
+  2026 angelegtes Projekt hat 6.000) und taktet von da an jedes Konto auf drei Fünftel davon,
+  zehn Nachrichten pro Anfrage — Google lehnt ab, was den Vorrat einer Minute in einer Sekunde
+  verbraucht; ein gelerntes Limit wird nach einem Tag vergessen, damit ein angehobenes
+  wiedergefunden wird.
   Was ein Konto verbraucht hat und wann es zuletzt abgelehnt wurde, liegt in einem Cache-Pool
   in der Datenbank, sodass alle Worker aus einem Kontingent schöpfen. Eine Ablehnung ist auf
   diesem Weg nirgends ein Fehler: Ein Stapel, eine Import-Seite oder ein Sync, der auf eine

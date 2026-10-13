@@ -165,7 +165,7 @@ the record and a missed nudge costs one stale render, never a wrong answer.
                                    the limit is only assumed is the end of the
                                    sentence, and the part that was cut off. #}
                                 <p class="mt-0.5 text-[11px] text-ink-faint" data-import-quota>
-                                    {{ (line.quota.learnt ? 'jobs.import.quota' : 'jobs.import.quota_assumed')|trans({
+                                    {{ (line.quota.isPaused() ? 'jobs.import.quota_refused' : (line.quota.learnt ? 'jobs.import.quota' : 'jobs.import.quota_assumed'))|trans({
                                         '%used%': line.quota.used|number_format,
                                         '%limit%': line.quota.limit|number_format,
                                     }) }}

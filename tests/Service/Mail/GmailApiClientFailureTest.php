@@ -445,6 +445,35 @@ final class GmailApiClientFailureTest extends TestCase
         self::assertGreaterThan(0, $pacer->waitSeconds($this->account()));
     }
 
+    /**
+     * Fifty messages in one request are a thousand units in one second, which
+     * Google refuses on a project allowed 6,000 a minute. They go out ten to
+     * a request, and when one request is refused the rest are not sent.
+     */
+    public function testABatchGoesOutAFewMessagesAtATimeAndStopsAtARefusal(): void
+    {
+        $requests = 0;
+        $refusal  = json_encode($this->perUserQuotaBody(6000), JSON_THROW_ON_ERROR);
+
+        $http = new MockHttpClient(function () use (&$requests, $refusal): MockResponse {
+            ++$requests;
+
+            return 2 === $requests
+                ? new MockResponse($refusal, ['http_code' => 403])
+                : new MockResponse("--batch_x\r\n--batch_x--", ['http_code' => 200]);
+        });
+
+        $tokenManager = $this->createStub(OAuthTokenManager::class);
+        $tokenManager->method('getValidAccessToken')->willReturn('test-token');
+
+        $ids     = array_map(static fn (int $n): string => 'm' . $n, range(1, 35));
+        $fetched = new GmailApiClient($http, $tokenManager, new GmailQuotaPacer(new MockClock()))
+            ->getMessages($this->account(), $ids);
+
+        self::assertSame(2, $requests, 'the third and fourth requests are never made');
+        self::assertSame($ids, $fetched['retryable'], 'every id is handed back: none fetched, none lost');
+    }
+
     /** The whole request refused is the same answer as every part refused. */
     public function testAWhollyRefusedBatchIsHandedBackRatherThanThrown(): void
     {

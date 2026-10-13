@@ -22,8 +22,8 @@ use Symfony\Component\Clock\MockClock;
  */
 final class GmailQuotaPacerTest extends TestCase
 {
-    /** A full batch: fifty messages.get at twenty units. */
-    private const int BATCH = 1000;
+    /** One request: ten messages.get at twenty units. */
+    private const int BATCH = 200;
 
     public function testAFewBatchesInARowAreNotHeld(): void
     {
@@ -46,7 +46,7 @@ final class GmailQuotaPacerTest extends TestCase
 
         $worst = $this->worstMinute($pacer, $clock, $this->account(1));
 
-        self::assertLessThanOrEqual(13_000, $worst);
+        self::assertLessThanOrEqual(10_000, $worst);
         // And not so cautious that an import crawls: the steady rate is used.
         self::assertGreaterThanOrEqual(9_000, $worst);
     }
@@ -71,7 +71,7 @@ final class GmailQuotaPacerTest extends TestCase
 
         $worst = $this->worstMinute($pacer, $clock, $account);
 
-        self::assertLessThanOrEqual(6000, $worst);
+        self::assertLessThanOrEqual(4200, $worst);
         self::assertGreaterThanOrEqual(3600, $worst);
     }
 
@@ -187,17 +187,17 @@ final class GmailQuotaPacerTest extends TestCase
         $pacer->spend($account, self::BATCH);
         $pacer->spend($account, self::BATCH);
 
-        self::assertSame(2000, $pacer->usedThisMinute($account));
+        self::assertSame(400, $pacer->usedThisMinute($account));
         self::assertSame(0, $pacer->usedThisMinute($this->account(2)));
 
         $clock->sleep(30);
         $pacer->spend($account, self::BATCH);
 
-        self::assertSame(3000, $pacer->usedThisMinute($account));
+        self::assertSame(600, $pacer->usedThisMinute($account));
 
         $clock->sleep(45);
 
-        self::assertSame(1000, $pacer->usedThisMinute($account));
+        self::assertSame(200, $pacer->usedThisMinute($account));
 
         $clock->sleep(60);
 
@@ -214,14 +214,35 @@ final class GmailQuotaPacerTest extends TestCase
         $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
         $clock->sleep(120);
 
-        for ($i = 0; $i < 40; $i++) {
+        for ($i = 0; $i < 100; $i++) {
             $pacer->spend($account, self::BATCH);
         }
 
-        self::assertLessThanOrEqual(6000, $pacer->usedThisMinute($account));
+        self::assertLessThanOrEqual(4200, $pacer->usedThisMinute($account));
         self::assertGreaterThanOrEqual(3000, $pacer->usedThisMinute($account));
         self::assertTrue($pacer->isLimitLearnt());
         self::assertSame(180, $pacer->messagesPerMinute());
+    }
+
+    /**
+     * During the wait after a refusal nothing is spent and the running count
+     * falls to nothing. What had been counted when Google said no is kept,
+     * because that is the figure the pause is explained by.
+     */
+    public function testWhatHadBeenSpentWhenGoogleRefusedIsRemembered(): void
+    {
+        $clock   = new MockClock('2026-10-08 14:30:00');
+        $pacer   = new GmailQuotaPacer($clock);
+        $account = $this->account(1);
+
+        $pacer->spend($account, self::BATCH);
+        $pacer->spend($account, self::BATCH);
+        $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+
+        $clock->sleep(70);
+
+        self::assertSame(0, $pacer->usedThisMinute($account));
+        self::assertSame(400, $pacer->usedWhenRefused($account));
     }
 
     public function testOneAccountImportingDoesNotHoldAnother(): void
@@ -268,7 +289,7 @@ final class GmailQuotaPacerTest extends TestCase
         /** @var list<float> $spentAt */
         $spentAt = [];
 
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < 300; $i++) {
             $pacer->spend($account, self::BATCH);
             $spentAt[] = (float) $clock->now()->format('U.u');
         }

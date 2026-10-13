@@ -245,6 +245,7 @@ final readonly class MailImporter
             'accountId'    => $account->id,
             'delaySeconds' => $seconds,
             'limit'        => $this->pacer->limit(),
+            'countedWhenRefused' => $this->pacer->usedWhenRefused($account),
         ]);
     }
 

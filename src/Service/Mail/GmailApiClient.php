@@ -41,6 +41,12 @@ final class GmailApiClient
      */
     private const int IDS_PER_BATCH = 1000;
 
+    /**
+     * How many messages.get go into one batch request. See getMessages() for
+     * why it is not the fifty a caller hands over.
+     */
+    private const int MESSAGES_PER_REQUEST = 10;
+
     private const array TRANSIENT_REASONS = [
         'rateLimitExceeded',
         'userRateLimitExceeded',
@@ -136,8 +142,8 @@ final class GmailApiClient
     /**
      * Fetch multiple messages (format=full) using the Gmail Batch API.
      *
-     * Packs up to 50 individual messages.get sub-requests into a single
-     * multipart/mixed HTTP POST. This avoids hammering the per-user per-second
+     * Packs individual messages.get sub-requests into multipart/mixed HTTP
+     * POSTs, a few to each. This avoids hammering the per-user per-second
      * quota with individual concurrent requests and dramatically reduces
      * round-trips for large initial syncs.
      *
@@ -161,16 +167,52 @@ final class GmailApiClient
      */
     public function getMessages(Account $account, array $messageIds): array
     {
-        if (count($messageIds) === 0) {
-            return [
-                'payloads'  => [],
-                'retryable' => [],
-                'gone'      => [],
-            ];
+        $fetched = [
+            'payloads'  => [],
+            'retryable' => [],
+            'gone'      => [],
+        ];
+
+        // A FEW AT A TIME, with the pacer asked before each few.
+        //
+        // The limit is "units a minute", but Google does not let a minute's
+        // worth be spent in a second: fifty messages in one request are a
+        // thousand units at once, ten seconds' worth on a project allowed
+        // 6,000 a minute, and Google refused part of every such batch — one
+        // batch, a refusal, a minute's wait, and the next batch refused the
+        // same way (#90). Ten messages are two seconds' worth there, which is
+        // a burst Google lets through, and the pacer's wait between requests
+        // is what keeps the rate under the limit.
+        $chunks = array_chunk(array_values($messageIds), self::MESSAGES_PER_REQUEST);
+
+        foreach ($chunks as $index => $chunk) {
+            $part = $this->getMessagesInOneRequest($account, $chunk);
+
+            $fetched['payloads'] += $part['payloads'];
+            $fetched['retryable'] = [...$fetched['retryable'], ...$part['retryable']];
+            $fetched['gone']      = [...$fetched['gone'], ...$part['gone']];
+
+            if (true === $part['refused']) {
+                // Not asked for at all: what is left would only be refused
+                // too, and counted against the minute all the same.
+                foreach (array_slice($chunks, $index + 1) as $rest) {
+                    $fetched['retryable'] = [...$fetched['retryable'], ...$rest];
+                }
+
+                break;
+            }
         }
 
-        // The one call here that can spend a minute's quota on its own, so it
-        // is the one that is paced. See GmailQuotaPacer.
+        return $fetched;
+    }
+
+    /**
+     * @param list<string> $messageIds at most MESSAGES_PER_REQUEST
+     *
+     * @return array{payloads: array<string,array<string,mixed>>, retryable: list<string>, gone: list<string>, refused: bool}
+     */
+    private function getMessagesInOneRequest(Account $account, array $messageIds): array
+    {
         $this->pacer->spend($account, GmailQuotaPacer::UNITS_PER_MESSAGE * count($messageIds));
 
         $token    = $this->tokenManager->getValidAccessToken($account);
@@ -196,6 +238,7 @@ final class GmailApiClient
                 'payloads'  => [],
                 'retryable' => array_values($messageIds),
                 'gone'      => [],
+                'refused'   => true,
             ];
         } catch (HttpException $e) {
             throw new \RuntimeException(
@@ -240,9 +283,9 @@ final class GmailApiClient
             'payloads'  => $payloads,
             'retryable' => $retryable,
             'gone'      => $gone,
+            'refused'   => null !== $parsed['refusal'],
         ];
     }
-
 
     /**
      * Fetch a single message in full format.

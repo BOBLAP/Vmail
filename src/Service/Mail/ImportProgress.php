@@ -129,11 +129,16 @@ final readonly class ImportProgress
         $total = $account->importTotal;
         $left  = null === $total ? null : max(0, $total - $done);
 
+        $paused = $this->pacer->waitSeconds($account);
+
         return new GmailQuotaStatus(
             $this->pacer->limit(),
             $this->pacer->isLimitLearnt(),
-            $this->pacer->usedThisMinute($account),
-            $this->pacer->waitSeconds($account),
+            // While Google holds the account nothing is being spent, and the
+            // running count falls to nothing; what was spent when it said no
+            // is the figure that explains the pause.
+            $paused > 0 ? $this->pacer->usedWhenRefused($account) : $this->pacer->usedThisMinute($account),
+            $paused,
             null === $left || 0 === $left ? null : (int) ceil($left / $this->pacer->messagesPerMinute()),
         );
     }

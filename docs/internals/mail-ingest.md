@@ -85,8 +85,9 @@ The two are separate now. A sync arranges for new mail to be seen and stops; the
 - **Gmail's quota is learnt, not configured.** Google allows one user a number of quota units
   a minute and does not say how many until it refuses a request. `GmailQuotaPacer` starts from
   15,000, reads the limit out of the first refusal (a project created since May 2026 has
-  6,000) and paces every account to four fifths of it from then on; a learnt limit is forgotten
-  after a day so a raised one is found again. What an account has spent and when it was last
+  6,000) and paces every account to three fifths of it from then on, ten messages to a request
+  — Google refuses a minute's worth spent in one second; a learnt limit is forgotten after a
+  day so a raised one is found again. What an account has spent and when it was last
   refused are in a database-backed cache pool, so every worker draws on one allowance. A
   refusal is not an error anywhere on this path: a batch, an import page or a sync that meets
   one is put back to run when the account's minute is over.

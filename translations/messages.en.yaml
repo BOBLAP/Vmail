@@ -2189,6 +2189,7 @@ jobs:
         quota: "Gmail quota: about %used% of %limit% units this minute"
         quota_assumed: "Gmail quota: about %used% of %limit% units this minute (limit assumed until Google names it)"
         quota_paused: "Paused by Gmail's quota · continues in %seconds% s"
+        quota_refused: "Gmail said no at about %used% of %limit% units a minute"
         remaining_hours: "About %hours% h %minutes% min left"
         remaining_minutes: "About %minutes% min left"
         waiting: "Waiting to continue"

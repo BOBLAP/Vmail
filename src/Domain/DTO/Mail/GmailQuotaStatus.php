@@ -25,7 +25,8 @@ final readonly class GmailQuotaStatus
      * @param bool     $learnt        whether Google named that limit, or it is
      *                                the one assumed until it does
      * @param int      $used          roughly what the bulk fetching spent in
-     *                                the minute just gone
+     *                                the minute just gone — or, while paused,
+     *                                in the minute before Google refused
      * @param int      $pausedSeconds how long Google's last refusal still
      *                                holds the account; 0 when it does not
      * @param int|null $minutesLeft   how long the rest of the import takes at

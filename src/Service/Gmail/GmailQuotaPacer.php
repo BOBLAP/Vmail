@@ -51,7 +51,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * it. Starting from the top again costs one refused batch a day on a project
  * that has less, and that batch is put back like any other.
  *
- * WELL UNDER the limit — the worst minute here is four fifths of it. The rest
+ * WELL UNDER the limit — the worst minute here is about two thirds of it. The rest
  * belongs to what is not counted: the person using the mailbox (a send is
  * 100, a label change on a selection 50), push-driven syncs, and whatever
  * else is signed in to the same Google account.
@@ -95,8 +95,17 @@ final class GmailQuotaPacer
     /** The share of the limit that is the steady allowance. */
     private const float STEADY_SHARE = 0.6;
 
-    /** How far ahead of the allowance a burst may run: a fifth of the limit. */
-    private const float RESERVE_SECONDS = 20.0;
+    /**
+     * How far ahead of the allowance a burst may run: five seconds of it,
+     * which is one request of ten messages and a listing page beside it.
+     *
+     * It was twenty, a fifth of the limit, on the reading that a limit of so
+     * much a minute may be spent however the minute likes. Google does not
+     * see it that way — a thousand units in one second was refused on a
+     * project allowed six thousand a minute — so the reserve is only what
+     * lets a request go out without waiting when the account has been idle.
+     */
+    private const float RESERVE_SECONDS = 5.0;
 
     /**
      * How long an account is left alone after a refusal that came with no
@@ -191,6 +200,14 @@ final class GmailQuotaPacer
         $state = $this->read($item->get());
 
         $state['refusedUntil'] = max($state['refusedUntil'], $now + $cooldown);
+        // What had been spent when Google said no. Kept because the running
+        // count falls to nothing during the wait that follows, and "paused,
+        // 0 of 6,000 used" explains nothing; see usedWhenRefused().
+        $state['usedWhenRefused'] = array_sum(array_filter(
+            $this->sinceAMinuteAgo($state['spent'], $now),
+            static fn (int $slot): bool => $slot <= $now,
+            ARRAY_FILTER_USE_KEY,
+        ));
         // The reserve is gone as well: whatever was thought to be left of this
         // minute, Google has just said there is none.
         $state['paidOffAt'] = max($state['paidOffAt'], $now + self::RESERVE_SECONDS);
@@ -252,6 +269,19 @@ final class GmailQuotaPacer
         ));
     }
 
+    /**
+     * What this application had counted for the account in the minute before
+     * Google last refused it.
+     *
+     * Shown while the account is paused, and the honest measure of how far
+     * the count is from Google's: a refusal at a figure well under the limit
+     * is quota spent by something this pacer does not see.
+     */
+    public function usedWhenRefused(Account $account): int
+    {
+        return $this->read($this->state->getItem($this->accountKey($account))->get())['usedWhenRefused'];
+    }
+
     /** Whether the limit is one Google named, rather than the one assumed until it does. */
     public function isLimitLearnt(): bool
     {
@@ -280,7 +310,7 @@ final class GmailQuotaPacer
     }
 
     /**
-     * @return array{paidOffAt: float, refusedUntil: float, spent: array<int, int>}
+     * @return array{paidOffAt: float, refusedUntil: float, usedWhenRefused: int, spent: array<int, int>}
      *         the moment the account's spending so far is paid off at the
      *         steady rate, and the moment a refusal stops applying — both in
      *         the past for an account that has been idle — and what was spent
@@ -291,9 +321,10 @@ final class GmailQuotaPacer
         $spent = true === is_array($stored) && true === is_array($stored['spent'] ?? null) ? $stored['spent'] : [];
 
         return [
-            'paidOffAt'    => (float) (true === is_array($stored) ? ($stored['paidOffAt'] ?? 0.0) : 0.0),
-            'refusedUntil' => (float) (true === is_array($stored) ? ($stored['refusedUntil'] ?? 0.0) : 0.0),
-            'spent'        => array_map(intval(...), $spent),
+            'paidOffAt'       => (float) (true === is_array($stored) ? ($stored['paidOffAt'] ?? 0.0) : 0.0),
+            'refusedUntil'    => (float) (true === is_array($stored) ? ($stored['refusedUntil'] ?? 0.0) : 0.0),
+            'usedWhenRefused' => (int) (true === is_array($stored) ? ($stored['usedWhenRefused'] ?? 0) : 0),
+            'spent'           => array_map(intval(...), $spent),
         ];
     }
 

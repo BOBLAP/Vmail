@@ -34,10 +34,9 @@ final class GmailApiSyncer
     private const int PAGE_SIZE = 500;
 
     /**
-     * Gmail message IDs per fan-out batch. Fifty is the most Google asks to
-     * be sent in one batch request, and at twenty units a message it is a
-     * thousand units — a sixth of the minute on a project with the lowest
-     * limit, where a hundred was a third of it in one request.
+     * Gmail message IDs per fan-out batch: one job's worth. The client sends
+     * them a few to a request — see GmailApiClient::getMessages() — so this
+     * is how much a worker takes on at a time.
      */
     private const int BATCH_SIZE = 50;
 
@@ -151,7 +150,7 @@ final class GmailApiSyncer
             'labelIds'   => 'INBOX',
         ]);
 
-        $this->dispatchBatches($account, $this->newGmailIds($account, $listed['messages']), true);
+        $this->dispatchBatches($account, $this->newGmailIds($account, $listed['messages']), true, true);
     }
 
     /**
@@ -178,6 +177,12 @@ final class GmailApiSyncer
             // now would find the same ids missing and dispatch them a second
             // time; an hour is long enough for the queue to have made visible
             // progress.
+            //
+            // Visible progress, not the end of it: a large mailbox on a low
+            // quota takes most of a day, and each hourly listing in that time
+            // names everything still outstanding again. Those batches are
+            // marked `onlyMissing`, so what an earlier one has brought in by
+            // the time a later one is handled costs a lookup and no fetch.
             $ranAt = $account->backfillRanAt;
 
             if (null !== $ranAt && $ranAt > new \DateTimeImmutable(sprintf('-%d seconds', self::BACKFILL_COOLDOWN))) {
@@ -200,7 +205,7 @@ final class GmailApiSyncer
 
         $pending = $this->newGmailIds($account, $listed['messages']);
 
-        $this->dispatchBatches($account, $pending, $toImportQueue);
+        $this->dispatchBatches($account, $pending, $toImportQueue, true);
 
         $found = $account->backfillPending + count($pending);
 
@@ -590,8 +595,12 @@ final class GmailApiSyncer
 
     /**
      * @param list<string> $gmailIds
+     * @param bool         $onlyMissing a listing's batch: by the time it is
+     *                                  handled some of what it names may be
+     *                                  here already, and those are not
+     *                                  fetched again
      */
-    private function dispatchBatches(Account $account, array $gmailIds, bool $toImportQueue = false): void
+    private function dispatchBatches(Account $account, array $gmailIds, bool $toImportQueue = false, bool $onlyMissing = false): void
     {
         if (count($gmailIds) === 0) {
             return;
@@ -609,6 +618,7 @@ final class GmailApiSyncer
                     (int) $account->id,
                     $batch,
                     $this->origin->current(),
+                    $onlyMissing,
                 ),
                 true === $toImportQueue ? [new TransportNamesStamp([self::IMPORT_QUEUE])] : [],
             );

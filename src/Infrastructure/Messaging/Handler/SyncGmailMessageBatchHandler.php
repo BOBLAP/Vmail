@@ -104,7 +104,22 @@ final readonly class SyncGmailMessageBatchHandler
         // below looks each id up before building, and enriches when it finds a
         // row. A redelivered batch therefore costs one re-fetch and updates
         // instead of inserting, which is what it should always have done.
-        $toFetch = array_values($message->gmailIds);
+        $toFetch     = array_values($message->gmailIds);
+        $onlyMissing = true === ($message->onlyMissing ?? false);
+
+        // EXCEPT A LISTING'S BATCH, which names what was missing when the
+        // listing ran and has nothing to say about labels. An import that
+        // takes longer than the hour between listings has every outstanding
+        // id on the queue once per listing: seventy thousand messages named a
+        // second time, a third, each fetched in full again at sixty quota
+        // units apiece on the quota the import was already short of (#90).
+        if (true === $onlyMissing) {
+            $stored  = array_flip($this->messageRepository->findStoredGmailIdsForUser($account->usr, $toFetch));
+            $toFetch = array_values(array_filter(
+                $toFetch,
+                static fn (string|int $id): bool => false === isset($stored[(string) $id]),
+            ));
+        }
 
         if (count($toFetch) === 0) {
             return;
@@ -116,7 +131,7 @@ final readonly class SyncGmailMessageBatchHandler
         // come round when the refusal has cleared. Not an error and not a
         // retry: nothing went wrong, and there is no ladder to climb.
         if ($this->pacer->waitSeconds($account) > 0) {
-            $this->putBack($account, $toFetch);
+            $this->putBack($account, $toFetch, $onlyMissing);
 
             return;
         }
@@ -141,7 +156,7 @@ final readonly class SyncGmailMessageBatchHandler
                 'count'     => count($fetch['retryable']),
             ]);
 
-            $this->putBack($account, $fetch['retryable']);
+            $this->putBack($account, $fetch['retryable'], $onlyMissing);
         }
 
         /** @var list<array{message: Message, account: Account}> $built */
@@ -294,7 +309,7 @@ final readonly class SyncGmailMessageBatchHandler
      *
      * @param list<string> $gmailIds
      */
-    private function putBack(Account $account, array $gmailIds): void
+    private function putBack(Account $account, array $gmailIds, bool $onlyMissing): void
     {
         $wait  = $this->pacer->waitSeconds($account);
         $delay = $wait > 0 ? 1000 * ($wait + random_int(1, 15)) : self::RETRY_DELAY_MS;
@@ -306,7 +321,7 @@ final readonly class SyncGmailMessageBatchHandler
         }
 
         $this->bus->dispatch(
-            new SyncGmailMessageBatchMessage((int) $account->id, $gmailIds, $this->origin->current()),
+            new SyncGmailMessageBatchMessage((int) $account->id, $gmailIds, $this->origin->current(), $onlyMissing),
             $stamps,
         );
 

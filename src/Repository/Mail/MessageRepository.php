@@ -1811,6 +1811,31 @@ class MessageRepository extends ServiceEntityRepository
     }
 
     /**
+     * Which of these Gmail ids the owner already has, as ids and nothing
+     * else: what a listing's batch asks before it fetches.
+     *
+     * @param list<string> $gmailIds
+     *
+     * @return list<string>
+     */
+    public function findStoredGmailIdsForUser(User $user, array $gmailIds): array
+    {
+        if (0 === count($gmailIds)) {
+            return [];
+        }
+
+        return array_map(strval(...), $this->createQueryBuilder('m')
+            ->select('m.gmailId')
+            ->innerJoin('m.account', 'a')
+            ->where('a.usr = :usr')
+            ->andWhere('m.gmailId IN (:gmailIds)')
+            ->setParameter('usr', $user)
+            ->setParameter('gmailIds', $gmailIds)
+            ->getQuery()
+            ->getSingleColumnResult());
+    }
+
+    /**
      * QueryBuilder on two counts: the owner is reached through the account
      * association, which findBy() cannot traverse, and only one column comes
      * back.

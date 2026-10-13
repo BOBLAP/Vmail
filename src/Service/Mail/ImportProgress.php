@@ -130,6 +130,7 @@ final readonly class ImportProgress
         $left  = null === $total ? null : max(0, $total - $done);
 
         $paused = $this->pacer->waitSeconds($account);
+        $used   = $this->pacer->usedThisMinute($account);
 
         return new GmailQuotaStatus(
             $this->pacer->limit(),
@@ -137,8 +138,12 @@ final readonly class ImportProgress
             // While Google holds the account nothing is being spent, and the
             // running count falls to nothing; what was spent when it said no
             // is the figure that explains the pause.
-            $paused > 0 ? $this->pacer->usedWhenRefused($account) : $this->pacer->usedThisMinute($account),
+            $paused > 0 ? $this->pacer->usedWhenRefused($account) : $used,
             $paused,
+            // What was spent, over what a message costs. A listing page is in
+            // the count as well and is a quarter of one message; a refused
+            // message is in it too, and was not fetched. Roughly, then.
+            $paused > 0 ? 0 : intdiv($used, GmailQuotaPacer::UNITS_PER_MESSAGE),
             null === $left || 0 === $left ? null : (int) ceil($left / $this->pacer->messagesPerMinute()),
         );
     }

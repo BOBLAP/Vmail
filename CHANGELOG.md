@@ -19,7 +19,8 @@ allowance between its workers. A refusal is no longer an
 error: whatever met it — a batch, an import page, a sync, a label change being pushed — waits
 out the minute and carries on. The
 import line in the background-work indicator now shows the quota, roughly how much of it is in
-use, how long the rest of the import takes, and says so when Google has paused it. No
+use, how many messages a minute are coming in, how long the rest of the import takes, and says
+so when Google has paused it. No
 migration. [#90](https://github.com/karatektus/pl_mail/issues/90), reported by @karamanliev.
 
 **The tab icon is the one you picked, in Firefox too.** Settings → Appearance → Logo changed the

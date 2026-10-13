@@ -29,6 +29,9 @@ final readonly class GmailQuotaStatus
      *                                in the minute before Google refused
      * @param int      $pausedSeconds how long Google's last refusal still
      *                                holds the account; 0 when it does not
+     * @param int      $messagesPerMinute roughly how many messages were
+     *                                fetched in the minute just gone; 0 while
+     *                                paused, when none are
      * @param int|null $minutesLeft   how long the rest of the import takes at
      *                                the paced rate, or null when there is no
      *                                total to reckon it from
@@ -38,6 +41,7 @@ final readonly class GmailQuotaStatus
         public bool $learnt,
         public int  $used,
         public int  $pausedSeconds,
+        public int  $messagesPerMinute,
         public ?int $minutesLeft,
     ) {}
 

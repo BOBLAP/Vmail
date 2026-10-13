@@ -170,6 +170,11 @@ the record and a missed nudge costs one stale render, never a wrong answer.
                                         '%limit%': line.quota.limit|number_format,
                                     }) }}
                                 </p>
+                                {% if line.quota.messagesPerMinute > 0 and not line.waiting %}
+                                    <p class="mt-0.5 text-[11px] text-ink-faint truncate" data-import-rate>
+                                        {{ 'jobs.import.rate'|trans({ '%count%': line.quota.messagesPerMinute|number_format }) }}
+                                    </p>
+                                {% endif %}
                                 {% if line.quota.minutesLeft is not null and (not line.waiting or line.quota.isPaused()) %}
                                     <p class="mt-0.5 text-[11px] text-ink-faint truncate" data-import-remaining>
                                         {% if line.quota.minutesLeft >= 60 %}

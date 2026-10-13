@@ -2070,6 +2070,7 @@ jobs:
         quota_assumed: "Gmail's ration: about %used% o' %limit% units this minute (a guess, till Google names the limit)"
         quota_paused: "Becalmed by Gmail's ration · under way in %seconds% s"
         quota_refused: "Gmail said nay at about %used% o' %limit% units a minute"
+        rate: "About %count% letters a minute"
         remaining_hours: "About %hours% h %minutes% min o' haulin' left"
         remaining_minutes: "About %minutes% min o' haulin' left"
         waiting: "Waitin' fer the tide"

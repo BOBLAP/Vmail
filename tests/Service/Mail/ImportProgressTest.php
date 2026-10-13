@@ -198,7 +198,15 @@ final class ImportProgressTest extends KernelTestCase
         self::assertSame(15_000, $line->quota->limit);
         self::assertFalse($line->quota->learnt);
         self::assertSame(2000, $line->quota->used);
+        self::assertSame(100, $line->quota->messagesPerMinute, '2,000 units at twenty a message');
         self::assertFalse($line->quota->isPaused());
+
+        $running = static::getContainer()->get(Environment::class)->render('mail/_jobs_indicator.html.twig', [
+            'jobs'    => [],
+            'imports' => [$line],
+        ]);
+
+        self::assertStringContainsString('About 100 messages a minute', $running);
         // 9,000 messages at 450 a minute, which is three fifths of 15,000
         // units at twenty a message.
         self::assertSame(20, $line->quota->minutesLeft);
@@ -210,6 +218,7 @@ final class ImportProgressTest extends KernelTestCase
         self::assertSame(6000, $line->quota->limit);
         self::assertTrue($line->quota->learnt);
         self::assertTrue($line->quota->isPaused());
+        self::assertSame(0, $line->quota->messagesPerMinute);
         self::assertSame(50, $line->quota->minutesLeft);
 
         $html = static::getContainer()->get(Environment::class)->render('mail/_jobs_indicator.html.twig', [
@@ -221,6 +230,7 @@ final class ImportProgressTest extends KernelTestCase
         self::assertStringContainsString('6,000', $html);
         self::assertStringContainsString('About 50 min left', $html);
         self::assertStringContainsString('Paused by Gmail', $html);
+        self::assertStringNotContainsString('data-import-rate', $html, 'nothing is fetched while paused');
     }
 
     /** Nothing running is no button at all, as it was before imports were shown. */

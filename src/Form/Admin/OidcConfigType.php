@@ -101,7 +101,12 @@ final class OidcConfigType extends AbstractType
                 'help'        => 'admin.sso.field.scopes_help',
                 'required'    => false,
                 'constraints' => [new Length(max: 255)],
-                'attr'        => ['placeholder' => 'openid email profile'] + PasswordManagerIgnore::ATTR,
+                // No placeholder. It read "openid email profile", and the word
+                // "email" in a placeholder is enough for Bitwarden to take the
+                // field for the address of an identity and open its menu in
+                // it — with `off` and its own opt-out attribute both set. The
+                // help text below names the default instead.
+                'attr'        => PasswordManagerIgnore::ATTR,
             ])
             ->add('autoCreate', CheckboxType::class, [
                 'label'    => 'admin.sso.field.auto_create',

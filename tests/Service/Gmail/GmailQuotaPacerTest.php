@@ -93,6 +93,31 @@ final class GmailQuotaPacerTest extends TestCase
         self::assertSame(0, $pacer->waitSeconds($account));
     }
 
+    /**
+     * The quota probe needs a minute with nothing else in it. Holding an
+     * account makes its jobs wait as a refusal does, and means none of what a
+     * refusal means: nothing is learnt and nothing is slowed.
+     */
+    public function testAnAccountCanBeHeldWithoutBeingTreatedAsRefused(): void
+    {
+        $clock   = new MockClock('2026-10-08 14:30:00');
+        $pacer   = new GmailQuotaPacer($clock);
+        $account = $this->account(1);
+
+        $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+        $clock->sleep(61);
+
+        $pacer->hold($account, 600);
+
+        self::assertSame(600, $pacer->waitSeconds($account));
+        self::assertSame(6000, $pacer->limit());
+
+        $pacer->hold($account, 0);
+
+        self::assertSame(0, $pacer->waitSeconds($account));
+        self::assertSame(180, $pacer->messagesPerMinute($account));
+    }
+
     public function testGooglesOwnRetryAfterIsBelievedOverTheMinute(): void
     {
         $pacer   = new GmailQuotaPacer(new MockClock('2026-10-08 14:30:00'));

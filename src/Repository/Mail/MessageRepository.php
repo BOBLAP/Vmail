@@ -1811,6 +1811,25 @@ class MessageRepository extends ServiceEntityRepository
     }
 
     /**
+     * A few of an account's Gmail ids, newest first: something to fetch again
+     * for the quota probe without asking Gmail what there is.
+     *
+     * @return list<string>
+     */
+    public function findSomeGmailIdsForAccount(Account $account, int $limit): array
+    {
+        return array_map(strval(...), $this->createQueryBuilder('m')
+            ->select('m.gmailId')
+            ->where('m.account = :account')
+            ->andWhere('m.gmailId IS NOT NULL')
+            ->setParameter('account', $account)
+            ->orderBy('m.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getSingleColumnResult());
+    }
+
+    /**
      * Which of these Gmail ids the owner already has, as ids and nothing
      * else: what a listing's batch asks before it fetches.
      *

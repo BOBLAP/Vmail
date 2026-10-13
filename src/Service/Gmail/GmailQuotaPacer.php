@@ -290,6 +290,29 @@ final class GmailQuotaPacer
     }
 
     /**
+     * Leave this account's bulk fetching alone for so many seconds, for a
+     * reason that is not Google's: the quota probe, which needs a minute with
+     * nothing else in it (see GmailQuotaProbeCommand). 0 ends it.
+     *
+     * The same wait a refusal causes, so every job that would fetch puts
+     * itself back the same way — and none of what a refusal means. The pace
+     * is not cut and no limit is learnt, because nothing was refused.
+     */
+    public function hold(Account $account, int $seconds): void
+    {
+        $item  = $this->state->getItem($this->accountKey($account));
+        $state = $this->read($item->get());
+
+        // Its pace as it stands now, kept: the wait is measured from
+        // refusedUntil, and moving that would otherwise change it.
+        $now                   = $this->now();
+        $state['pace']         = $this->pace($state, $now);
+        $state['refusedUntil'] = $now + max(0, $seconds);
+
+        $this->state->save($item->set($state)->expiresAfter(self::LIMIT_LIFETIME_SECONDS));
+    }
+
+    /**
      * How long to leave this account alone, in whole seconds; 0 when it may
      * be asked now.
      *

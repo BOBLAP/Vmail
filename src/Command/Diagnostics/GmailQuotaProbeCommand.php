@@ -66,7 +66,10 @@ final class GmailQuotaProbeCommand extends Command
     private const string BASE  = 'https://gmail.googleapis.com/gmail/v1/users/me';
     private const string BATCH = 'https://www.googleapis.com/batch/gmail/v1';
 
-    /** How many messages.get go into one batch request, as GmailApiClient sends them. */
+    /** What Google's quota table says a messages.get costs, to set the meter's reading beside. */
+    private const int DOCUMENTED_UNITS = 20;
+
+    /** How many messages.get go into one batch request. */
     private const int MESSAGES_PER_REQUEST = 10;
 
     /**
@@ -160,7 +163,7 @@ final class GmailQuotaProbeCommand extends Command
                 (string) $result['ok'],
                 (string) $result['refused'],
                 (string) $result['other'],
-                number_format($result['requests'] * GmailQuotaPacer::UNITS_PER_MESSAGE),
+                number_format($result['requests'] * self::DOCUMENTED_UNITS),
                 '' === $result['firstError'] ? '' : mb_strimwidth($result['firstError'], 0, 60, '…'),
             ];
 
@@ -181,7 +184,7 @@ final class GmailQuotaProbeCommand extends Command
 
         $io->newLine();
         $io->table(
-            ['Mode', 'Minute', 'messages.get', '200', '403/429', 'Other', 'Units at 20 each', 'First error'],
+            ['Mode', 'Minute', 'messages.get', '200', '403/429', 'Other', 'Units by Google\'s table', 'First error'],
             $rows,
         );
 

@@ -53,7 +53,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * it. Starting from the top again costs one refused batch a day on a project
  * that has less, and that batch is put back like any other.
  *
- * WELL UNDER the limit — the worst minute here is about two thirds of it. The rest
+ * UNDER the limit — the worst minute here is a little short of all of it. The rest
  * belongs to what is not counted: the person using the mailbox (a send is
  * 100, a label change on a selection 50), push-driven syncs, and whatever
  * else is signed in to the same Google account.
@@ -90,8 +90,31 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  */
 final class GmailQuotaPacer
 {
-    /** What a messages.get costs, and so what each id in a batch costs. */
-    public const int UNITS_PER_MESSAGE = 20;
+    /**
+     * What fetching one message in full costs, and so what each id in a batch
+     * costs.
+     *
+     * MEASURED, and three times the figure in Google's table. The table gives
+     * messages.get one cost, 20. An import paced on that was refused with
+     * 3,240 units counted of a 6,000 limit, and no other call was being made.
+     * So thirty messages were fetched each way in a minute of their own
+     * (app:gmail:quota-probe, 2026-10-13) and the project's quota meter read
+     * afterwards:
+     *
+     *     format=full, batched        1,800 units   60 each
+     *     format=full, one at a time  1,800         60
+     *     format=raw                  1,800         60
+     *     format=metadata               600         20
+     *     format=minimal                600         20
+     *
+     * The table's 20 is the cost of a message without its body. With it, by
+     * either format that carries one, it is 60 — and an import needs the body.
+     *
+     * If Google moves the figure again the pacer does not break: a refusal at
+     * a known limit slows the account whatever this says. This is where the
+     * pace starts, and what the progress line's figures are reckoned from.
+     */
+    public const int UNITS_PER_MESSAGE = 60;
 
     /** What one page of messages.list costs. */
     public const int UNITS_PER_LIST_PAGE = 5;
@@ -109,12 +132,21 @@ final class GmailQuotaPacer
      */
     public const int CURRENT_DEFAULT_LIMIT = 6_000;
 
-    /** The share of the limit that is the steady allowance. */
-    private const float STEADY_SHARE = 0.6;
+    /**
+     * The share of the limit that is the steady allowance.
+     *
+     * It was three fifths while a message was thought to cost a third of
+     * what it does, which in truth was nearly twice the limit. With the cost
+     * right, the whole of a 6,000 limit is a hundred messages a minute and
+     * there is little to be generous with: this leaves a seventh for the
+     * burst below, the syncs and the person using the mailbox, and the pace
+     * gives way to a refusal for whatever that does not cover.
+     */
+    private const float STEADY_SHARE = 0.85;
 
     /**
      * How far ahead of the allowance a burst may run: five seconds of it,
-     * which is one request of ten messages and a listing page beside it.
+     * which is one request of five messages and a listing page beside it.
      *
      * It was twenty, a fifth of the limit, on the reading that a limit of so
      * much a minute may be spent however the minute likes. Google does not

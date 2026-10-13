@@ -10,11 +10,12 @@ The published image tags: `latest` follows the most recent release below,
 
 **A Gmail import no longer runs into Google's quota and stays there.** Google lowered the
 per-user limit to 6,000 units a minute for projects created since May 2026 and raised the cost
-of fetching a message from 5 units to 20; plMail paced imports for 15,000 at the old cost, so on
+of fetching a message with its body from 5 units to 60 (its table says 20, which is the
+cost without the body); plMail paced imports for 15,000 at the old cost, so on
 a new project most of what an import asked for was refused, the log filled with rate-limit
 warnings and an import could stop without resuming. plMail now reads the limit out of Google's
 first refusal and keeps to it — nothing to configure — counts a message at its real cost,
-fetches ten to a request so a minute's worth is never asked for in one second, and shares one
+fetches five to a request so a minute's worth is never asked for in one second, and shares one
 allowance between its workers. An account Google still refuses at the right limit is slowed
 down and speeds up again by itself. An import longer than an hour no longer fetches again what
 an earlier pass already brought in. A refusal is no longer an

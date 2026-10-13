@@ -22,8 +22,8 @@ use Symfony\Component\Clock\MockClock;
  */
 final class GmailQuotaPacerTest extends TestCase
 {
-    /** One request: ten messages.get at twenty units. */
-    private const int BATCH = 200;
+    /** One request: five messages at sixty units. */
+    private const int BATCH = 300;
 
     public function testAFewBatchesInARowAreNotHeld(): void
     {
@@ -46,9 +46,9 @@ final class GmailQuotaPacerTest extends TestCase
 
         $worst = $this->worstMinute($pacer, $clock, $this->account(1));
 
-        self::assertLessThanOrEqual(10_000, $worst);
+        self::assertLessThanOrEqual(14_200, $worst);
         // And not so cautious that an import crawls: the steady rate is used.
-        self::assertGreaterThanOrEqual(9_000, $worst);
+        self::assertGreaterThanOrEqual(12_600, $worst);
     }
 
     /**
@@ -71,8 +71,8 @@ final class GmailQuotaPacerTest extends TestCase
 
         $worst = $this->worstMinute($pacer, $clock, $account);
 
-        self::assertLessThanOrEqual(4200, $worst);
-        self::assertGreaterThanOrEqual(3600, $worst);
+        self::assertLessThanOrEqual(5900, $worst);
+        self::assertGreaterThanOrEqual(5000, $worst);
     }
 
     public function testARefusedAccountIsLeftAloneForAMinuteAndThenIsNot(): void
@@ -115,7 +115,7 @@ final class GmailQuotaPacerTest extends TestCase
         $pacer->hold($account, 0);
 
         self::assertSame(0, $pacer->waitSeconds($account));
-        self::assertSame(180, $pacer->messagesPerMinute($account));
+        self::assertSame(85, $pacer->messagesPerMinute($account));
     }
 
     public function testGooglesOwnRetryAfterIsBelievedOverTheMinute(): void
@@ -212,17 +212,17 @@ final class GmailQuotaPacerTest extends TestCase
         $pacer->spend($account, self::BATCH);
         $pacer->spend($account, self::BATCH);
 
-        self::assertSame(400, $pacer->usedThisMinute($account));
+        self::assertSame(600, $pacer->usedThisMinute($account));
         self::assertSame(0, $pacer->usedThisMinute($this->account(2)));
 
         $clock->sleep(30);
         $pacer->spend($account, self::BATCH);
 
-        self::assertSame(600, $pacer->usedThisMinute($account));
+        self::assertSame(900, $pacer->usedThisMinute($account));
 
         $clock->sleep(45);
 
-        self::assertSame(200, $pacer->usedThisMinute($account));
+        self::assertSame(300, $pacer->usedThisMinute($account));
 
         $clock->sleep(60);
 
@@ -243,10 +243,10 @@ final class GmailQuotaPacerTest extends TestCase
             $pacer->spend($account, self::BATCH);
         }
 
-        self::assertLessThanOrEqual(4200, $pacer->usedThisMinute($account));
-        self::assertGreaterThanOrEqual(3000, $pacer->usedThisMinute($account));
+        self::assertLessThanOrEqual(5900, $pacer->usedThisMinute($account));
+        self::assertGreaterThanOrEqual(4300, $pacer->usedThisMinute($account));
         self::assertTrue($pacer->isLimitLearnt());
-        self::assertSame(180, $pacer->messagesPerMinute($account));
+        self::assertSame(85, $pacer->messagesPerMinute($account));
     }
 
     /**
@@ -267,7 +267,7 @@ final class GmailQuotaPacerTest extends TestCase
         $clock->sleep(70);
 
         self::assertSame(0, $pacer->usedThisMinute($account));
-        self::assertSame(400, $pacer->usedWhenRefused($account));
+        self::assertSame(600, $pacer->usedWhenRefused($account));
     }
 
     /**
@@ -285,13 +285,13 @@ final class GmailQuotaPacerTest extends TestCase
         // The refusal that teaches the limit is explained by the limit.
         $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
 
-        self::assertSame(180, $pacer->messagesPerMinute($account));
+        self::assertSame(85, $pacer->messagesPerMinute($account));
 
         $clock->sleep(61);
         $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
 
-        self::assertSame(135, $pacer->messagesPerMinute($account));
-        self::assertSame(180, $pacer->messagesPerMinute($this->account(2)), 'who else spends a mailbox\'s quota is a fact about that mailbox');
+        self::assertSame(63, $pacer->messagesPerMinute($account));
+        self::assertSame(85, $pacer->messagesPerMinute($this->account(2)), 'who else spends a mailbox\'s quota is a fact about that mailbox');
     }
 
     /** A job that was under way when the first refusal came is not a second reason. */
@@ -309,7 +309,7 @@ final class GmailQuotaPacerTest extends TestCase
         $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
         $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
 
-        self::assertSame(135, $pacer->messagesPerMinute($account));
+        self::assertSame(63, $pacer->messagesPerMinute($account));
     }
 
     public function testASlowedAccountWinsItsPaceBackAndIsNeverStoppedOutright(): void
@@ -325,16 +325,16 @@ final class GmailQuotaPacerTest extends TestCase
             $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
         }
 
-        self::assertSame(36, $pacer->messagesPerMinute($account), 'a fifth of 180, and no lower');
+        self::assertSame(17, $pacer->messagesPerMinute($account), 'a fifth of 85, and no lower');
 
         // The pause, then ten quiet minutes: a fifth of the way back.
         $clock->sleep(60 + 600);
 
-        self::assertSame(72, $pacer->messagesPerMinute($account));
+        self::assertSame(34, $pacer->messagesPerMinute($account));
 
         $clock->sleep(3600);
 
-        self::assertSame(180, $pacer->messagesPerMinute($account));
+        self::assertSame(85, $pacer->messagesPerMinute($account));
     }
 
     public function testOneAccountImportingDoesNotHoldAnother(): void

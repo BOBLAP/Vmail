@@ -90,7 +90,7 @@ final class GmailQuotaProbeCommandTest extends TestCase
             ->execute(['account' => '7', '--mode' => 'single-minimal', '--count' => '3']);
 
         self::assertSame([true, true, true], $held);
-        self::assertSame(450, $pacer->messagesPerMinute($account), 'held, not refused: its pace is what it was');
+        self::assertSame(212, $pacer->messagesPerMinute($account), 'held, not refused: its pace is what it was');
     }
 
     public function testARefusedFetchIsCountedAsOneAndSaysWhy(): void

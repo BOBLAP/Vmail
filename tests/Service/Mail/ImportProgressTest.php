@@ -199,7 +199,7 @@ final class ImportProgressTest extends KernelTestCase
         self::assertSame(15_000, $line->quota->limit);
         self::assertFalse($line->quota->learnt);
         self::assertSame(400, $line->quota->used);
-        self::assertSame(20, $line->quota->messagesPerMinute, '400 units at twenty a message');
+        self::assertSame(6, $line->quota->messagesPerMinute, '400 units at sixty a message');
         self::assertFalse($line->quota->isPaused());
 
         $running = static::getContainer()->get(Environment::class)->render('mail/_jobs_indicator.html.twig', [
@@ -207,10 +207,10 @@ final class ImportProgressTest extends KernelTestCase
             'imports' => [$line],
         ]);
 
-        self::assertStringContainsString('About 20 messages a minute', $running);
-        // 9,000 messages at 450 a minute, which is three fifths of 15,000
-        // units at twenty a message.
-        self::assertSame(20, $line->quota->minutesLeft);
+        self::assertStringContainsString('About 6 messages a minute', $running);
+        // 9,000 messages at 212 a minute, which is 85% of 15,000 units at
+        // sixty a message.
+        self::assertSame(43, $line->quota->minutesLeft);
 
         $pacer->refused($this->account, 'defaultPerMinutePerUser', 6000);
 
@@ -220,7 +220,7 @@ final class ImportProgressTest extends KernelTestCase
         self::assertTrue($line->quota->learnt);
         self::assertTrue($line->quota->isPaused());
         self::assertSame(0, $line->quota->messagesPerMinute);
-        self::assertSame(50, $line->quota->minutesLeft);
+        self::assertSame(106, $line->quota->minutesLeft);
 
         $html = static::getContainer()->get(Environment::class)->render('mail/_jobs_indicator.html.twig', [
             'jobs'    => [],
@@ -229,7 +229,7 @@ final class ImportProgressTest extends KernelTestCase
 
         self::assertStringContainsString('data-import-quota', $html);
         self::assertStringContainsString('6,000', $html);
-        self::assertStringContainsString('About 50 min left', $html);
+        self::assertStringContainsString('About 1 h 46 min left', $html);
         self::assertStringContainsString('Paused by Gmail', $html);
         self::assertStringNotContainsString('data-import-rate', $html, 'nothing is fetched while paused');
     }

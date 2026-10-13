@@ -45,7 +45,7 @@ final class GmailApiClient
      * How many messages.get go into one batch request. See getMessages() for
      * why it is not the fifty a caller hands over.
      */
-    private const int MESSAGES_PER_REQUEST = 10;
+    private const int MESSAGES_PER_REQUEST = 5;
 
     private const array TRANSIENT_REASONS = [
         'rateLimitExceeded',
@@ -176,13 +176,13 @@ final class GmailApiClient
         // A FEW AT A TIME, with the pacer asked before each few.
         //
         // The limit is "units a minute", but Google does not let a minute's
-        // worth be spent in a second: fifty messages in one request are a
-        // thousand units at once, ten seconds' worth on a project allowed
-        // 6,000 a minute, and Google refused part of every such batch — one
-        // batch, a refusal, a minute's wait, and the next batch refused the
-        // same way (#90). Ten messages are two seconds' worth there, which is
-        // a burst Google lets through, and the pacer's wait between requests
-        // is what keeps the rate under the limit.
+        // worth be spent in a second: fifty messages in one request are half
+        // a minute's worth at once on a project allowed 6,000 a minute, and
+        // Google refused part of every such batch — one batch, a refusal, a
+        // minute's wait, and the next batch refused the same way (#90). Five
+        // messages are three seconds' worth there, which is a burst Google
+        // lets through, and the pacer's wait between requests is what keeps
+        // the rate under the limit.
         $chunks = array_chunk(array_values($messageIds), self::MESSAGES_PER_REQUEST);
 
         foreach ($chunks as $index => $chunk) {

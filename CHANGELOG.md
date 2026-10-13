@@ -15,7 +15,8 @@ a new project most of what an import asked for was refused, the log filled with 
 warnings and an import could stop without resuming. plMail now reads the limit out of Google's
 first refusal and keeps to it — nothing to configure — counts a message at its real cost,
 fetches fifty at a time, and shares one allowance between its workers. A refusal is no longer an
-error: the batch, import page or sync that met it waits out the minute and carries on. The
+error: whatever met it — a batch, an import page, a sync, a label change being pushed — waits
+out the minute and carries on. The
 import line in the background-work indicator now shows the quota, roughly how much of it is in
 use, how long the rest of the import takes, and says so when Google has paused it. No
 migration. [#90](https://github.com/karatektus/pl_mail/issues/90), reported by @karamanliev.

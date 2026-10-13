@@ -144,7 +144,7 @@ final readonly class ImportProgress
             // the count as well and is a quarter of one message; a refused
             // message is in it too, and was not fetched. Roughly, then.
             $paused > 0 ? 0 : intdiv($used, GmailQuotaPacer::UNITS_PER_MESSAGE),
-            null === $left || 0 === $left ? null : (int) ceil($left / $this->pacer->messagesPerMinute()),
+            null === $left || 0 === $left ? null : (int) ceil($left / $this->pacer->messagesPerMinute($account)),
         );
     }
 

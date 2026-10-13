@@ -221,7 +221,7 @@ final class GmailQuotaPacerTest extends TestCase
         self::assertLessThanOrEqual(4200, $pacer->usedThisMinute($account));
         self::assertGreaterThanOrEqual(3000, $pacer->usedThisMinute($account));
         self::assertTrue($pacer->isLimitLearnt());
-        self::assertSame(180, $pacer->messagesPerMinute());
+        self::assertSame(180, $pacer->messagesPerMinute($account));
     }
 
     /**
@@ -243,6 +243,73 @@ final class GmailQuotaPacerTest extends TestCase
 
         self::assertSame(0, $pacer->usedThisMinute($account));
         self::assertSame(400, $pacer->usedWhenRefused($account));
+    }
+
+    /**
+     * An import that had counted 3,240 units of its 6,000 was refused (#90).
+     * The count is not Google's — somebody reading mail, another client, a
+     * cost reckoned differently — so a refusal at a limit already known means
+     * "slower than this" whatever the count said.
+     */
+    public function testARefusalAtAKnownLimitSlowsThatAccountDown(): void
+    {
+        $clock   = new MockClock('2026-10-08 14:30:00');
+        $pacer   = new GmailQuotaPacer($clock);
+        $account = $this->account(1);
+
+        // The refusal that teaches the limit is explained by the limit.
+        $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+
+        self::assertSame(180, $pacer->messagesPerMinute($account));
+
+        $clock->sleep(61);
+        $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+
+        self::assertSame(135, $pacer->messagesPerMinute($account));
+        self::assertSame(180, $pacer->messagesPerMinute($this->account(2)), 'who else spends a mailbox\'s quota is a fact about that mailbox');
+    }
+
+    /** A job that was under way when the first refusal came is not a second reason. */
+    public function testRefusalsThatPileUpInsideOnePauseCountOnce(): void
+    {
+        $clock   = new MockClock('2026-10-08 14:30:00');
+        $pacer   = new GmailQuotaPacer($clock);
+        $account = $this->account(1);
+
+        $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+        $clock->sleep(61);
+
+        $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+        $clock->sleep(2);
+        $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+        $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+
+        self::assertSame(135, $pacer->messagesPerMinute($account));
+    }
+
+    public function testASlowedAccountWinsItsPaceBackAndIsNeverStoppedOutright(): void
+    {
+        $clock   = new MockClock('2026-10-08 14:30:00');
+        $pacer   = new GmailQuotaPacer($clock);
+        $account = $this->account(1);
+
+        $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+
+        for ($i = 0; $i < 20; $i++) {
+            $clock->sleep(61);
+            $pacer->refused($account, 'defaultPerMinutePerUser', 6000);
+        }
+
+        self::assertSame(36, $pacer->messagesPerMinute($account), 'a fifth of 180, and no lower');
+
+        // The pause, then ten quiet minutes: a fifth of the way back.
+        $clock->sleep(60 + 600);
+
+        self::assertSame(72, $pacer->messagesPerMinute($account));
+
+        $clock->sleep(3600);
+
+        self::assertSame(180, $pacer->messagesPerMinute($account));
     }
 
     public function testOneAccountImportingDoesNotHoldAnother(): void

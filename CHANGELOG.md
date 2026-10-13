@@ -15,7 +15,8 @@ a new project most of what an import asked for was refused, the log filled with 
 warnings and an import could stop without resuming. plMail now reads the limit out of Google's
 first refusal and keeps to it — nothing to configure — counts a message at its real cost,
 fetches ten to a request so a minute's worth is never asked for in one second, and shares one
-allowance between its workers. A refusal is no longer an
+allowance between its workers. An account Google still refuses at the right limit is slowed
+down and speeds up again by itself. A refusal is no longer an
 error: whatever met it — a batch, an import page, a sync, a label change being pushed — waits
 out the minute and carries on. The
 import line in the background-work indicator now shows the quota, roughly how much of it is in

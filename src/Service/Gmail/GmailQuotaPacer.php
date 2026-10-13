@@ -6,6 +6,8 @@ namespace App\Service\Gmail;
 
 use App\Entity\Mail\Account;
 use Psr\Cache\CacheItemPoolInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -55,6 +57,21 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * belongs to what is not counted: the person using the mailbox (a send is
  * 100, a label change on a selection 50), push-driven syncs, and whatever
  * else is signed in to the same Google account.
+ *
+ * ## And the count is not Google's, so the pace gives way too
+ *
+ * Even at the right limit this application's count is not the one Google
+ * keeps. An import that had counted 3,240 units of a minute's 6,000 was
+ * refused: the person reading mail, another client signed in to the same
+ * account, a cost Google reckons differently — none of it visible from here,
+ * and none of it Google's to explain. So a refusal at a limit already known
+ * is taken as "slower than this", whatever the count said: the account's
+ * pace drops by a quarter, and climbs back a little for every minute that
+ * passes without another. It settles just under whatever Google will
+ * actually take, and finds its way up again when the other spender stops.
+ *
+ * That is per account, where the limit is everybody's: who else is spending
+ * a mailbox's quota is a fact about that mailbox.
  *
  * ## Shared between processes
  *
@@ -126,6 +143,15 @@ final class GmailQuotaPacer
      */
     private const int SLOT_SECONDS = 10;
 
+    /** What a refusal at a known limit leaves of an account's pace. */
+    private const float SLOWER = 0.75;
+
+    /** The least an account is ever slowed to: a fifth of its allowance. */
+    private const float SLOWEST = 0.2;
+
+    /** How much of its allowance an account wins back per minute without a refusal. */
+    private const float FASTER_PER_MINUTE = 0.02;
+
     private const string LIMIT_KEY = 'gmail_quota.limit';
 
     private readonly CacheItemPoolInterface $state;
@@ -136,6 +162,7 @@ final class GmailQuotaPacer
         // share with: an array is all the sharing they need.
         #[Autowire(service: 'app.gmail_quota')]
         ?CacheItemPoolInterface $state = null,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         $this->state = $state ?? new ArrayAdapter();
     }
@@ -158,7 +185,7 @@ final class GmailQuotaPacer
         $item  = $this->state->getItem($this->accountKey($account));
         $state = $this->read($item->get());
 
-        $paidOffAt = max($state['paidOffAt'], $now) + $units / $this->unitsPerSecond();
+        $paidOffAt = max($state['paidOffAt'], $now) + $units / $this->unitsPerSecond($state, $now);
 
         // Recorded before the wait, not after: what was spent is spent whether
         // or not the sleep is interrupted by the worker being stopped.
@@ -182,10 +209,12 @@ final class GmailQuotaPacer
     /**
      * Google refused a call for this account on quota.
      *
-     * Two things follow. The account is left alone until the refusal has had
-     * time to clear, by every process — see waitSeconds(). And if the refusal
-     * was under the per-user limit, the limit it named becomes the one every
-     * account is paced to, since it is the project's and not the mailbox's.
+     * Three things follow. The account is left alone until the refusal has
+     * had time to clear, by every process — see waitSeconds(). If the refusal
+     * was under a per-user limit lower than the one being kept to, the limit
+     * it named becomes the one every account is paced to, since it is the
+     * project's and not the mailbox's. And if it taught nothing about the
+     * limit, this account is paced more slowly: see the class.
      *
      * @param string   $limitName         Google's name for the limit, e.g. "…PerMinutePerUser"; '' when the body had none
      * @param int|null $limitValue        units a minute, when the body said
@@ -198,6 +227,34 @@ final class GmailQuotaPacer
 
         $item  = $this->state->getItem($this->accountKey($account));
         $state = $this->read($item->get());
+
+        // The per-project limit is two hundred times the per-user one and
+        // says nothing about how fast a single mailbox may be read.
+        $perUser = true === str_contains(strtolower($limitName), 'peruser');
+        $current = $this->limit();
+        $learnt  = true === $perUser ? ($limitValue ?? self::CURRENT_DEFAULT_LIMIT) : 0;
+
+        // Downwards only. A refusal under a limit higher than the one being
+        // kept to is not news about the limit.
+        $lowered = $learnt > 0 && $learnt < $current;
+
+        if (true === $lowered) {
+            $limit = $this->state->getItem(self::LIMIT_KEY);
+            $this->state->save($limit->set($learnt)->expiresAfter(self::LIMIT_LIFETIME_SECONDS));
+        }
+
+        // A refusal that arrives while the account is already being left
+        // alone is the same one again — a job that was under way, a part of
+        // the same batch — and is not a second reason to slow down. Nor is
+        // one that has just been explained by the limit being lower than
+        // thought.
+        $again = $now < $state['refusedUntil'];
+
+        if (false === $lowered && false === $again) {
+            $state['pace'] = max(self::SLOWEST, $this->pace($state, $now) * self::SLOWER);
+        } else {
+            $state['pace'] = $this->pace($state, $now);
+        }
 
         $state['refusedUntil'] = max($state['refusedUntil'], $now + $cooldown);
         // What had been spent when Google said no. Kept because the running
@@ -214,22 +271,22 @@ final class GmailQuotaPacer
 
         $this->state->save($item->set($state)->expiresAfter(self::LIMIT_LIFETIME_SECONDS));
 
-        // The per-project limit is two hundred times this one and says nothing
-        // about how fast a single mailbox may be read.
-        if (false === str_contains(strtolower($limitName), 'peruser')) {
+        if (true === $again) {
             return;
         }
 
-        $current = $this->limit();
-        $learnt  = $limitValue ?? self::CURRENT_DEFAULT_LIMIT;
-
-        // Downwards only. A refusal under a limit higher than the one being
-        // kept to is another client spending the same user's quota, not news
-        // about the limit.
-        if ($learnt > 0 && $learnt < $current) {
-            $limit = $this->state->getItem(self::LIMIT_KEY);
-            $this->state->save($limit->set($learnt)->expiresAfter(self::LIMIT_LIFETIME_SECONDS));
-        }
+        // The one line that says what Google said and what was made of it.
+        // `counted` beside `limit` is how far this application's count is
+        // from Google's.
+        $this->logger->info('Gmail quota: refused', [
+            'accountId'        => $account->id,
+            'googleLimitName'  => $limitName,
+            'googleLimitValue' => $limitValue,
+            'limit'            => $this->limit(),
+            'counted'          => $state['usedWhenRefused'],
+            'pace'             => round($state['pace'], 2),
+            'waitSeconds'      => $cooldown,
+        ]);
     }
 
     /**
@@ -290,10 +347,12 @@ final class GmailQuotaPacer
         return true === is_int($limit) && $limit > 0;
     }
 
-    /** How many messages a minute an import fetches at the steady allowance. */
-    public function messagesPerMinute(): int
+    /** How many messages a minute this account's import fetches at the pace it is being held to. */
+    public function messagesPerMinute(Account $account): int
     {
-        return max(1, (int) floor($this->unitsPerSecond() * 60.0 / self::UNITS_PER_MESSAGE));
+        $state = $this->read($this->state->getItem($this->accountKey($account))->get());
+
+        return max(1, (int) floor($this->unitsPerSecond($state, $this->now()) * 60.0 / self::UNITS_PER_MESSAGE));
     }
 
     /** Units a minute one user is being held to: Google's last word, or the highest there is. */
@@ -304,13 +363,28 @@ final class GmailQuotaPacer
         return true === is_int($limit) && $limit > 0 ? $limit : self::HIGHEST_LIMIT;
     }
 
-    private function unitsPerSecond(): float
+    /** @param array{pace: float, refusedUntil: float} $state */
+    private function unitsPerSecond(array $state, float $now): float
     {
-        return $this->limit() * self::STEADY_SHARE / 60.0;
+        return $this->limit() * self::STEADY_SHARE * $this->pace($state, $now) / 60.0;
     }
 
     /**
-     * @return array{paidOffAt: float, refusedUntil: float, usedWhenRefused: int, spent: array<int, int>}
+     * The share of its steady allowance this account is held to just now:
+     * what the last refusal left, and a little more for every minute since
+     * that refusal stopped applying.
+     *
+     * @param array{pace: float, refusedUntil: float} $state
+     */
+    private function pace(array $state, float $now): float
+    {
+        $minutesSince = max(0.0, $now - $state['refusedUntil']) / 60.0;
+
+        return min(1.0, $state['pace'] + self::FASTER_PER_MINUTE * $minutesSince);
+    }
+
+    /**
+     * @return array{paidOffAt: float, refusedUntil: float, usedWhenRefused: int, pace: float, spent: array<int, int>}
      *         the moment the account's spending so far is paid off at the
      *         steady rate, and the moment a refusal stops applying — both in
      *         the past for an account that has been idle — and what was spent
@@ -324,6 +398,7 @@ final class GmailQuotaPacer
             'paidOffAt'       => (float) (true === is_array($stored) ? ($stored['paidOffAt'] ?? 0.0) : 0.0),
             'refusedUntil'    => (float) (true === is_array($stored) ? ($stored['refusedUntil'] ?? 0.0) : 0.0),
             'usedWhenRefused' => (int) (true === is_array($stored) ? ($stored['usedWhenRefused'] ?? 0) : 0),
+            'pace'            => (float) (true === is_array($stored) ? ($stored['pace'] ?? 1.0) : 1.0),
             'spent'           => array_map(intval(...), $spent),
         ];
     }

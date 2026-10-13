@@ -102,62 +102,67 @@ final class PasswordManagerIgnoreTest extends KernelTestCase
 
         self::assertStringContainsString('data-bwignore', $html);
         self::assertStringContainsString('data-form-type', $html);
+        // Bitwarden opened its menu in exactly the text fields that had no
+        // `autocomplete` at all, and left alone the ones that said `off`.
+        self::assertStringContainsString('autocomplete="off"', $html);
     }
 
     /**
-     * A secret field has to reach the browser as `new-password`.
+     * A pasted secret is not a password input, and nothing in src/Form may make
+     * one of it again.
      *
-     * PasswordManagerIgnore::SECRET carries it, and six credential fields
-     * never sent it: each wrote `'autocomplete' => 'off'` in the array it
-     * unioned SECRET onto, and with `+` the left side wins. Chrome ignores
-     * `off` on a password field, so Admin → SSO took the administrator's own
-     * mail address as its client ID and their password as its client secret —
-     * the very autofill the constant was introduced to stop, in every form but
-     * the one it was reported from.
-     *
-     * Read from the source rather than rendered form by form: the mistake is in
-     * how the array is written, and a new form can make it without appearing
-     * in any list a test keeps.
+     * Three attempts at talking browsers and password managers out of a
+     * `type="password"` field each fixed one symptom: `off` is ignored by
+     * Chrome, which filled the administrator's own login into Admin → SSO;
+     * `new-password` stopped that and had Bitwarden offer to generate a
+     * password into the field and Chrome list every saved one on a click. The
+     * field is a SecretType now — text, drawn as dots — so there is no password
+     * input left to classify.
      */
-    public function testNoSecretFieldOverridesTheBrowsersOptOut(): void
-    {
-        $offenders = [];
-
-        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(\dirname(__DIR__, 2) . '/src/Form')) as $file) {
-            if (false === $file->isFile() || 'php' !== $file->getExtension()) {
-                continue;
-            }
-
-            $source = (string) file_get_contents($file->getPathname());
-
-            // Every array literal that is the left side of `+ SECRET`.
-            preg_match_all('/\[(?:[^\[\]]|\[[^\[\]]*\])*\]\s*\+\s*PasswordManagerIgnore::SECRET/', $source, $matches);
-
-            foreach ($matches[0] as $literal) {
-                if (1 === preg_match("/'autocomplete'\s*=>/", $literal)) {
-                    $offenders[] = $file->getFilename();
-                }
-            }
-        }
-
-        self::assertSame([], $offenders, 'These forms set their own `autocomplete` on a field that takes PasswordManagerIgnore::SECRET; theirs wins and the browser fills in the saved login.');
-    }
-
-    public function testTheSingleSignOnSecretIsNotOfferedTheSavedLogin(): void
+    public function testAPastedSecretIsAMaskedTextFieldThatComesBackEmpty(): void
     {
         self::bootKernel();
 
         $container = self::getContainer();
 
         $form = $container->get(FormFactoryInterface::class)
-            ->create(OidcConfigType::class, new OidcConfig(), ['csrf_protection' => false])
-            ->createView();
+            ->create(OidcConfigType::class, new OidcConfig(), ['csrf_protection' => false]);
+        $form->submit(['issuer' => 'https://auth.example.com/', 'clientSecret' => ' typed-secret ']);
+
+        self::assertSame(' typed-secret ', $form->get('clientSecret')->getData(), 'a secret is taken as pasted, spaces included');
 
         $html = $container->get(Environment::class)
             ->createTemplate('{{ form_widget(field) }}')
-            ->render(['field' => $form['clientSecret']]);
+            ->render(['field' => $form->createView()['clientSecret']]);
 
-        self::assertStringContainsString('autocomplete="new-password"', $html);
+        self::assertStringContainsString('type="text"', $html);
+        self::assertStringContainsString('autocomplete="off"', $html);
+        self::assertStringContainsString('secret-masked', $html);
+        self::assertStringContainsString('data-bwignore', $html);
+        self::assertStringNotContainsString('typed-secret', $html, 'what was typed is not rendered back, even after a refusal');
+    }
+
+    /**
+     * The only password inputs left are the ones somebody signs in with or
+     * sets a login password through. Anything else in a form is a SecretType.
+     */
+    public function testOnlyLoginPasswordsArePasswordInputs(): void
+    {
+        $logins = ['FirstAdminType.php', 'UserFormType.php', 'ChangePasswordType.php'];
+        $others = [];
+
+        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(\dirname(__DIR__, 2) . '/src/Form')) as $file) {
+            if (false === $file->isFile() || 'php' !== $file->getExtension() || in_array($file->getFilename(), $logins, true)) {
+                continue;
+            }
+
+            // Not preceded by a letter, so ChangePasswordType::class is not it.
+            if (1 === preg_match('/(?<![A-Za-z])PasswordType::class/', (string) file_get_contents($file->getPathname()))) {
+                $others[] = $file->getFilename();
+            }
+        }
+
+        self::assertSame([], $others, 'These forms use a password input for something that is not this site\'s login. Use App\Form\SecretType, or a browser fills in the saved login.');
     }
 
     private static function renderField(string $field): string

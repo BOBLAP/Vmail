@@ -74,6 +74,16 @@ a collection row — is one field to the reader and should stay tight.
             'data-lpignore':  'true',
             'data-form-type': 'other',
         }) %}
+
+        {# And `off` where the field said nothing. No browser takes it as an
+           order, but Bitwarden reads it when deciding where to open its menu:
+           on Admin → SSO it offered logins in "Name on the button" and
+           "Scopes", the two text fields with no `autocomplete`, and left the
+           two that said `off` alone. A field that wants suggestions — an
+           address, a name in a real profile form — says so and keeps it. #}
+        {% if attr.autocomplete is not defined %}
+            {% set attr = attr|merge({ autocomplete: 'off' }) %}
+        {% endif %}
     {% endif %}
 
     {% set attr = attr|merge({

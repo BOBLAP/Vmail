@@ -8,12 +8,15 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
-**The browser filled your own login into client-secret fields.** Opening Admin → SSO, or a Google,
-Microsoft or integration provider form, could put your mail address in the client ID and your
-password in the secret field, one press of Save away from being stored. An earlier fix told Chrome
-these are not the saved login, but six of the fields also set `autocomplete="off"` of their own,
-which won — and Chrome ignores `off` on a password field. They now send `new-password` as intended,
-and a test reads every form for the same mistake.
+**Browsers and password managers kept offering your logins in client-secret fields.** Opening
+Admin → SSO, or a Google, Microsoft or integration provider form, could put your mail address in the
+client ID and your password in the secret field, one press of Save away from being stored; with
+that stopped, a click in the field still had Chrome list every saved password and Bitwarden offer to
+generate one, and Bitwarden opened its menu in the text fields below. All of it followed from the
+field being a password input, which no attribute talks every browser and extension out of. Client
+secrets, API tokens and mail-server passwords are now text fields drawn as dots, and a text field
+that asks for nothing says `autocomplete="off"`. The sign-in form and the forms that set a login
+password are unchanged.
 
 **Sign in through Authentik, Keycloak or any other OpenID Connect provider.** Enter the provider's
 issuer, client ID and secret under the new **Admin → SSO** and the login page offers a "Sign in with

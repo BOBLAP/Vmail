@@ -6,9 +6,9 @@ namespace App\Form\Admin;
 
 use App\Entity\Oidc\OidcConfig;
 use App\Form\PasswordManagerIgnore;
+use App\Form\SecretType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
-use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormError;
@@ -68,13 +68,13 @@ final class OidcConfigType extends AbstractType
                 'constraints' => [new Length(max: 255)],
                 'attr'        => ['autocomplete' => 'off'] + PasswordManagerIgnore::ATTR,
             ])
-            ->add('clientSecret', PasswordType::class, [
+            ->add('clientSecret', SecretType::class, [
                 'label'    => 'admin.sso.field.client_secret',
                 'required' => false,
                 'mapped'   => false,
                 'attr'     => [
                     'placeholder'  => true === $hasSecret ? 'admin.integrations.secret_unchanged' : 'admin.integrations.secret_none',
-                ] + PasswordManagerIgnore::SECRET,
+                ],
             ]);
 
         // Offered only when there is something to clear, so the option cannot

@@ -3112,6 +3112,13 @@ li[data-selected="true"] {
    Restore it once here; a `cursor-*` utility on the element still wins.
    ═══════════════════════════════════════════════════════════════════════════ */
 @layer base {
+    /* A pasted secret, drawn as dots without being a password input — see
+       App\Form\SecretType for why it must not be one. The placeholder is not
+       text and stays readable. */
+    .secret-masked {
+        -webkit-text-security: disc;
+    }
+
     button,
     summary,
     [role="button"] {

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Messaging\Handler;
 
+use App\Repository\Mail\GmailSkippedMessageRepository;
+use App\Entity\Mail\GmailSkippedMessage;
+use App\Domain\Enum\Mail\GmailSkipReason;
 use App\Domain\DTO\Mail\IngestedMessage;
 use App\Domain\DTO\Mail\RemoteFlagState;
 use App\Domain\Helper\MessageIdHelper;
@@ -63,6 +66,7 @@ final readonly class SyncGmailMessageBatchHandler
         private MessageThreader         $messageThreader,
         private SyncOrigin              $origin,
         private GmailQuotaPacer         $pacer,
+        private GmailSkippedMessageRepository $skipped,
     ) {}
 
     public function __invoke(SyncGmailMessageBatchMessage $message): void
@@ -114,7 +118,13 @@ final readonly class SyncGmailMessageBatchHandler
         // second time, a third, each fetched in full again at sixty quota
         // units apiece on the quota the import was already short of (#90).
         if (true === $onlyMissing) {
-            $stored  = array_flip($this->messageRepository->findStoredGmailIdsForUser($account->usr, $toFetch));
+            // And not what has been looked at and declined, for the same
+            // reason: a listing that ran before the first of these batches
+            // was handled named those too. See GmailSkippedMessage.
+            $stored  = array_flip([
+                ...$this->messageRepository->findStoredGmailIdsForUser($account->usr, $toFetch),
+                ...$this->skipped->findGmailIdsAmong($account, array_map(strval(...), $toFetch)),
+            ]);
             $toFetch = array_values(array_filter(
                 $toFetch,
                 static fn (string|int $id): bool => false === isset($stored[(string) $id]),
@@ -143,11 +153,31 @@ final readonly class SyncGmailMessageBatchHandler
         // Every id we asked for is either processed below, re-queued (transient
         // sub-request failure — typically 429 mid-batch on initial syncs), or
         // logged as permanently gone. Nothing gets dropped silently.
+        // What this account has already declined among the ids in hand: one
+        // read, so a message is neither recorded twice nor left on the record
+        // once it is stored after all.
+        $alreadySkipped = array_flip($this->skipped->findGmailIdsAmong($account, array_map(strval(...), $toFetch)));
+        $nowStored      = [];
+        $newlySkipped   = 0;
+
         if (count($fetch['gone']) > 0) {
             $this->logger->warning('SyncGmailMessageBatch: messages permanently unfetchable, skipping', [
                 'accountId' => $account->id,
                 'gmailIds'  => $fetch['gone'],
             ]);
+
+            // Written down, so the next listing does not name them again. A
+            // message Gmail lists and answers 404 for is not going to arrive
+            // by being asked for every hour.
+            foreach ($fetch['gone'] as $goneId) {
+                $goneId = (string) $goneId;
+
+                if ('' !== $goneId && false === isset($alreadySkipped[$goneId])) {
+                    $this->em->persist(new GmailSkippedMessage($account, $goneId, GmailSkipReason::Unfetchable));
+                    $alreadySkipped[$goneId] = true;
+                    ++$newlySkipped;
+                }
+            }
         }
 
         if (count($fetch['retryable']) > 0) {
@@ -184,7 +214,33 @@ final readonly class SyncGmailMessageBatchHandler
                     'gmailId'   => '' !== $gmailId ? $gmailId : '(unknown)',
                     'accountId' => $account->id,
                 ]);
+
+                // The debug line above used to be the only trace, and nothing
+                // reads a debug line. The import knew a message only as
+                // stored or missing, so this one stayed missing: listed again
+                // every hour, fetched again in full, declined again (#90).
+                // With what the decision was made on, so `app:gmail:skipped`
+                // can say what kind of message it was.
+                if ('' !== $gmailId && false === isset($alreadySkipped[$gmailId])) {
+                    $this->em->persist(new GmailSkippedMessage(
+                        $account,
+                        $gmailId,
+                        GmailSkipReason::Unattributable,
+                        $labelIds,
+                        $headers,
+                    ));
+                    $alreadySkipped[$gmailId] = true;
+                    ++$newlySkipped;
+                }
+
                 continue;
+            }
+
+            // Declined once and attributable now — another account has been
+            // connected since, or the rule has changed. It is about to be
+            // stored or merged, so it comes off the record.
+            if (true === isset($alreadySkipped[$gmailId])) {
+                $nowStored[] = $gmailId;
             }
 
             // ── Gmailify dedup: merge, don't skip ─────────────────────────────
@@ -260,7 +316,16 @@ final readonly class SyncGmailMessageBatchHandler
             }
         }
 
+        $this->skipped->forget($account, $nowStored);
+
         if (count($built) === 0 && 0 === $enriched) {
+            // Nothing to store, but possibly something to remember: a batch
+            // made up entirely of messages that were declined still has to
+            // write that down, or it is fetched again in an hour.
+            if ($newlySkipped > 0) {
+                $this->em->flush();
+            }
+
             return;
         }
 

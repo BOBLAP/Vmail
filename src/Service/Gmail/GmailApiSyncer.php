@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Gmail;
 
+use App\Repository\Mail\GmailSkippedMessageRepository;
 use App\Domain\Exception\GmailApiException;
 use App\Entity\Mail\Account;
 use App\Infrastructure\Messaging\Message\SyncGmailMessageBatchMessage;
@@ -57,6 +58,7 @@ final class GmailApiSyncer
         private readonly LoggerInterface        $logger,
         private readonly MessageEraser          $eraser,
         private readonly SyncOrigin             $origin,
+        private readonly GmailSkippedMessageRepository $skipped,
     ) {}
 
     /**
@@ -570,9 +572,15 @@ final class GmailApiSyncer
      */
     private function newGmailIds(Account $account, array $refs): array
     {
-        $syncedGmailIds = array_flip(
-            $this->messageRepository->findSyncedGmailIdsForUser($account->usr)
-        );
+        // "Not here yet" means neither stored nor already looked at and
+        // declined. Without the second half a declined message is missing for
+        // ever: named by every listing, fetched in full each time, and the
+        // import waits out its whole attempt ceiling on mail that is not
+        // coming. See GmailSkippedMessage.
+        $syncedGmailIds = array_flip([
+            ...$this->messageRepository->findSyncedGmailIdsForUser($account->usr),
+            ...$this->skipped->findGmailIdsForAccount($account),
+        ]);
 
         $pending = [];
 

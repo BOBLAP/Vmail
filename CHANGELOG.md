@@ -83,6 +83,19 @@ message it is handling five minutes; after that its IMAP connections are closed,
 retried later and the queue moves on. No
 migration. [#95](https://github.com/karatektus/pl_mail/issues/95), reported by @montywei.
 
+**A Gmail import finishes, instead of waiting a day on mail that is not coming.** plMail fetches
+some Gmail messages and then does not store them — a draft, a chat, mail whose headers tie it to no
+account connected here. Nothing remembered that, so every hourly listing found them missing and
+fetched all of them again: on the mailbox this was reported from, 2,235 messages and about a third
+of the hour's quota, every hour, with the account showing "Importing: waiting" until the import
+gave up after a day. They are written down now. The listing leaves them alone, the import ends on
+the pass where everything outstanding has an answer, and the progress line counts them as done, so
+it reaches Google's total. `php bin/console app:gmail:skipped` shows what was skipped for an
+account, grouped by kind. An import already stuck this way finishes within two hourly listings of
+the upgrade. Whether some of these messages should be stored after all is not changed here.
+**Migration:** adds the empty table `gmail_skipped_message`; nothing existing is
+altered. [#90](https://github.com/karatektus/pl_mail/issues/90), reported by @karamanliev.
+
 ## v0.3.4 — 2026-10-13
 
 **A Gmail import no longer runs into Google's quota and stays there.** Google lowered the

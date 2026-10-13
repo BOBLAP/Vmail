@@ -1,4 +1,4 @@
-<!-- translated-from: internals/mail-ingest.md sha1:948de4da5eb88270d606c0a4f3e5581003eda0da -->
+<!-- translated-from: internals/mail-ingest.md sha1:116b8d5828c7cc61a9936ec251013995f87652dd -->
 # Mail-Ingest
 
 Vom Anbieter in die Datenbank: wie aus Bytes eine Zeile `Message` wird, was mit ihr geschieht,
@@ -106,6 +106,18 @@ die Vorgeschichte gehört `App\Service\Mail\MailImporter`, auf der Warteschlange
   in der Datenbank, sodass alle Worker aus einem Kontingent schöpfen. Eine Ablehnung ist auf
   diesem Weg nirgends ein Fehler: Ein Stapel, eine Import-Seite oder ein Sync, der auf eine
   trifft, wird zurückgestellt und läuft, wenn die Minute des Kontos vorbei ist.
+- **Eine Gmail-Nachricht, die angesehen und nicht gespeichert wird, wird notiert.** Der
+  Stapel-Handler lehnt eine Nachricht ab, deren Header sie keinem Konto hier zuordnen — einen
+  Entwurf, einen Chat, eine von einer „Senden als“-Adresse verschickte Mail — und kann eine
+  nicht speichern, die Gmail auflistet und mit 404 beantwortet. Jede bekommt eine Zeile in
+  `gmail_skipped_message` (`App\Entity\Mail\GmailSkippedMessage`) mit dem Grund, ihren Labels
+  und ihren Adress-Headern. Die Auflistung behandelt eine notierte id wie eine gespeicherte, die
+  Nachricht wird also nicht jede Stunde erneut abgerufen, und ein Import, bei dem jede
+  ausstehende Nachricht eine Antwort hat, endet in diesem Durchlauf statt an seiner
+  Versuchsgrenze; die Fortschrittszeile zählt sie als erledigt, denn Googles Gesamtzahl enthält
+  sie. `app:gmail:skipped` gibt die Notizen nach Art gruppiert aus, und `--forget` löscht sie
+  für ein Konto, sodass die nächste Auflistung erneut fragt. Eine Zeile verschwindet, wenn ihre
+  Nachricht doch gespeichert wird.
 - **Microsoft liest die erste Delta-Runde jedes Ordners seitenweise.** Ein Ordner ohne
   Delta-Link wird auf dem Konto eingeplant (`Account::$graphImport`), statt vom Abgleich
   aufgezählt zu werden, und `GraphApiSyncer::importPage()` geht diese Runde in Schritten von

@@ -860,6 +860,7 @@ php bin/mirror-wiki.php --check
 | `app:push:generate-vapid-keys` | Generate a VAPID keypair for Web Push |
 | `app:graph:diagnose` | Probe Microsoft Graph access for one account and report what works |
 | `app:gmail:quota-probe [account] [--mode=all] [--count=30]` | Without an account, list the Gmail accounts and ask which. Fetch a fixed number of stored Gmail messages one way per minute (batched as an import does, or singly in each format), holding the account's import meanwhile, so the cost Google charges for each can be read off the Cloud console's quota chart. Stores and changes nothing |
+| `app:gmail:skipped [account] [--list=N] [--forget]` | Show the Gmail messages an import looked at and did not store. Without an account, one line per Gmail account: stored, skipped, Gmail's own total. With one, the skipped messages grouped by kind (chat, draft, sent from another address, delivered to another address, unfetchable), by Gmail label and by address, and with `--list` the messages themselves. Reads only what was recorded when each message was looked at; asks Gmail nothing. `--forget` deletes the record for the account so the next listing asks for those messages again |
 | `app:attachments:reclassify` | Recompute inline/attachment classification for stored parts |
 | `app:prune:blobs [--days=N] [--dry-run]` | Expire staged JMAP uploads and delete files orphaned by deleted rows |
 | `app:user:promote <email> [--revoke]` | Grant or revoke `ROLE_ADMIN` |

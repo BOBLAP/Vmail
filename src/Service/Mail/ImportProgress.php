@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Mail;
 
+use App\Repository\Mail\GmailSkippedMessageRepository;
 use App\Domain\DTO\Mail\GmailQuotaStatus;
 use App\Domain\DTO\Mail\ImportLine;
 use App\Entity\Mail\Account;
@@ -48,6 +49,7 @@ final readonly class ImportProgress
         private MessageRepository   $messages,
         private GraphFolderResolver $folders,
         private GmailQuotaPacer     $pacer,
+        private GmailSkippedMessageRepository $skipped,
     ) {}
 
     /** @return list<ImportLine> one per importing account, in the accounts' own order */
@@ -83,7 +85,12 @@ final readonly class ImportProgress
 
             if (true === $account->isGmail()) {
                 if (true === $account->needsBackfill()) {
-                    $done = $this->messages->countForAccount($account);
+                    // Dealt with, not only stored. The total is Google's count
+                    // of the mailbox, which includes what plMail looks at and
+                    // declines — a draft, a chat — and counting only what was
+                    // stored left the line short of its total for good: 21,964
+                    // of 24,199 with nothing still to come (#90).
+                    $done = $this->messages->countForAccount($account) + $this->skipped->countForAccount($account);
 
                     $lines[] = new ImportLine(
                         $account,

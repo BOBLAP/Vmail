@@ -93,6 +93,16 @@ The two are separate now. A sync arranges for new mail to be seen and stops; the
   refused are in a database-backed cache pool, so every worker draws on one allowance. A
   refusal is not an error anywhere on this path: a batch, an import page or a sync that meets
   one is put back to run when the account's minute is over.
+- **A Gmail message that is looked at and not stored is written down.** The batch handler
+  declines a message whose headers tie it to no account here — a draft, a chat, mail sent from a
+  "send mail as" address — and cannot store one Gmail lists and answers 404 for. Each gets a row
+  in `gmail_skipped_message` (`App\Entity\Mail\GmailSkippedMessage`) with the reason, its labels
+  and its address headers. The listing treats a recorded id like a stored one, so the message
+  is not fetched again every hour and an import whose every outstanding message has an answer
+  finishes on that pass instead of at its attempt ceiling; the progress line counts it as done,
+  since Google's total includes it. `app:gmail:skipped` prints the record grouped by kind, and
+  `--forget` clears it for an account so the next listing asks again. A row is removed when its
+  message is stored after all.
 - **Microsoft reads each folder's first delta round a page at a time.** A folder without a
   delta link is planned on the account (`Account::$graphImport`) instead of being enumerated
   by the sync, and `GraphApiSyncer::importPage()` walks that round fifty messages at a call,

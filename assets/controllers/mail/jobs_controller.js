@@ -92,17 +92,105 @@ export default class extends Controller {
             return;
         }
 
-        // Read before the frame is replaced: whether somebody has the list
-        // open and is watching it.
+        // Whether somebody has the list open and is watching it.
         const wasOpen = null !== frame.querySelector(`${MENU}:not([hidden])`);
 
+        if (false === wasOpen) {
+            this.#replace(frame, false);
+
+            return;
+        }
+
+        // OPEN, SO CHANGED WHERE IT STANDS.
+        //
+        // The answer to a frame reload is a whole new frame, dropdown
+        // included, and a new dropdown is a closed one. It used to be opened
+        // again as soon as the new one was in — which works, and which
+        // somebody watching sees as the list going away and coming back.
+        // Once per chunk of a bulk action that was a flicker now and then;
+        // re-read every five seconds for the hours an import takes, it was
+        // the list flashing for as long as it was looked at.
+        //
+        // So the new rows are fetched and put into the list that is already
+        // open, and the button's label with them. The list itself is never
+        // taken out of the page, and has nothing to flash with.
+        this.#update(frame).then((updated) => {
+            if (false === updated) {
+                this.#replace(frame, true);
+            }
+        });
+    }
+
+    /**
+     * Put the server's current rows into the open list.
+     *
+     * @returns {Promise<boolean>} false when that could not be done — nothing
+     *     is running any more, the request failed — and the frame should be
+     *     replaced the ordinary way, which is also what takes it away.
+     */
+    async #update(frame) {
+        let fresh;
+
+        try {
+            const response = await fetch(this.urlValue, {
+                headers: { Accept: "text/html", "X-Requested-With": "XMLHttpRequest" },
+                credentials: "same-origin",
+            });
+
+            if (false === response.ok) {
+                return false;
+            }
+
+            fresh = new DOMParser()
+                .parseFromString(await response.text(), "text/html")
+                .getElementById("jobs-indicator");
+        } catch {
+            return false;
+        }
+
+        const rows = frame.querySelector(`${MENU} ul`);
+        const freshRows = fresh?.querySelector(`${MENU} ul`);
+
+        if (null === rows || null === freshRows || undefined === freshRows) {
+            return false;
+        }
+
+        rows.innerHTML = freshRows.innerHTML;
+
+        const toggle = frame.querySelector(TOGGLE);
+        const freshToggle = fresh.querySelector(TOGGLE);
+
+        if (null !== toggle && null !== freshToggle) {
+            // Piece by piece and only what differs: writing the button's
+            // markup afresh starts its turning icon again from the top, which
+            // is a twitch every five seconds in the corner of the eye.
+            if (toggle.className !== freshToggle.className) {
+                toggle.className = freshToggle.className;
+            }
+
+            const icon = toggle.querySelector("i");
+            const freshIcon = freshToggle.querySelector("i");
+
+            if (null !== icon && null !== freshIcon && icon.className !== freshIcon.className) {
+                icon.className = freshIcon.className;
+            }
+
+            const label = toggle.querySelector("span");
+            const freshLabel = freshToggle.querySelector("span");
+
+            if (null !== label && null !== freshLabel && label.textContent !== freshLabel.textContent) {
+                label.textContent = freshLabel.textContent;
+            }
+        }
+
+        return true;
+    }
+
+    #replace(frame, wasOpen) {
         if (true === wasOpen) {
-            // The answer is a whole new frame, dropdown included, and a new
-            // dropdown is a closed one. To somebody watching a count go up,
-            // that was the list shutting in their face every second and a
-            // half — which is the same as it not working. Opened again as soon
-            // as the new one is in, on the next frame so its controller has
-            // connected and there is something to hear the click.
+            // Opened again as soon as the new one is in, on the next frame so
+            // its controller has connected and there is something to hear the
+            // click.
             frame.addEventListener("turbo:frame-load", () => {
                 requestAnimationFrame(() => {
                     const menu = frame.querySelector(MENU);

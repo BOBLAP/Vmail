@@ -43,6 +43,24 @@ inline image instead of a link recipients have to allow. Existing signatures are
 they are next saved. No
 migration. [#32](https://github.com/karatektus/pl_mail/issues/32), reported by @eatcodeplay.
 
+**The sidebar's numbers follow what happens, without a reload.** Saving a draft did not raise
+Drafts, deleting or sending it did not lower it, and a mail read on the phone left the badge where
+it was until the next sync or a click on another folder. The numbers were only re-read when a
+button remembered to ask, and the composer, the worker that sends a mail and the phone apps had no
+way to. The server now says so itself whenever mail changes — on the response to the request that
+changed it, and over the hub for a change made elsewhere — so every tab hears, once per change.
+Opening a conversation that was already read no longer writes anything, tells the provider anything
+or wakes the phone apps. No
+migration. [#86](https://github.com/karatektus/pl_mail/issues/86), reported by @pmdevelopment.
+
+**A reply you sent from a catch-all address shows as "me" in the list.** It showed the account's
+name, as though a third person had joined the conversation. Somebody else writing from the same
+domain keeps their name. No migration.
+
+**A meeting on two calendars splits its colours side by side in a narrow month.** The bar a month
+cell falls back to when there is no room for the title stacked the two colours on top of each other
+in a few pixels of height. No migration.
+
 ## v0.3.4 — 2026-10-13
 
 **A Gmail import no longer runs into Google's quota and stays there.** Google lowered the

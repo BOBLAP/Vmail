@@ -38,6 +38,13 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/mail', name: 'app_mail_')]
 final class MailController extends AbstractController
 {
+    /**
+     * The key the counts payload carries its change sequence under. Namespaced
+     * so it cannot be taken for a badge: no element has a count key starting
+     * "state:".
+     */
+    public const string COUNTS_SEQUENCE_KEY = 'state:sequence';
+
     use ChecksCsrf;
 
     public function __construct(
@@ -724,7 +731,12 @@ final class MailController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_USER');
 
+        // How far along this user's mail was when these numbers were read. A
+        // tab keeps it and ignores a `mail.changed` nudge that is not newer.
+        // First in the payload because it has to be read first — see
+        // SidebarCounts::changeSequence().
         $payload = [
+            self::COUNTS_SEQUENCE_KEY     => $counts->changeSequence(),
             'starred'                     => $counts->forStarred(),
             'unread'                      => $counts->forUnread(),
             NewMailMarkers::STARRED_KEY   => $newMail->forStarred(),

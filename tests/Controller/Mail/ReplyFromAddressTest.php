@@ -195,6 +195,41 @@ final class ReplyFromAddressTest extends WebTestCase
         self::assertSame($account->id . '|sales@joder.dev', $this->selectedFrom($crawler));
     }
 
+    // ── the change signal ────────────────────────────────────────────────────
+
+    /**
+     * Here because the composer is the write this was found on: a draft is
+     * saved by a form on a timer, with no controller of its own to tell the
+     * sidebar, and the Drafts badge did not move. The server marks the
+     * response instead, and the counts answer carries the sequence a tab
+     * compares a `mail.changed` nudge against.
+     */
+    public function testSavingADraftMarksTheResponseAndMovesTheCountsSequence(): void
+    {
+        $client  = static::createClient();
+        $user    = $this->boot($client);
+        $account = $this->account($user, 'me@joder.dev');
+
+        $client->request('GET', '/mail/sidebar/counts');
+        $before = json_decode((string) $client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+
+        self::assertIsInt($before['state:sequence']);
+        self::assertFalse(
+            $client->getResponse()->headers->has('X-Mail-Changed'),
+            'reading the counts changes nothing, and saying otherwise would make the sidebar ask for them forever',
+        );
+
+        $this->save($client, $account->id . '|me@joder.dev');
+
+        self::assertSame('1', $client->getResponse()->headers->get('X-Mail-Changed'));
+
+        $client->request('GET', '/mail/sidebar/counts');
+        $after = json_decode((string) $client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+
+        self::assertGreaterThan($before['state:sequence'], $after['state:sequence']);
+        self::assertSame(1, $after['role:drafts']);
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private function selectedFrom(\Symfony\Component\DomCrawler\Crawler $crawler): string

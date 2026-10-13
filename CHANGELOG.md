@@ -6,7 +6,7 @@ so anything that changes the schema irreversibly is called out explicitly.
 The published image tags: `latest` follows the most recent release below,
 `main` follows the tip of the default branch, and `sha-…` pins one commit.
 
-## Unreleased
+## v0.3.5 — 2026-10-13
 
 **Browsers and password managers kept offering your logins in client-secret fields.** Opening
 Admin → SSO, or a Google, Microsoft or integration provider form, could put your mail address in the

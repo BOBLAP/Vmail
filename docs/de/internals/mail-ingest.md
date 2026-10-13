@@ -1,4 +1,4 @@
-<!-- translated-from: internals/mail-ingest.md sha1:dcb2b781f03c1702974cc382857086d18024e21c -->
+<!-- translated-from: internals/mail-ingest.md sha1:7329297e0b7553b6e0fb3e23948afdcff155a609 -->
 # Mail-Ingest
 
 Vom Anbieter in die Datenbank: wie aus Bytes eine Zeile `Message` wird, was mit ihr geschieht,
@@ -93,6 +93,15 @@ die Vorgeschichte gehört `App\Service\Mail\MailImporter`, auf der Warteschlange
 - **Gmail fragt zuerst namentlich nach dem Posteingang,** dann blättert es die Auflistung des
   ganzen Postfachs Anfrage für Anfrage durch; das Seiten-Token liegt zwischen den Jobs auf dem
   Konto.
+- **Gmails Kontingent wird gelernt, nicht eingestellt.** Google erlaubt einem Nutzer eine Zahl
+  von Kontingent-Einheiten pro Minute und sagt erst, wie viele, wenn es eine Anfrage ablehnt.
+  `GmailQuotaPacer` beginnt bei 15.000, liest das Limit aus der ersten Ablehnung (ein seit Mai
+  2026 angelegtes Projekt hat 6.000) und taktet von da an jedes Konto auf vier Fünftel davon;
+  ein gelerntes Limit wird nach einem Tag vergessen, damit ein angehobenes wiedergefunden wird.
+  Was ein Konto verbraucht hat und wann es zuletzt abgelehnt wurde, liegt in einem Cache-Pool
+  in der Datenbank, sodass alle Worker aus einem Kontingent schöpfen. Eine Ablehnung ist auf
+  diesem Weg nirgends ein Fehler: Ein Stapel, eine Import-Seite oder ein Sync, der auf eine
+  trifft, wird zurückgestellt und läuft, wenn die Minute des Kontos vorbei ist.
 - **Microsoft liest die erste Delta-Runde jedes Ordners seitenweise.** Ein Ordner ohne
   Delta-Link wird auf dem Konto eingeplant (`Account::$graphImport`), statt vom Abgleich
   aufgezählt zu werden, und `GraphApiSyncer::importPage()` geht diese Runde in Schritten von

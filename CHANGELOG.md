@@ -8,6 +8,18 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**A Gmail import no longer runs into Google's quota and stays there.** Google lowered the
+per-user limit to 6,000 units a minute for projects created since May 2026 and raised the cost
+of fetching a message from 5 units to 20; plMail paced imports for 15,000 at the old cost, so on
+a new project most of what an import asked for was refused, the log filled with rate-limit
+warnings and an import could stop without resuming. plMail now reads the limit out of Google's
+first refusal and keeps to it — nothing to configure — counts a message at its real cost,
+fetches fifty at a time, and shares one allowance between its workers. A refusal is no longer an
+error: the batch, import page or sync that met it waits out the minute and carries on. The
+import line in the background-work indicator now shows the quota, roughly how much of it is in
+use, how long the rest of the import takes, and says so when Google has paused it. No
+migration. [#90](https://github.com/karatektus/pl_mail/issues/90), reported by @karamanliev.
+
 **The tab icon is the one you picked, in Firefox too.** Settings → Appearance → Logo changed the
 icon in the app but not in the tab, which kept showing the wax seal. Every page also linked a
 fixed 192px wax-seal PNG as a second tab icon, and Firefox prefers that to the SVG for a tab. The

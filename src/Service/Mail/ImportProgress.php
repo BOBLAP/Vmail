@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Service\Mail;
 
+use App\Domain\DTO\Mail\GmailQuotaStatus;
 use App\Domain\DTO\Mail\ImportLine;
 use App\Entity\Mail\Account;
 use App\Entity\User\User;
 use App\Repository\Mail\AccountRepository;
 use App\Repository\Mail\MailboxRepository;
 use App\Repository\Mail\MessageRepository;
+use App\Service\Gmail\GmailQuotaPacer;
 use App\Service\Graph\GraphFolderResolver;
 use DateTimeImmutable;
 
@@ -45,6 +47,7 @@ final readonly class ImportProgress
         private MailboxRepository   $mailboxes,
         private MessageRepository   $messages,
         private GraphFolderResolver $folders,
+        private GmailQuotaPacer     $pacer,
     ) {}
 
     /** @return list<ImportLine> one per importing account, in the accounts' own order */
@@ -80,12 +83,15 @@ final readonly class ImportProgress
 
             if (true === $account->isGmail()) {
                 if (true === $account->needsBackfill()) {
+                    $done = $this->messages->countForAccount($account);
+
                     $lines[] = new ImportLine(
                         $account,
-                        $this->messages->countForAccount($account),
+                        $done,
                         $account->importTotal,
                         null,
                         $this->isWaiting($account),
+                        quota: $this->quota($account, $done),
                     );
                 }
 
@@ -108,6 +114,28 @@ final readonly class ImportProgress
         }
 
         return $lines;
+    }
+
+    /**
+     * What the quota allows this import, and how long the rest takes at that.
+     *
+     * The time is the messages still to come over the rate the pacer holds an
+     * import to. It runs long towards the end: the total is Google's count of
+     * the mailbox, which includes what is never stored — a draft, a chat —
+     * so the last of "what is left" is mail that is not coming.
+     */
+    private function quota(Account $account, int $done): GmailQuotaStatus
+    {
+        $total = $account->importTotal;
+        $left  = null === $total ? null : max(0, $total - $done);
+
+        return new GmailQuotaStatus(
+            $this->pacer->limit(),
+            $this->pacer->isLimitLearnt(),
+            $this->pacer->usedThisMinute($account),
+            $this->pacer->waitSeconds($account),
+            null === $left || 0 === $left ? null : (int) ceil($left / $this->pacer->messagesPerMinute()),
+        );
     }
 
     private function isWaiting(Account $account): bool

@@ -33,8 +33,13 @@ final class GmailApiSyncer
     /** Message-list page size (API max is 500). */
     private const int PAGE_SIZE = 500;
 
-    /** Gmail message IDs per fan-out batch. */
-    private const int BATCH_SIZE = 100;
+    /**
+     * Gmail message IDs per fan-out batch. Fifty is the most Google asks to
+     * be sent in one batch request, and at twenty units a message it is a
+     * thousand units — a sixth of the minute on a project with the lowest
+     * limit, where a hundred was a third of it in one request.
+     */
+    private const int BATCH_SIZE = 50;
 
     /** How many of the Inbox's newest messages an import asks for by name, first. */
     private const int INBOX_SLICE = 200;

@@ -270,6 +270,7 @@ final class GmailInboundReadStateTest extends KernelTestCase
             $container->get('App\Service\Mail\MessageCategorizer'),
             $container->get('App\Service\Imap\MessageThreader'),
             new \App\Service\Mail\SyncOrigin(),
+            new \App\Service\Gmail\GmailQuotaPacer(new \Symfony\Component\Clock\MockClock()),
         );
 
         $handler(new SyncGmailMessageBatchMessage((int) $this->account->id, [self::GMAIL_ID]));

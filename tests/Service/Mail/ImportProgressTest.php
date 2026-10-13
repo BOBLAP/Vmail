@@ -9,6 +9,7 @@ use App\Domain\Enum\Mail\MailboxSpecialUse;
 use App\Entity\Label\Label;
 use App\Entity\Label\LabelBinding;
 use App\Entity\Mail\Mailbox;
+use App\Service\Gmail\GmailQuotaPacer;
 use App\Service\Mail\ImportProgress;
 use App\Tests\Support\Mail\SeedsMarkerFixtures;
 use DateTimeImmutable;
@@ -172,6 +173,54 @@ final class ImportProgressTest extends KernelTestCase
         self::assertStringContainsString($this->account->displayAddress, $html);
         self::assertStringContainsString('1,240 / 21,000', $html);
         self::assertStringContainsString('INBOX', $html);
+    }
+
+    /**
+     * A Gmail import is as fast as Google's quota lets it be, so its line says
+     * what the quota is, roughly what is being used of it, and how long the
+     * rest takes at that — and "held by Google for a minute" is said as that
+     * and not as the "waiting" that could mean anything (#90).
+     */
+    public function testAGmailImportShowsItsQuotaAndHowLongIsLeft(): void
+    {
+        $this->account->authType       = AuthType::OAuth2->value;
+        $this->account->oauthProvider  = 'google';
+        $this->account->importTotal    = 9000;
+        $this->account->importBeatAt   = new DateTimeImmutable();
+        $this->em->flush();
+
+        $pacer = static::getContainer()->get(GmailQuotaPacer::class);
+        $pacer->spend($this->account, 2000);
+
+        $line = $this->progress->forUser($this->user)[0];
+
+        self::assertNotNull($line->quota);
+        self::assertSame(15_000, $line->quota->limit);
+        self::assertFalse($line->quota->learnt);
+        self::assertSame(2000, $line->quota->used);
+        self::assertFalse($line->quota->isPaused());
+        // 9,000 messages at 450 a minute, which is three fifths of 15,000
+        // units at twenty a message.
+        self::assertSame(20, $line->quota->minutesLeft);
+
+        $pacer->refused($this->account, 'defaultPerMinutePerUser', 6000);
+
+        $line = $this->progress->forUser($this->user)[0];
+
+        self::assertSame(6000, $line->quota->limit);
+        self::assertTrue($line->quota->learnt);
+        self::assertTrue($line->quota->isPaused());
+        self::assertSame(50, $line->quota->minutesLeft);
+
+        $html = static::getContainer()->get(Environment::class)->render('mail/_jobs_indicator.html.twig', [
+            'jobs'    => [],
+            'imports' => [$line],
+        ]);
+
+        self::assertStringContainsString('data-import-quota', $html);
+        self::assertStringContainsString('6,000', $html);
+        self::assertStringContainsString('About 50 min left', $html);
+        self::assertStringContainsString('Paused by Gmail', $html);
     }
 
     /** Nothing running is no button at all, as it was before imports were shown. */

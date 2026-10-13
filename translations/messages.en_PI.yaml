@@ -2066,6 +2066,11 @@ jobs:
         folder: "Now: %folder%"
         heading: "Haulin' %account% aboard"
         newest_first: "Freshest post first"
+        quota: "Gmail's ration: about %used% o' %limit% units this minute"
+        quota_assumed: "Gmail's ration: about %used% o' %limit% units this minute (a guess, till Google names the limit)"
+        quota_paused: "Becalmed by Gmail's ration · under way in %seconds% s"
+        remaining_hours: "About %hours% h %minutes% min o' haulin' left"
+        remaining_minutes: "About %minutes% min o' haulin' left"
         waiting: "Waitin' fer the tide"
     started: 'Started %action% — she runs below decks.'
     failure:

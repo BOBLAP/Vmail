@@ -2186,6 +2186,11 @@ jobs:
         folder: "Now: %folder%"
         heading: "Importing %account%"
         newest_first: "Newest mail first"
+        quota: "Gmail quota: about %used% of %limit% units this minute"
+        quota_assumed: "Gmail quota: about %used% of %limit% units this minute (limit assumed until Google names it)"
+        quota_paused: "Paused by Gmail's quota · continues in %seconds% s"
+        remaining_hours: "About %hours% h %minutes% min left"
+        remaining_minutes: "About %minutes% min left"
         waiting: "Waiting to continue"
     started: 'Started %action% — this runs in the background.'
     failure:

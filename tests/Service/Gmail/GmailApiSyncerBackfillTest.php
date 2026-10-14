@@ -71,6 +71,24 @@ final class GmailApiSyncerBackfillTest extends TestCase
         self::assertCount(1, $this->requests);
     }
 
+    /**
+     * messages.list leaves Spam and Trash out unless asked, and Gmail's
+     * messagesTotal — what the import line counts towards — includes them.
+     * The comment above this call said "inbox, sent, spam, trash" for a
+     * request that never asked for the last two.
+     */
+    public function testTheListingAsksForSpamAndTrashToo(): void
+    {
+        $this->synced();
+
+        $this->syncer(['a'])->backfill($this->account());
+
+        $listings = array_values(array_filter($this->requests, static fn (string $url): bool => str_contains($url, '/messages?')));
+
+        self::assertNotSame([], $listings);
+        self::assertStringContainsString('includeSpamTrash=true', $listings[0]);
+    }
+
     public function testBackfillIsSkippedOnceTheWholeMailboxIsIn(): void
     {
         $account = $this->account();

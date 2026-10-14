@@ -1,4 +1,4 @@
-<!-- translated-from: internals/mail-ingest.md sha1:116b8d5828c7cc61a9936ec251013995f87652dd -->
+<!-- translated-from: internals/mail-ingest.md sha1:1c9c9d3d0cc4ce9e95d18b4f296c61ddfb7dc752 -->
 # Mail-Ingest
 
 Vom Anbieter in die Datenbank: wie aus Bytes eine Zeile `Message` wird, was mit ihr geschieht,
@@ -106,10 +106,17 @@ die Vorgeschichte gehört `App\Service\Mail\MailImporter`, auf der Warteschlange
   in der Datenbank, sodass alle Worker aus einem Kontingent schöpfen. Eine Ablehnung ist auf
   diesem Weg nirgends ein Fehler: Ein Stapel, eine Import-Seite oder ein Sync, der auf eine
   trifft, wird zurückgestellt und läuft, wenn die Minute des Kontos vorbei ist.
+- **Eine Gmail-Nachricht gehört zu dem Postfach, in dem sie liegt.** Der Stapel-Handler gibt
+  eine Nachricht nur dann einem anderen verbundenen Konto, wenn dieses den besseren Anspruch
+  hat (Gmailify: ein Geschwisterkonto, das in ihren Headern genannt ist); alles andere im
+  Postfach gehört dem Gmail-Konto, auch von einer „Senden als“-Adresse verschickte Mail, von
+  einer hier nicht verbundenen Adresse weitergeleitete Mail und Gmail-Entwürfe, die als
+  Entwürfe ankommen. Die Auflistung fragt auch nach Spam und Papierkorb (`includeSpamTrash`),
+  die `messages.list` sonst auslässt und `messagesTotal` mitzählt.
 - **Eine Gmail-Nachricht, die angesehen und nicht gespeichert wird, wird notiert.** Der
-  Stapel-Handler lehnt eine Nachricht ab, deren Header sie keinem Konto hier zuordnen — einen
-  Entwurf, einen Chat, eine von einer „Senden als“-Adresse verschickte Mail — und kann eine
-  nicht speichern, die Gmail auflistet und mit 404 beantwortet. Jede bekommt eine Zeile in
+  Stapel-Handler lehnt einen Chat ab — die einzige Art, für die es keinen Platz gibt — und
+  kann eine Nachricht nicht speichern, die Gmail auflistet und mit 404 beantwortet. Jede
+  bekommt eine Zeile in
   `gmail_skipped_message` (`App\Entity\Mail\GmailSkippedMessage`) mit dem Grund, ihren Labels
   und ihren Adress-Headern. Die Auflistung behandelt eine notierte id wie eine gespeicherte, die
   Nachricht wird also nicht jede Stunde erneut abgerufen, und ein Import, bei dem jede

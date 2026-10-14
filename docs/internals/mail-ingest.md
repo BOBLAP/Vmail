@@ -93,9 +93,15 @@ The two are separate now. A sync arranges for new mail to be seen and stops; the
   refused are in a database-backed cache pool, so every worker draws on one allowance. A
   refusal is not an error anywhere on this path: a batch, an import page or a sync that meets
   one is put back to run when the account's minute is over.
+- **A Gmail message belongs to the mailbox it is in.** The batch handler gives a message to
+  another connected account only when that account has the better claim (Gmailify: a sibling
+  named in its headers); everything else in the mailbox is the Gmail account's, including mail
+  sent from a "send mail as" address, mail forwarded in from an address not connected here and
+  Gmail drafts, which arrive as drafts. The listing asks for Spam and Trash as well
+  (`includeSpamTrash`), which `messages.list` otherwise leaves out and `messagesTotal` counts.
 - **A Gmail message that is looked at and not stored is written down.** The batch handler
-  declines a message whose headers tie it to no account here — a draft, a chat, mail sent from a
-  "send mail as" address — and cannot store one Gmail lists and answers 404 for. Each gets a row
+  declines a chat — the one kind left with nowhere to go — and cannot store a message Gmail
+  lists and answers 404 for. Each gets a row
   in `gmail_skipped_message` (`App\Entity\Mail\GmailSkippedMessage`) with the reason, its labels
   and its address headers. The listing treats a recorded id like a stored one, so the message
   is not fetched again every hour and an import whose every outstanding message has an answer

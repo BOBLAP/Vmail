@@ -202,8 +202,17 @@ final class GmailApiSyncer
             $this->em->flush();
         }
 
-        // No labelIds filter — fetch all mail (inbox, sent, spam, trash, …).
-        $listed = $this->apiClient->listMessagesPage($account, ['maxResults' => self::PAGE_SIZE], $pageToken);
+        // No labelIds filter — all mail — and Spam and Trash asked for by
+        // name. The comment here said "inbox, sent, spam, trash", and the
+        // request never included the last two: messages.list leaves both out
+        // unless includeSpamTrash is set. getProfile's messagesTotal, which
+        // the progress line counts towards, includes them, so an import of a
+        // mailbox with a full Trash could never reach its own total.
+        $listed = $this->apiClient->listMessagesPage(
+            $account,
+            ['maxResults' => self::PAGE_SIZE, 'includeSpamTrash' => 'true'],
+            $pageToken,
+        );
 
         $pending = $this->newGmailIds($account, $listed['messages']);
 

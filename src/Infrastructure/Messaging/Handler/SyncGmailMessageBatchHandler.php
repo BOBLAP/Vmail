@@ -537,20 +537,32 @@ final readonly class SyncGmailMessageBatchHandler
     /**
      * Determine which account owns this message.
      *
-     * Received mail (no SENT label):
-     *   - Without Gmailify attribution: only mail genuinely addressed to
-     *     this account is considered.
-     *   - With it: GmailAddressFilter::resolveReceivedAccount decides
-     *     between carrier and siblings, To/Cc outranking a
-     *     carrier-matching Delivered-To (Gmail stamps its own address on
-     *     fetched mail). The loop then decides between enriching the
-     *     sibling's existing IMAP row and importing a new one.
+     * The message is in THIS account's Gmail mailbox, so it is this account's
+     * unless another connected account has a better claim to it. That is the
+     * rule; everything below is the "better claim".
      *
-     * Sent mail (SENT label):
-     *   - From matches this account's own address        → this account.
-     *   - From matches a Gmailify sibling AND the carrier has
-     *     gmailSyncGmailifyEnabled                       → the sibling.
-     *   - Otherwise skip (return null).
+     * It used to be the other way round: a message was stored only when its
+     * headers named this account, and anything else was dropped. Measured on
+     * a real mailbox (#90, `app:gmail:skipped`), what that dropped was 202
+     * messages from the user's own Sent — written from "send mail as"
+     * addresses — 89 delivered to a forwarding address that is not connected
+     * here, 43 drafts and 4 addressed to the `googlemail.com` spelling of the
+     * account. All of it is in Gmail, in the folders the user would look for
+     * it in, and none of it belongs to any other account.
+     *
+     * Received mail (no SENT, no DRAFT label):
+     *   - With Gmailify attribution, GmailAddressFilter::resolveReceivedAccount
+     *     picks a sibling when one is named; the carrier otherwise.
+     *   - Without it, mail genuinely addressed to this account only. Switching
+     *     Gmailify attribution off is a deliberate "only what was sent to this
+     *     address", and it stays that.
+     *
+     * Sent mail and drafts (SENT or DRAFT):
+     *   - From a Gmailify sibling, with attribution on → the sibling.
+     *   - Otherwise → this account. A message in this account's Sent was sent
+     *     by its owner, whichever of their addresses it went out as.
+     *
+     * Chats (CHAT) → nobody. A chat is not mail and has nowhere to go here.
      *
      * @param list<string>          $labelIds
      * @param array<string,string>  $headers          lower-cased header name → value
@@ -562,44 +574,36 @@ final readonly class SyncGmailMessageBatchHandler
         Account $account,
         array   $siblingAccounts,
     ): ?Account {
-        $isSent           = true === in_array('SENT', $labelIds, true);
+        if (true === in_array('CHAT', $labelIds, true)) {
+            return null;
+        }
+
+        $written          = true === in_array('SENT', $labelIds, true) || true === in_array('DRAFT', $labelIds, true);
         $gmailifyEnabled  = true === $account->getSetting('gmailSyncGmailifyEnabled', true);
 
-        if (false === $isSent) {
+        if (false === $written) {
             if (false === $gmailifyEnabled) {
-                if (true === $this->addressFilter->isAddressedToAccount($headers, $account)) {
-                    return $account;
-                }
-
-                return null;
+                return true === $this->addressFilter->isAddressedToAccount($headers, $account) ? $account : null;
             }
 
-            return $this->addressFilter->resolveReceivedAccount($headers, $account, $siblingAccounts);
+            return $this->addressFilter->resolveReceivedAccount($headers, $account, $siblingAccounts) ?? $account;
         }
 
-        // Sent mail — check From against this account first.
-        if (true === $this->addressFilter->isSentByAccount($headers, $account)) {
+        if (true === $this->addressFilter->isSentByAccount($headers, $account) || false === $gmailifyEnabled) {
             return $account;
-        }
-
-        // Gmailify sent: check if From matches a sibling account.
-        if (false === $gmailifyEnabled) {
-            return null;
         }
 
         $from = $headers['from'] ?? '';
 
-        if ('' === $from) {
-            return null;
+        if ('' !== $from) {
+            $normFrom = $this->addressFilter->normalise($from);
+
+            if (true === isset($siblingAccounts[$normFrom])) {
+                return $siblingAccounts[$normFrom];
+            }
         }
 
-        $normFrom = $this->addressFilter->normalise($from);
-
-        if (true === isset($siblingAccounts[$normFrom])) {
-            return $siblingAccounts[$normFrom];
-        }
-
-        return null;
+        return $account;
     }
 
     /**

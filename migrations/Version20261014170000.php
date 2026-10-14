@@ -31,7 +31,7 @@ use Doctrine\Migrations\AbstractMigration;
  * category un-files its mail in the database, leaving no pointer at a row that
  * is gone. The owner's foreign key is CASCADE, so a category goes with its user.
  */
-final class Version20261012140000 extends AbstractMigration
+final class Version20261014170000 extends AbstractMigration
 {
     public function getDescription(): string
     {

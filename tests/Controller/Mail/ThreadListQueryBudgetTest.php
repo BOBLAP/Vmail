@@ -86,10 +86,10 @@ final class ThreadListQueryBudgetTest extends WebTestCase
     private const int BUDGET = 28;
 
     /**
-     * The ceiling for the INBOX alone: twenty-eight, and the one read that moved
-     * it.
+     * The ceiling for the INBOX alone: one above BUDGET, and the one read that
+     * moved it.
      *
-     * The inbox was at twenty-seven exactly, so the one read the reader's own
+     * The inbox was at BUDGET exactly, so the one read the reader's own
      * tabs need — `SELECT … FROM inbox_category WHERE usr_id = ?`, an indexed
      * lookup of a table that is empty for most people — took it over. It is the
      * only statement added, it is made once per request however many callers ask
@@ -100,7 +100,7 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * the ceiling they had: a shared ceiling raised for one view would let each
      * of the others regress by a query and still pass.
      */
-    private const int INBOX_BUDGET = 28;
+    private const int INBOX_BUDGET = 29;
 
     /**
      * The ceiling for the same list NAVIGATED rather than visited.

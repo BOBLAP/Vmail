@@ -2356,6 +2356,7 @@ message:
             default: 'rien ne l’a désigné comme courrier de masse'
             forum: 'un en-tête de liste de diffusion : '
             gmail: 'Gmail l’a dit : '
+            own_filter: "classé ici par l’un de vos filtres"
             # A category somebody chose by dragging the conversation onto a tab.
             # Nothing below the first row can move it while this holds.
             pinned: 'vous l’avez déplacé ici'
@@ -2895,6 +2896,26 @@ settings:
         refresh: 'Actualiser depuis le fournisseur'
         subheading: 'Les adresses sous lesquelles ce compte envoie et reçoit.'
         system: 'système'
+    categories:
+        add: "Ajouter"
+        created: "Catégorie « %name% » créée."
+        delete: "Supprimer la catégorie"
+        delete_confirm: "Supprimer « %name% » ? Le courrier qui y est classé retourne dans l’onglet où il serait sinon. Aucun courrier n’est supprimé."
+        deleted: "Catégorie « %name% » supprimée."
+        empty: "Vous n’avez pas encore d’onglet personnel."
+        error:
+            empty: "Une catégorie a besoin d’un nom."
+            reserved: "Ce nom appartient à l’un des onglets intégrés."
+            taken: "Vous avez déjà une catégorie de ce nom."
+            too_long: "Ce nom est trop long (40 caractères au maximum)."
+        filters_link: "Réglages → Filtres."
+        heading: "Vos propres onglets"
+        hint: "Un onglet apparaît dans la boîte de réception tant qu’il contient du courrier. Le courrier y arrive par un filtre dont l’action est « Classer dans une catégorie » — configurez-en un dans"
+        name_label: "Nom"
+        placeholder: "p. ex. Livraisons"
+        rename: "Renommer"
+        renamed: "Renommée en « %name% »."
+        subheading: "Des onglets de boîte de réception que vous nommez vous-même, à côté des cinq fournis avec plMail."
     clock:
         heading: Horloge
         subheading: Si les heures s’écrivent au format 12 ou 24 heures, et où l’heure actuelle s’affiche. Rien n’est stocké différemment — seuls les chiffres changent.
@@ -3151,6 +3172,7 @@ settings:
         action:
             applyLabel: Appliquer le libellé
             archive: Ignorer la boîte de réception
+            fileInCategory: "Classer dans une catégorie"
             markRead: Marquer comme lu
             markSpam: Marquer comme spam
             removeLabel: Retirer le libellé
@@ -3162,6 +3184,7 @@ settings:
         add_condition: Ajouter une condition
         add_group: Ajouter un groupe
         all_accounts: Tous les comptes
+        category_missing: "(catégorie supprimée)"
         count: '%count% filtres'
         count_capped: 'Correspond à %count%+ messages existants'
         count_error: Pas encore un filtre utilisable
@@ -3230,6 +3253,7 @@ settings:
         new_title: Nouveau filtre
         no: Non
         no_actions: Aucune action pour l’instant
+        no_categories: "Aucune catégorie pour l’instant — créez-en une d’abord."
         no_integrations: 'Aucun service connecté — configurez-en un d’abord dans Intégrations.'
         of_the_following: des conditions suivantes
         op:

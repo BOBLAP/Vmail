@@ -229,6 +229,12 @@ final class GmailSkippedMessageTest extends KernelTestCase
         $this->em->refresh($copy);
 
         self::assertSame(self::GMAIL_ID, $copy->gmailId, 'the copy that exists learns its Gmail id instead');
+
+        // And the import line counts it: it is in, just not on this account.
+        $this->account->importTotal = 1;
+        $this->em->flush();
+
+        self::assertSame(1, self::getContainer()->get(ImportProgress::class)->forUser($this->user)[0]->done);
     }
 
     /** A Gmail draft is a draft here: in Drafts, flagged as one. */

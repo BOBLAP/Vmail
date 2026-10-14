@@ -1,4 +1,4 @@
-<!-- translated-from: features/mail.md sha1:0d798c1e796a2cedb420e231d33fc731bb677977 -->
+<!-- translated-from: features/mail.md sha1:d26edbd72da2119a0ed71b4b68fa46ed01e1bcfa -->
 
 # Mail
 
@@ -94,7 +94,7 @@ Synchronisierung.
 ### Ein Posteingang ohne Tabs
 
 Wenn dir eine einzige Liste lieber ist, stelle **Tabs im Posteingang** unter **Einstellungen →
-Allgemein → Kategorien** auf **Eine Liste**. Der Posteingang zeigt dann alles, was
+Kategorien** auf **Eine Liste**. Der Posteingang zeigt dann alles, was
 darin liegt, das Neueste zuerst, und die Tabs sind weg — samt allem, was zu ihnen gehört: die
 „Neu“-Marken, das Ziehen einer Unterhaltung auf einen Tab und die Erklärung, warum eine Nachricht
 dort einsortiert wurde, wo sie ist.
@@ -106,7 +106,7 @@ sagt das, wenn beides zutrifft, und mit **Regeln** hört es auf.
 
 ### Auswählen, was deine Mail einsortiert
 
-Beide Voreinstellungen kannst du ändern, unter **Einstellungen → Allgemein → Kategorien**.
+Beide Voreinstellungen kannst du ändern, unter **Einstellungen → Kategorien**.
 
 **Sortiert nach** legt fest, wer entscheidet. **Regeln** liest Header — einen Mailinglisten-Header,
 einen Abmeldelink, einen Absender, dem du schon geschrieben hast — und antwortet bei derselben
@@ -153,13 +153,37 @@ Es ist begrenzt, weil es pro Nachricht einen Modell-Aufruf kostet — ein paar h
 auf einem warmen Host, ein ganzes Postfach Stunden. Und bei der neuesten Mail fällt ein falscher Tab
 ohnehin zuerst auf. Von allein fragt nichts noch einmal nach, und das ist auch richtig so.
 
+### Die Tabs anordnen
+
+Die Karte **Tabs** auf derselben Seite listet jeden Tab in der Reihenfolge, in der der Posteingang
+sie zeigt. Zieh einen, um ihn zu verschieben, oder nimm die Pfeile daneben, per Tastatur oder am
+Handy. **Allgemein** steht immer vorn und ist immer an: Dort öffnet sich der Posteingang, und dort
+landet die Mail eines Tabs, den du ausschaltest.
+
+Jeden der anderen vier eingebauten Tabs kannst du **Aus**schalten. Foren ist der übliche Kandidat —
+selbst Gmail legt dort kaum etwas ab. Ein ausgeschalteter Tab ist nicht nur versteckt: Es wird nichts
+mehr hineinsortiert, weder von den Regeln noch von Googles Labels noch vom Assistenten, und die Mail,
+die dort gelandet wäre, liegt in Allgemein. Der Bereich **Details** sagt das bei so einer Nachricht
+(„es wäre Foren, und das hast du ausgeschaltet“). Einen Tab aus- oder wieder einzuschalten sortiert
+deine vorhandene Mail im Hintergrund neu, genau wie eine Änderung daran, was deine Mail einsortiert;
+schaltest du ihn wieder ein, ist seine Mail zurück, weil die Kategorie aus dem neu berechnet wird, was
+an jeder Nachricht gespeichert ist. Eine Konversation, die du in einen Tab gezogen hattest, den du
+ausschaltest, wird danach wieder einsortiert wie jede andere.
+
 ### Eigene Tabs
 
 Die fünf sind das, was plMail zu erkennen weiß. Willst du einen Tab für etwas, das es nicht
-erkennen kann — Pakete, Belege, die Mail eines Kunden —, lege ihn unter **Einstellungen →
-Allgemein → Deine eigenen Tabs** an: ein Name, sonst nichts. Ein eigener Tab enthält nichts, bis ein
+erkennen kann — Pakete, Belege, die Mail eines Kunden —, leg ihn unten auf der Karte **Tabs** unter
+**Einstellungen → Kategorien** an: ein Name, sonst nichts. Er steht am Ende der Leiste, bis du ihn
+verschiebst. Ein eigener Tab enthält nichts, bis ein
 [Filter](filters.md#in-eigene-tabs-ablegen), dessen Aktion **In Kategorie ablegen** ist, Mail
-hineinlegt, und wie die anderen erscheint er im Posteingang nur, solange er Mail enthält.
+hineinlegt, und wie die anderen erscheint er im Posteingang nur, solange er Mail enthält. Ein Filter
+legt auch Gmail-Mail ab: Googles Kategorien haben Vorrang vor plMails eigener Sortierung, solange du
+nichts anderes sagst, aber einen Filter hast du selbst geschrieben, und er hat Vorrang vor beiden.
+
+Mail bleibt in deinem Tab, wenn der Filter, der sie dort abgelegt hat, geändert oder gelöscht wird —
+so wie ein Label an der Mail bleibt, wenn sein Filter geht. Herausziehen oder den Tab löschen ist der
+Weg hinaus.
 
 Eine Konversation steckt in genau einem Tab; Mail, die in einem deiner Tabs abgelegt wird,
 verlässt also den eingebauten Tab, in dem sie sonst gelegen hätte — die Benachrichtigung eines
@@ -173,9 +197,10 @@ sagt, dass sie von einem deiner Filter dort abgelegt wurde (oder, nach einem Dra
 verschoben hast). Einen Tab umzubenennen benennt ihn überall zugleich um. Einen **zu löschen** legt
 seine Mail in den Tab zurück, in dem sie sonst läge; gelöscht wird nichts.
 
-Deine Tabs leben in plMail. Andere Mail-Apps, die sich per JMAP verbinden, und Gmail selbst wissen
-nichts von ihnen: Eine Konversation in deinem Sendungen-Tab erscheint ihnen in dem eingebauten Tab,
-in dem sie sonst läge.
+Die Android-App zeigt deine Tabs wie der Browser — in deiner Reihenfolge, ohne die ausgeschalteten —
+und verschiebt Mail zwischen ihnen. Andere Mail-Apps, die sich per JMAP verbinden, sehen, was sie
+immer gesehen haben: die fünf eingebauten Kategorien, eine Konversation aus deinem Sendungen-Tab in
+dem eingebauten Tab, in dem sie sonst läge. Gmail selbst weiß nichts von deinen Tabs.
 
 ### plMail sagen, dass es danebenlag
 

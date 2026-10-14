@@ -1,4 +1,4 @@
-<!-- translated-from: features/filters.md sha1:b4f7b78a3ddcd2f435e6401e64d1a052d6c75036 -->
+<!-- translated-from: features/filters.md sha1:446ac513f7e197133acae2b0794ff92ec911c1d4 -->
 
 # Filter
 
@@ -190,13 +190,12 @@ Was die Aktion ablegt und was nicht:
   echten in deinem Sendungen-Tab zu sitzen. Mail, die die Prüfung nicht besteht, wird nicht
   abgelegt, und Mail, die plMail nicht prüfen kann, ebenso wenig; siehe „Fallstricke“ dafür, was das
   zusichert und was nicht.
-- **Bei einem Gmail-Konto nur, wenn du plMail gesagt hast, es solle Google überstimmen.** Sonst
-  entscheidet Gmails eigene Kategorie, wie überall sonst — der Schalter steht unter **Einstellungen
-  → Allgemein → Kategorien → Bei Gmail-Konten**.
+- **Auch bei Gmail-Konten.** Googles Kategorien haben Vorrang vor plMails eigener Sortierung,
+  solange du nichts anderes sagst, aber ein Filter ist eine Anweisung, die du geschrieben hast, und
+  hat Vorrang vor beiden.
 - **Nichts außer einem Tab.** Die Aktion fasst keine Labels an, archiviert nicht, verschiebt nichts
-  in Spam und markiert nichts als gelesen. Andere Mail-Apps, die sich per JMAP verbinden, sehen
-  weiterhin die fünf Kategorien, die sie immer gesehen haben: Eine Konversation in deinem
-  Sendungen-Tab erscheint ihnen in dem eingebauten Tab, in dem sie sonst läge.
+  in Spam und markiert nichts als gelesen. Die Android-App zeigt deine Tabs; andere Mail-Apps, die
+  sich per JMAP verbinden, sehen weiterhin die fünf eingebauten Kategorien.
 
 Eine Konversation steckt in **einem** Tab. Sie steckt in deinem, wenn ihre neueste Nachricht dort
 abgelegt wurde; eine neuere Nachricht, die kein Filter beansprucht, nimmt sie also wieder heraus,

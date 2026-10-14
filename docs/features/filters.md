@@ -168,13 +168,11 @@ What the action will and will not file:
   ordinary rules put it, instead of sitting in your Shipping tab beside the real ones. Mail that
   fails the check is not filed, and neither is mail plMail cannot check; see "Things that bite" for
   what this does and does not guarantee.
-- **On a Gmail account, only if you have told plMail to sort over Google.** Otherwise Gmail's own
-  category decides, as it does everywhere else — the switch is **Settings → General → Categories →
-  On Gmail accounts**.
+- **On Gmail accounts too.** Google's categories outrank plMail's own sorting unless you say
+  otherwise, but a filter is an instruction you wrote, and it outranks both.
 - **Nothing but a tab.** The action does not touch labels, does not archive, does not move anything
-  to Spam and does not mark anything read. Other mail apps that connect over JMAP keep seeing the
-  five categories they have always seen: a conversation in your Shipping tab appears to them in the
-  built-in tab it would otherwise be in.
+  to Spam and does not mark anything read. The Android app shows your tabs; other mail apps that
+  connect over JMAP keep seeing the five built-in categories.
 
 A conversation is in **one** tab. It is in yours when its newest message was filed there, so a
 newer message no filter claims takes it back out, the way a newer Promotions message takes a

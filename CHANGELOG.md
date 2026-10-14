@@ -29,6 +29,11 @@ tabs, read for parcels, invoices or meetings, or offered as a calendar event, an
 no longer become contacts. A forged invitation in Spam stays out of the calendar. Read receipts
 filtered into Spam are still matched to the mail they are about. No migration.
 
+**plMail speaks French.** Choose **Français** under **Settings → General → Language**, or when
+creating the first account. The whole interface is translated, including the admin panel, the
+validation and sign-in messages and the emoji picker's search; French also defaults to the
+24-hour clock, as German does. No migration.
+
 ## v0.3.5 — 2026-10-13
 
 **Browsers and password managers kept offering your logins in client-secret fields.** Opening

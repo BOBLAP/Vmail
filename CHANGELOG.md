@@ -17,9 +17,17 @@ account's unless another connected account has a better claim to it; drafts arri
 `googlemail.com` is read as `gmail.com`. Only chats are still left out. The import also fetches
 Spam and Trash now, which it said it did and never asked Google for — the reason an import could
 not reach Gmail's own total. Every Gmail account lists its mailbox once more after the upgrade to
-take these in, and shows as importing until that pass is done. **Migration:** clears the record of
+take these in, and shows as importing until that pass is done. A message that names nobody and that
+Gmail collected from another connected account is merged into that account's copy rather than
+listed twice. **Migration:** clears the record of
 skipped Gmail messages except chats, and the backfill markers of Gmail
 accounts. [#90](https://github.com/karatektus/pl_mail/issues/90), reported by @karamanliev.
+
+**Spam and Trash are kept, not worked on.** Mail arriving in either — from any provider, and now
+from a Gmail import — is no longer categorised by the language model, held back from the inbox
+tabs, read for parcels, invoices or meetings, or offered as a calendar event, and senders of spam
+no longer become contacts. A forged invitation in Spam stays out of the calendar. Read receipts
+filtered into Spam are still matched to the mail they are about. No migration.
 
 ## v0.3.5 — 2026-10-13
 

@@ -243,6 +243,27 @@ final readonly class SyncGmailMessageBatchHandler
                 $nowStored[] = $gmailId;
             }
 
+            // ── Claimed by nobody: is it another account's copy? ──────────────
+            // A message whose headers name neither this account nor any other
+            // is this account's — it is in its mailbox. But Gmail may have
+            // fetched it from another connected account whose own sync holds
+            // it already: a newsletter Bcc'd to that address, collected by
+            // Gmail with nothing of the address left in its headers. Stored
+            // here as well, it would be listed twice. So before it is taken
+            // as this account's, the user's other accounts are asked for the
+            // same Message-ID, and a copy found there is enriched instead,
+            // exactly as a Gmailify sibling's is below.
+            if ($targetAccount === $account && false === $this->namesCarrier($labelIds, $headers, $account)) {
+                $copy = $this->copyOnAnotherAccount($headers, $siblingAccounts);
+
+                if (null !== $copy) {
+                    $this->enrichExisting($copy, $labelIds, $gmailId, $copy->account, $account, false);
+                    $enriched++;
+                    $affectedAccounts[(int) $copy->account->id] = $copy->account;
+                    continue;
+                }
+            }
+
             // ── Gmailify dedup: merge, don't skip ─────────────────────────────
             // When the sibling's own IMAP sync already holds this message
             // (same canonical RFC Message-ID), the IMAP row keeps ownership of
@@ -604,6 +625,56 @@ final readonly class SyncGmailMessageBatchHandler
         }
 
         return $account;
+    }
+
+    /**
+     * Whether the headers themselves tie the message to this account, as
+     * opposed to its having landed here because nobody else claimed it.
+     *
+     * @param list<string>         $labelIds
+     * @param array<string,string> $headers
+     */
+    private function namesCarrier(array $labelIds, array $headers, Account $account): bool
+    {
+        $written = true === in_array('SENT', $labelIds, true) || true === in_array('DRAFT', $labelIds, true);
+
+        return true === $written
+            ? $this->addressFilter->isSentByAccount($headers, $account)
+            : $this->addressFilter->isAddressedToAccount($headers, $account);
+    }
+
+    /**
+     * The same message already stored on another of the user's accounts, by
+     * RFC Message-ID, or null.
+     *
+     * @param array<string,string>  $headers
+     * @param array<string,Account> $siblingAccounts normalisedEmail → Account; one account can appear under several keys
+     */
+    private function copyOnAnotherAccount(array $headers, array $siblingAccounts): ?Message
+    {
+        $rfcMessageId = MessageIdHelper::normalise($headers['message-id'] ?? '');
+
+        if ('' === $rfcMessageId) {
+            return null;
+        }
+
+        $asked = [];
+
+        foreach ($siblingAccounts as $sibling) {
+            if (true === isset($asked[(int) $sibling->id])) {
+                continue;
+            }
+
+            $asked[(int) $sibling->id] = true;
+
+            $existing = $this->messageRepository->findOneForAccountByMessageId($sibling, $rfcMessageId);
+
+            if (null !== $existing) {
+                return $existing;
+            }
+        }
+
+        return null;
     }
 
     /**

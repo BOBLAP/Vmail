@@ -180,6 +180,57 @@ final class GmailSkippedMessageTest extends KernelTestCase
         self::assertNotSame($filter->normalise('karatektus@gmail.com'), $filter->normalise('karatektus@googlemail.de'));
     }
 
+    /**
+     * The duplicate the new rule could otherwise make. Gmail collected this
+     * from another connected account — a Bcc'd newsletter, with nothing of
+     * that address left in its headers — and that account's own sync holds
+     * it already. It names nobody, so it would have been stored here as
+     * well; it is merged into the copy that exists instead.
+     */
+    public function testAnUnclaimedMessageAnotherAccountAlreadyHoldsIsMergedNotStoredTwice(): void
+    {
+        $sibling                = new Account();
+        $sibling->usr           = $this->user;
+        $sibling->name          = 'Work';
+        $sibling->email         = 'me@work.test';
+        $sibling->username      = uniqid('work-', true);
+        $sibling->authType      = AuthType::Password->value;
+        $sibling->imapHost      = 'imap.work.test';
+        $sibling->isActive      = true;
+        $this->em->persist($sibling);
+
+        // On a conversation of its own account, as every stored message is:
+        // that is how a copy is found (findOneForAccountByMessageId).
+        $thread                    = new \App\Entity\Mail\MessageThread();
+        $thread->account           = $sibling;
+        $thread->subject           = 'Newsletter';
+        $thread->normalizedSubject = 'newsletter';
+        $thread->threadingMethod   = \App\Domain\Enum\Mail\ThreadingMethod::SubjectFallback;
+        $thread->lastMessageAt     = new DateTimeImmutable('-1 hour');
+        $thread->unreadCount       = 0;
+        $this->em->persist($thread);
+
+        $copy              = new Message();
+        $copy->account     = $sibling;
+        $copy->thread      = $thread;
+        $copy->subject     = 'Newsletter';
+        $copy->fromAddress = 'news@list.test';
+        $copy->messageId   = 'gmail-skipped-1@example.test';
+        $copy->receivedAt  = new DateTimeImmutable('-1 hour');
+        $copy->hasAttachments = false;
+        $copy->flags       = [];
+        $this->em->persist($copy);
+        $this->em->flush();
+
+        $this->handle(['INBOX'], to: 'list-members@list.test', from: 'news@list.test');
+
+        self::assertSame(0, $this->storedCount(), 'not a second copy on the Gmail account');
+
+        $this->em->refresh($copy);
+
+        self::assertSame(self::GMAIL_ID, $copy->gmailId, 'the copy that exists learns its Gmail id instead');
+    }
+
     /** A Gmail draft is a draft here: in Drafts, flagged as one. */
     public function testAGmailDraftIsStoredAsADraft(): void
     {

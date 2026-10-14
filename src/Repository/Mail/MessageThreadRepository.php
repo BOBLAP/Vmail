@@ -2528,6 +2528,32 @@ class MessageThreadRepository extends ServiceEntityRepository
         );
     }
 
+    /**
+     * Release this reader's conversations pinned to a built-in category, before
+     * that category is switched off.
+     *
+     * The recompute statements skip a pinned conversation, so one dragged into
+     * a category that is then switched off would never be resolved again. Only
+     * conversations shown in that category: one in a tab of the reader's own
+     * keeps its pin, since that tab is still there.
+     */
+    public function unpinFromCategory(\App\Entity\User\User $user, MessageCategory $category): int
+    {
+        return (int) $this->getEntityManager()->getConnection()->executeStatement(
+            <<<'SQL'
+            UPDATE message_thread t
+            SET category_pinned_at = NULL
+            FROM account a
+            WHERE a.id = t.account_id
+              AND a.usr_id = :user
+              AND t.category = :category
+              AND t.user_category_id IS NULL
+              AND t.category_pinned_at IS NOT NULL
+            SQL,
+            ['user' => $user->id, 'category' => $category->value],
+        );
+    }
+
     public function recomputeCategoriesForAccount(Account $account): int
     {
         $sql = <<<'SQL'

@@ -3765,6 +3765,7 @@ settings:
         appearance: Appearance
         calendar_behaviour: Behaviour
         calendars: Calendars
+        categories: "Categories"
         disposal: Disposal
         filters: Filters
         general: General
@@ -3969,31 +3970,38 @@ settings:
         subheading: 'What is added to the bottom of the messages you write.'
     categories:
         add: Add
+        built_in: "Built in"
+        built_in_off: "Built in · switched off — its mail is in Primary"
         created: 'Created "%name%".'
         delete: Delete category
         delete_confirm: 'Delete "%name%"? Mail filed there goes back to the tab it would otherwise be in. No mail is deleted.'
         deleted: 'Deleted "%name%".'
-        empty: 'You have no tabs of your own yet.'
         error:
             empty: 'A category needs a name.'
             reserved: 'That name belongs to one of the built-in tabs.'
             taken: 'You already have a category with that name.'
             too_long: 'That name is too long (40 characters at most).'
         filters_link: 'Settings → Filters.'
-        heading: Your own tabs
-        hint: 'A tab shows in the inbox while it holds mail. Mail goes into it through a filter whose action is "File in category" — set one up under'
+        heading: "Inbox tabs"
+        hint: "A tab of your own shows in the inbox while it holds mail. Mail goes into it through a filter whose action is \"File in category\" — set one up under"
+        move_down: "Move %tab% down"
+        move_up: "Move %tab% up"
         name_label: Name
+        off: "Off"
+        on: "On"
         placeholder: 'e.g. Shipping'
+        primary_fixed: "Always first and always on — mail from a tab you switch off lands here."
         rename: Rename
         renamed: 'Renamed to "%name%".'
-        subheading: 'Inbox tabs you name yourself, beside the five that come with plMail.'
+        reorder: "Drag to reorder"
+        subheading: "Switch the built-in tabs on or off, add your own, and drag them into the order you want."
     sorting:
         again:
             button: Ask again
             hint: The assistant answers once per message and keeps the answer. Ask again after the model, the prompt or a plMail release has changed — it costs a model call per message, so it is bounded to your newest mail.
             label: Sort recent mail again
         applies_to_new: Changing either of these re-files the mail you already have, in the background — a large mailbox takes a few minutes, so give the tabs a moment to settle. Conversations you moved to a tab yourself are left alone.
-        heading: Categories
+        heading: "Sorting"
         override:
             hint: A Gmail account arrives already sorted by Google. This decides whether plMail leaves that alone or answers for itself.
             label: On Gmail accounts

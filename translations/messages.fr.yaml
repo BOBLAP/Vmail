@@ -2899,24 +2899,31 @@ settings:
         system: 'système'
     categories:
         add: "Ajouter"
+        built_in: "Intégré"
+        built_in_off: "Intégré · désactivé — son courrier est dans Principal"
         created: "Catégorie « %name% » créée."
         delete: "Supprimer la catégorie"
         delete_confirm: "Supprimer « %name% » ? Le courrier qui y est classé retourne dans l’onglet où il serait sinon. Aucun courrier n’est supprimé."
         deleted: "Catégorie « %name% » supprimée."
-        empty: "Vous n’avez pas encore d’onglet personnel."
         error:
             empty: "Une catégorie a besoin d’un nom."
             reserved: "Ce nom appartient à l’un des onglets intégrés."
             taken: "Vous avez déjà une catégorie de ce nom."
             too_long: "Ce nom est trop long (40 caractères au maximum)."
         filters_link: "Réglages → Filtres."
-        heading: "Vos propres onglets"
-        hint: "Un onglet apparaît dans la boîte de réception tant qu’il contient du courrier. Le courrier y arrive par un filtre dont l’action est « Classer dans une catégorie » — configurez-en un dans"
+        heading: "Onglets de la boîte de réception"
+        hint: "Un onglet personnel apparaît dans la boîte de réception tant qu’il contient du courrier. Le courrier y arrive par un filtre dont l’action est « Classer dans une catégorie » — configurez-en un dans"
+        move_down: "Descendre %tab%"
+        move_up: "Monter %tab%"
         name_label: "Nom"
+        off: "Désactivé"
+        on: "Activé"
         placeholder: "p. ex. Livraisons"
+        primary_fixed: "Toujours en premier et toujours actif — le courrier d’un onglet que vous désactivez arrive ici."
         rename: "Renommer"
         renamed: "Renommée en « %name% »."
-        subheading: "Des onglets de boîte de réception que vous nommez vous-même, à côté des cinq fournis avec plMail."
+        reorder: "Faire glisser pour réordonner"
+        subheading: "Activez ou désactivez les onglets intégrés, ajoutez les vôtres et faites-les glisser dans l’ordre que vous voulez."
     clock:
         heading: Horloge
         subheading: Si les heures s’écrivent au format 12 ou 24 heures, et où l’heure actuelle s’affiche. Rien n’est stocké différemment — seuls les chiffres changent.
@@ -3806,6 +3813,7 @@ settings:
         appearance: Apparence
         calendar_behaviour: Comportement
         calendars: Agendas
+        categories: "Catégories"
         disposal: Suppression
         filters: Filtres
         general: Général
@@ -4017,7 +4025,7 @@ settings:
             hint: L’assistant répond une fois par message et garde la réponse. Redemandez après un changement de modèle, d’instruction ou de version de plMail — cela coûte un appel au modèle par message, c’est donc limité à votre courrier le plus récent.
             label: Trier à nouveau le courrier récent
         applies_to_new: Changer l’un de ces réglages reclasse en arrière-plan le courrier que vous avez déjà — une grosse boîte prend quelques minutes, laissez donc un moment aux onglets pour se stabiliser. Les conversations que vous avez vous-même déplacées dans un onglet ne sont pas touchées.
-        heading: Catégories
+        heading: "Tri"
         override:
             hint: Un compte Gmail arrive déjà trié par Google. Ceci décide si plMail laisse ce tri tel quel ou répond lui-même.
             label: Sur les comptes Gmail

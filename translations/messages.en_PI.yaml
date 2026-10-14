@@ -3578,6 +3578,7 @@ settings:
         appearance: Look o' the ship
         calendar_behaviour: Behaviour
         calendars: Almanacs
+        categories: "Holds"
         disposal: Disposal
         filters: Sieves
         general: General
@@ -3771,31 +3772,38 @@ settings:
         subheading: 'What be carved at the foot o'' the scrolls ye write.'
     categories:
         add: Add
+        built_in: "Ship's own"
+        built_in_off: "Ship's own · struck — its loot be on the Main deck"
         created: 'Built the hold "%name%".'
         delete: Scuttle the hold
         delete_confirm: 'Scuttle "%name%"? Post stowed there goes back to the hold it would be in otherwise. No post goes over the side.'
         deleted: 'Scuttled "%name%".'
-        empty: 'Ye have no holds o'' yer own yet.'
         error:
             empty: 'A hold needs a name.'
             reserved: 'That name belongs to one o'' the holds the ship came with.'
             taken: 'Ye already have a hold by that name.'
             too_long: 'That name be too long (forty letters at most).'
         filters_link: 'Settings → Sieves.'
-        heading: Yer own holds
-        hint: 'A hold shows in the inbox while it has post in it. Post goes in through a sieve whose order be "Stow in a hold o'' its own" — make one under'
+        heading: "Tabs o' the inbox"
+        hint: "A tab o' yer own shows in the inbox while it holds letters. Letters go into it through a filter whose order be \"File in category\" — rig one up under"
+        move_down: "Haul %tab% down"
+        move_up: "Haul %tab% up"
         name_label: Name
+        off: "Nay"
+        on: "Aye"
         placeholder: 'e.g. Parcels'
+        primary_fixed: "Always first an' always flyin' — loot from a tab ye strike lands here."
         rename: Rename
         renamed: 'Renamed to "%name%".'
-        subheading: 'Holds ye name yerself, beside the five the ship came with.'
+        reorder: "Drag t' reorder"
+        subheading: "Raise or strike the ship's own tabs, add yer own, an' haul 'em into whatever order ye fancy."
     sorting:
         again:
             button: "Ask again"
             hint: "Th' oracle answers once per message an' keeps th' answer. Ask again when th' oracle, its orders or a plMail release have changed — it costs an askin' per message, so it be bounded to yer newest post."
             label: "Stow recent post again"
         applies_to_new: "Changin' either o' these re-stows the post ye already have, below decks — a big hold takes a few minutes, so give the tabs a moment. Yarns ye stowed by hand yerself be left be."
-        heading: Categories
+        heading: "Sortin'"
         override:
             hint: "A Gmail account arrives already stowed by Google. This decides whether plMail leaves it be or answers for itself."
             label: "On Gmail accounts"

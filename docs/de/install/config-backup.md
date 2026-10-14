@@ -1,4 +1,4 @@
-<!-- translated-from: install/config-backup.md sha1:85ed1a4795a97458cf3d026b778bded5027237ce -->
+<!-- translated-from: install/config-backup.md sha1:b466a9cfc5309749518af761ea47cbb63c3659ec -->
 # Konfigurationssicherung
 
 Die *Konfiguration* einer Installation ist nicht dasselbe wie ihre *Daten*, und beide gehen auf
@@ -183,10 +183,11 @@ Filter               Bedingungen und Aktionen; die Label-, Konto-,
                      Integrations- und Kategorie-IDs darin werden beim Import
                      umgeschrieben
 Labels               der ganze Baum: Namen, Rollen, Farben, Eltern, Reihenfolge
-Posteingangs-Tabs    die Tabs, die du selbst angelegt hast: Namen und
-                     Reihenfolge. Welche Mail darin abgelegt ist, wird nicht
-                     mitgenommen — das ist Mail, und ein Filter, der dort
-                     ablegt, füllt den Tab wieder
+Posteingangs-Tabs    die Tabs, die du selbst angelegt hast, die Reihenfolge
+                     aller Tabs und welche eingebauten ausgeschaltet sind.
+                     Welche Mail darin abgelegt ist, wird nicht mitgenommen
+                     — das ist Mail, und ein Filter, der dort ablegt, füllt
+                     den Tab wieder
 Kalender             Name, Farbe, Zeitzone, Rolle und von welchem Mailkonto oder
                      welcher Integration er eine Spiegelung ist
 veröffentlichte      Kalender-Freigabelinks und Buchungsseiten, über ihren

@@ -1,4 +1,4 @@
-<!-- translated-from: internals/mail-ingest.md sha1:e9666400a3d8eb233bc0bf2ae1ad6380d59e4dc8 -->
+<!-- translated-from: internals/mail-ingest.md sha1:4cec2680ca81aaeda118258ea11392456b81c947 -->
 # Mail-Ingest
 
 Vom Anbieter in die Datenbank: wie aus Bytes eine Zeile `Message` wird, was mit ihr geschieht,
@@ -197,7 +197,17 @@ Konversation über `MessageThreader::refreshCategory()` neu auflösen — neuest
 Hold-bewusst, wie bei der eingebauten Kategorie. `MessageThread::$userCategory` ist die Seite der
 Konversation, aufgelöst von denselben zwei Neuberechnungs-Statements wie `category`. Eine Nachricht
 wird nur abgelegt, wenn `SenderAuthentication` `Pass` sagt; wessen Urteil geglaubt wird, steht in
-dessen Docblock.
+dessen Docblock. Der Filter legt auch Mail mit Gmail-Labels ab: Die Kategorien des Anbieters haben
+Vorrang vor plMails eigener Sortierung, nicht vor einer Anweisung, die die Nutzerin geschrieben hat.
+
+Eine eingebaute Kategorie, die die Nutzerin ausgeschaltet hat (`CategorySorting::$disabled`),
+bekommt keine Mail. `MessageCategorizer::explain()` macht aus dem, was die Kaskade entschieden hat —
+Header-Regel, Gmail-Label oder Assistent —, Allgemein mit dem Grund `switched_off`, statt die nächste
+Regel zu fragen; „Foren ist aus“ macht eine Mailingliste also nie zu Werbung. Eine Kategorie aus- oder
+einzuschalten reiht dieselbe Neusortierung ein wie die anderen Sortier-Einstellungen. Beide
+Neuberechnungs-Statements schreiben nur die Konversationen, deren Tab sich ändert, und geben sie
+zurück, und jeder Aufrufer trägt sie als JMAP-Thread-Änderungen ein — so erfährt ein Handy von einer
+Neusortierung.
 
 Zurück kommt `PostIngestResult` — Nachrichten in Ingest-Reihenfolge, besitzende Konten nach Id
 und Konversations-Ids nach besitzendem Konto —, weil die drei Aufrufer nicht gleich zu Ende

@@ -169,8 +169,9 @@ integrations         per connection: provider, base URL, username, secret or
 filters              conditions and actions, with the label, account,
                      integration and category ids inside them rewritten on import
 labels               the whole tree: names, roles, colours, parents, order
-inbox tabs           the tabs you made yourself: names and order. Which mail
-                     is filed in them is not carried — that is mail, and a
+inbox tabs           the tabs you made yourself, the order of every tab and
+                     which built-in ones are switched off. Which mail is
+                     filed in them is not carried — that is mail, and a
                      filter that files into one fills it again
 calendars            name, colour, time zone, role, and which mail account or
                      integration each one is a mirror of

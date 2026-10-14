@@ -3784,7 +3784,7 @@ settings:
             taken: 'Ye already have a hold by that name.'
             too_long: 'That name be too long (forty letters at most).'
         filters_link: 'Settings → Sieves.'
-        heading: "Tabs o' the inbox"
+        heading: "Tabs"
         hint: "A tab o' yer own shows in the inbox while it holds letters. Letters go into it through a filter whose order be \"File in category\" — rig one up under"
         move_down: "Haul %tab% down"
         move_up: "Haul %tab% up"

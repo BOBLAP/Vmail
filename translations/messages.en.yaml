@@ -3982,7 +3982,7 @@ settings:
             taken: 'You already have a category with that name.'
             too_long: 'That name is too long (40 characters at most).'
         filters_link: 'Settings → Filters.'
-        heading: "Inbox tabs"
+        heading: "Tabs"
         hint: "A tab of your own shows in the inbox while it holds mail. Mail goes into it through a filter whose action is \"File in category\" — set one up under"
         move_down: "Move %tab% down"
         move_up: "Move %tab% up"

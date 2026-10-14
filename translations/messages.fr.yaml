@@ -2911,7 +2911,7 @@ settings:
             taken: "Vous avez déjà une catégorie de ce nom."
             too_long: "Ce nom est trop long (40 caractères au maximum)."
         filters_link: "Réglages → Filtres."
-        heading: "Onglets de la boîte de réception"
+        heading: "Onglets"
         hint: "Un onglet personnel apparaît dans la boîte de réception tant qu’il contient du courrier. Le courrier y arrive par un filtre dont l’action est « Classer dans une catégorie » — configurez-en un dans"
         move_down: "Descendre %tab%"
         move_up: "Monter %tab%"

@@ -4001,7 +4001,7 @@ settings:
             taken: 'Du hast bereits eine Kategorie mit diesem Namen.'
             too_long: 'Dieser Name ist zu lang (höchstens 40 Zeichen).'
         filters_link: 'Einstellungen → Filter.'
-        heading: "Posteingangs-Tabs"
+        heading: "Tabs"
         hint: "Ein eigener Tab erscheint im Posteingang, solange er Mail enthält. Mail kommt über einen Filter mit der Aktion „In Kategorie ablegen“ hinein — richte einen ein unter"
         move_down: "%tab% nach unten"
         move_up: "%tab% nach oben"

@@ -117,8 +117,11 @@ Accepts:
                             </button>
                         </form>
 
+                        {# Through Turbo, unlike the forms above: data-turbo-confirm is
+                           Turbo's, and with Turbo off the tab was deleted without
+                           the question being asked. #}
                         <form method="post" action="{{ path('app_settings_categories_delete', { id: tab.categoryId }) }}"
-                              data-turbo="false" class="shrink-0"
+                              class="shrink-0"
                               data-turbo-confirm="{{ 'settings.categories.delete_confirm'|trans({ '%name%': tab.name }) }}">
                             <input type="hidden" name="_token" value="{{ csrf_token('settings-categories') }}">
                             <button type="submit"

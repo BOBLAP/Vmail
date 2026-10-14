@@ -7,6 +7,7 @@ use App\Domain\Enum\Mail\MessageFlag;
 use App\Domain\Enum\Mail\ThreadingMethod;
 use App\Domain\Helper\MessageIdHelper;
 use App\Entity\Mail\Account;
+use App\Entity\Mail\InboxCategory;
 use App\Entity\Mail\Message;
 use App\Entity\Mail\MessageThread;
 use App\Repository\Mail\MessageRepository;
@@ -290,6 +291,11 @@ final class MessageThreader
         $thread->category = true === $message->isCategoryHeld()
             ? null
             : $message->category ?? MessageCategory::Primary;
+        // A held message's thread is in no tab at all, and that includes the
+        // reader's own: the filter that would file it has not run yet either.
+        $thread->userCategory = true === $message->isCategoryHeld()
+            ? null
+            : $this->ownTabOf($message);
         $thread->attachmentCount = 0;
 
         // The new-mail marker starts null — nobody has been shown this row yet
@@ -477,6 +483,38 @@ final class MessageThreader
 
         if (null !== $category) {
             $thread->category = $category;
+
+            // The reader's own tab follows the same rule and moves in the same
+            // breath, including BACK to none: a newer message no filter claimed
+            // takes the conversation out of "Shipping" exactly as a newer
+            // Promotions message takes it out of Updates. Only a message that
+            // has a category counts — an uncategorised draft is not an opinion
+            // about where the conversation belongs. See
+            // MessageThread::$userCategory.
+            $thread->userCategory = $this->ownTabOf($message);
         }
+    }
+
+    /**
+     * The tab of the reader's own that a message's filter verdict puts its
+     * conversation in, or null.
+     *
+     * The verdict counts on Gmail-labelled mail only while the reader has asked
+     * plMail to overrule Google — the rule RuleCategoryFiler applied when it
+     * filed the message. It is re-applied HERE because the verdict outlives the
+     * setting: Gmail enrichment re-adopts a message's verdict long after it was
+     * filed, and the setting may have been switched off in between. The same
+     * test is written into the two recompute statements in
+     * MessageThreadRepository, for the same reason.
+     */
+    private function ownTabOf(Message $message): ?InboxCategory
+    {
+        $tab = $message->ruleCategory;
+
+        if (null === $tab || null === $message->gmailLabelIds) {
+            return $tab;
+        }
+
+        return true === $message->account->usr?->categorySorting->overrideProvider ? $tab : null;
     }
 }

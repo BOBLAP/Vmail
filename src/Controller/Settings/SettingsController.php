@@ -22,6 +22,7 @@ use App\Repository\Calendar\BookingPageRepository;
 use App\Repository\Calendar\CalendarRepository;
 use App\Repository\Calendar\CalendarShareLinkRepository;
 use App\Repository\Mail\AccountRepository;
+use App\Repository\Mail\InboxCategoryRepository;
 use App\Repository\Push\PushDeliveryRepository;
 use App\Repository\User\ApiTokenRepository;
 use App\Repository\User\PushSubscriptionRepository;
@@ -87,6 +88,7 @@ final class SettingsController extends AbstractController
         private readonly CalendarShareLinkRepository $shareLinkRepository,
         private readonly BookingPageRepository $bookingPageRepository,
         private readonly MailRuleRepository $mailRuleRepository,
+        private readonly InboxCategoryRepository $inboxCategoryRepository,
         private readonly PushSubscriptionRegistry $pushSubscriptionRegistry,
         private readonly PushSubscriptionRepository $pushSubscriptions,
         private readonly PushDeliveryRepository $pushDeliveries,
@@ -155,6 +157,11 @@ final class SettingsController extends AbstractController
             'labels'             => $this->labelRepository->findForUserTreeOrdered($this->getUser()),
             'calendars'          => $this->calendarRepository->findForUser($this->getUser()),
             'rules'              => $this->mailRuleRepository->findForUserOrdered($this->getUser()),
+            // Only the General section draws them, and every other settings page
+            // would otherwise pay a read for a list it never shows.
+            'inboxCategories'    => 'general' === $section
+                ? $this->inboxCategoryRepository->findForUserOrdered($this->getUser())
+                : [],
             'apiTokens'          => $this->apiTokenRepository->findForUser($this->getUser()),
             'apiTokenForm'       => $this->createForm(ApiTokenType::class)->createView(),
             // A refused profile save forwards here with its form, so the page

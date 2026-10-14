@@ -274,6 +274,23 @@ icon in the app but not in the tab, which kept showing the wax seal. Every page 
 fixed 192px wax-seal PNG as a second tab icon, and Firefox prefers that to the SVG for a tab. The
 PNG is gone from the tab icons; the home-screen and install icons are unchanged. No migration.
 [#74](https://github.com/karatektus/pl_mail/pull/74), by @Flouss.
+**You can make inbox tabs of your own and have filters fill them.** The five tabs are what plMail
+can recognise; a parcel carrier's notices, one client's mail or your receipts are not among them.
+Make a tab under Settings → General → Your own tabs, then add a filter whose action is **File in
+category**. Mail filed there leaves the built-in tab it would otherwise have been in, and the tab
+shows while it holds mail, takes drag-and-drop, and counts and badges like the others. Keeping a
+sender's marketing out of the tab is a **None of** group in the filter. Only mail whose sender
+passes authentication is filed, so a forged "your parcel is waiting" is not filed into a tab named
+after the real carrier; on a mailbox where plMail cannot tell which server vouches for the mail, a
+filter like this files nothing, and a filter that does not name the sender files any sender that
+authenticates for its own domain — the filters page spells both out. On Gmail accounts it applies only when
+you have asked plMail to sort over Google's categories. Nobody's inbox changes until they make a
+tab and a filter for it, and other mail apps over JMAP keep seeing the five categories — a
+conversation in one of your tabs appears to them in the built-in tab it would otherwise be in.
+Migration: one new table and two nullable columns, added without rewriting any mail. Anyone with
+tabs switched on now pays one more (indexed, once-per-request) read on each inbox render and each
+sidebar-counts poll, even before making a category, and the inbox's own two query-budget ceilings
+move by one; the other lists' ceilings are untouched.
 
 **A message with a stray non-UTF-8 byte in the wrong place was never stored.** Over IMAP, a mail
 whose text was labelled `us-ascii` but written in Latin-1 — "Grüße" from a mailer nobody configured

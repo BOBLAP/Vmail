@@ -138,6 +138,29 @@ It is bounded because it costs a model call each — a few hundred is minutes on
 mailbox is hours. Recent mail is where a wrong tab gets noticed anyway. Nothing asks again on its
 own, and nothing should.
 
+### Tabs of your own
+
+The five are what plMail knows how to recognise. If you want a tab for something it cannot — parcels,
+receipts, one client's mail — make it under **Settings → General → Your own tabs**: a name, and
+nothing else. A tab of your own holds nothing until a [filter](filters.md#filing-into-your-own-tabs)
+whose action is **File in category** puts mail into it, and like the others it only shows in the
+inbox while it holds mail.
+
+A conversation is in exactly one tab, so mail filed into yours leaves the built-in tab it would
+otherwise have been in — a carrier's notice that used to sit in Promotions is in Shipping now, and
+Promotions counts, shows and badges only what is left. You can also drag a conversation onto a tab
+of your own, or off one onto a built-in tab, exactly as between the five; a conversation you moved
+by hand stays where you put it.
+
+The message's **Details** panel names your tab when that is where the conversation is, and says it
+was filed there by one of your filters (or, after a drag, that you moved it). Renaming a tab renames
+it everywhere at once. **Deleting** one puts its mail back in the tab it would otherwise be in;
+nothing is deleted.
+
+Your tabs live in plMail. Other mail apps that connect over JMAP, and Gmail itself, know nothing of
+them: a conversation in your Shipping tab appears to them in the built-in tab it would otherwise be
+in.
+
 ### Telling plMail it got one wrong
 
 Open a message's **to …** dropdown and the bottom row asks whether it is in the wrong tab. Pick where

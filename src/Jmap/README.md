@@ -234,6 +234,21 @@ Get these wrong and things fail quietly rather than loudly.
   did not is the failure this whole layer is careful about. `app:backfill
   category` is what fills those in, and re-running it after a change to
   `MessageCategorizer` needs no resync — it reads only persisted data.
+
+  **The tabs a reader makes themselves are not in this vocabulary, on purpose.**
+  The five are a closed, documented set that clients draw their tabs from, so a
+  sixth value would be a breaking change for every client that has never heard of
+  it — and `null` instead would make the conversation vanish from all of their
+  tabs. A conversation filed under one of the reader's own tabs
+  (`message_thread.user_category_id`) is therefore served here as the built-in
+  category the rules decided, which is what `message_thread.category` keeps, and
+  `threadCategory` still refuses anything outside the five. The consequence is
+  stated rather than hidden: for a reader who uses own tabs, the web and a JMAP
+  client differ about which tab such a conversation is in, and the JMAP client
+  shows it where it always would have. One consequence of dragging: a
+  conversation the reader drags onto a tab of their own is pinned, and a pin
+  stops the built-in category beneath it following new messages, so a JMAP
+  client keeps seeing it in the tab it was in when it was dragged.
 - **A JMAP CalendarEvent id is a `calendar_event` id — the series.** The query
   that finds events is a `tsrange &&` overlap over `calendar_event_occurrence`,
   so the ids the database hands back are *occurrence* ids and

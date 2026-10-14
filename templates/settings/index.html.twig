@@ -411,6 +411,18 @@
                                                     } %}
                                                 {% endblock %}
                                             {% endembed %}
+
+                                            {# The tabs this person names themselves — what sorting
+                                               above cannot give them. Filled by a filter's "File in
+                                               category" action, which the card says. #}
+                                            {% embed 'settings/_card.html.twig' with {
+                                                heading:    'settings.categories.heading'|trans,
+                                                subheading: 'settings.categories.subheading'|trans,
+                                            } %}
+                                                {% block body %}
+                                                    {% include 'settings/_inbox_categories.html.twig' with { categories: inboxCategories } %}
+                                                {% endblock %}
+                                            {% endembed %}
                                         </div>
                                     {% elseif section == 'reading-pane' %}
                                         {% embed 'settings/_card.html.twig' with {

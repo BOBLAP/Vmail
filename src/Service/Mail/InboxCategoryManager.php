@@ -8,6 +8,8 @@ use App\Domain\Enum\AppLocale;
 use App\Domain\Enum\Mail\MessageCategory;
 use App\Domain\Exception\InvalidInboxCategoryException;
 use App\Entity\Mail\InboxCategory;
+use App\Entity\Mail\Message;
+use App\Entity\Mail\MessageThread;
 use App\Entity\User\User;
 use App\Repository\Mail\InboxCategoryRepository;
 use App\Repository\Mail\MessageThreadRepository;
@@ -46,6 +48,8 @@ final readonly class InboxCategoryManager
         private MessageThreadRepository $threads,
         private EntityManagerInterface $em,
         private TranslatorInterface $translator,
+        private \App\Jmap\State\StateManager $stateManager,
+        private InboxTabChanges $tabChanges,
     ) {
     }
 
@@ -61,6 +65,10 @@ final readonly class InboxCategoryManager
         $this->em->persist($category);
         $this->em->flush();
 
+        // The id exists only now, and so does the key a phone knows it by.
+        $this->tabChanges->created($owner, [$category->tabKey()]);
+        $this->em->flush();
+
         return $category;
     }
 
@@ -71,6 +79,7 @@ final readonly class InboxCategoryManager
     {
         $category->name = $this->validName($category->usr, $name, $category);
 
+        $this->tabChanges->updated($category->usr, [$category->tabKey()]);
         $this->em->flush();
     }
 
@@ -82,6 +91,17 @@ final readonly class InboxCategoryManager
     {
         $this->em->wrapInTransaction(function () use ($category): void {
             $connection = $this->em->getConnection();
+
+            // Recorded while the id is still there to be named.
+            $this->tabChanges->destroyed($category->usr, [$category->tabKey()]);
+
+            // Its key leaves the stored order too, so the order never names
+            // a tab that is gone — InboxTabs would skip it, but a restore or
+            // a later category could otherwise read it.
+            $category->usr->categorySorting->arrange(array_values(array_diff(
+                $category->usr->categorySorting->tabOrder,
+                [$category->tabKey()],
+            )));
 
             // Taken BEFORE the delete, because the delete is what empties the
             // column this is read from.
@@ -98,6 +118,23 @@ final readonly class InboxCategoryManager
                 ['id' => $category->id],
             );
 
+            // The foreign keys un-file the rows; what is already loaded in this
+            // request still points at the category, and the next flush would
+            // try to write the reference back. Mirrored here.
+            $loaded = $this->em->getUnitOfWork()->getIdentityMap();
+
+            foreach ($loaded[MessageThread::class] ?? [] as $thread) {
+                if ($thread instanceof MessageThread && $thread->userCategory === $category) {
+                    $thread->userCategory = null;
+                }
+            }
+
+            foreach ($loaded[Message::class] ?? [] as $message) {
+                if ($message instanceof Message && $message->ruleCategory === $category) {
+                    $message->ruleCategory = null;
+                }
+            }
+
             $this->em->remove($category);
             $this->em->flush();
 
@@ -108,7 +145,13 @@ final readonly class InboxCategoryManager
             // the one place this removal was meant to put right. The foreign
             // keys have already emptied the verdicts, so this resolves each of
             // them from its messages like any other conversation.
-            $this->threads->recomputeCategoriesForThreads($held);
+            // And told: a JMAP client shows the reader's own tabs too, and
+            // these conversations have just left one.
+            foreach ($this->threads->recomputeCategoriesForThreads($held) as $accountId => $moved) {
+                $this->stateManager->recordThreadsTouched($accountId, $moved);
+            }
+
+            $this->em->flush();
         });
     }
 

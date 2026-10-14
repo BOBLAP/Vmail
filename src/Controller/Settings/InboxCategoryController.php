@@ -52,6 +52,7 @@ final class InboxCategoryController extends AbstractController
         private readonly MessageThreadRepository $threads,
         private readonly EntityManagerInterface $em,
         private readonly MessageBusInterface $bus,
+        private readonly \App\Service\Mail\InboxTabChanges $tabChanges,
     ) {
     }
 
@@ -103,6 +104,7 @@ final class InboxCategoryController extends AbstractController
         }
 
         $user->categorySorting->switchOff($off);
+        $this->tabChanges->updated($user, [$category->value]);
         $this->em->flush();
 
         // After the flush, so the worker reads the new setting.
@@ -134,11 +136,19 @@ final class InboxCategoryController extends AbstractController
         /** @var User $user */
         $user  = $this->getUser();
         $known = array_map(static fn ($tab): string => $tab->value, $this->tabs->managedFor($user));
+        $was   = $user->categorySorting->tabOrder;
 
         $user->categorySorting->arrange(array_values(array_filter(
             array_map(static fn (mixed $key): string => is_string($key) ? $key : '', $keys),
             static fn (string $key): bool => true === in_array($key, $known, true),
         )));
+
+        // Every tab, because every sortOrder may have moved. Not for a request
+        // that changed nothing: the page writes after each move, including a
+        // move straight back.
+        if ($was !== $user->categorySorting->tabOrder) {
+            $this->tabChanges->updated($user, $known);
+        }
 
         $this->em->flush();
 

@@ -2459,45 +2459,31 @@ class MessageThreadRepository extends ServiceEntityRepository
     }
 
     /**
-     * Resolve every thread's category from its own messages, most-recent-wins,
-     * in one statement.
+     * The same resolution as recomputeCategoriesForAccount(), for a handful of
+     * threads rather than a mailbox.
      *
-     * Raw SQL because DISTINCT ON is a Postgres extension DQL has no form of,
-     * and because this is an UPDATE ... FROM over a derived table: the ORM's
-     * write path is per-entity, so the alternative is loading every thread and
-     * its messages to compute in PHP what the database can answer in one pass.
-     *
-     * Threads whose category was chosen by hand are excluded, which is the same
-     * rule MessageThreader::adoptCategory() applies one row at a time. It has
-     * to be stated in both places: the backfill does not go through the
-     * threader, so a run of `app:backfill category` would otherwise wipe every
-     * category anybody had ever dragged a conversation into — the whole install
-     * at once, which is worse than the arrival-time case the flag was written
-     * for.
-     */
-    /**
-     * The same resolution, for a handful of threads rather than a mailbox.
-     *
-     * recomputeCategoriesForAccount() below is right for a backfill and wrong
-     * for a batch: it runs `DISTINCT ON (thread_id)` across every message the
-     * account has, which is the correct shape once and a scan of a hundred
-     * thousand rows if it runs after each batch of arriving mail. This is the
-     * same statement with the threads named, so the plan is bounded by the
-     * batch instead of by the mailbox.
+     * That one is right for a re-sort and wrong for a batch: it resolves every
+     * conversation the account has, which is the correct shape once and a
+     * scan of a hundred thousand rows if it runs after each batch of arriving
+     * mail. This is the same statement with the threads named, so the plan is
+     * bounded by the batch instead of by the mailbox.
      *
      * `category_pinned_at IS NULL` is carried over verbatim, and it is the part
      * that must not be lost in the narrowing: a conversation somebody dragged
      * onto a tab keeps it, whatever any model or rule now says.
      *
      * @param list<int> $threadIds
+     *
+     * @return array<int, list<int>> account id => the conversations that
+     *                               changed tab, for the JMAP change log
      */
-    public function recomputeCategoriesForThreads(array $threadIds): int
+    public function recomputeCategoriesForThreads(array $threadIds): array
     {
         if ([] === $threadIds) {
-            return 0;
+            return [];
         }
 
-        return (int) $this->getEntityManager()->getConnection()->executeStatement(
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             <<<'SQL'
             UPDATE message_thread t
             SET category = sub.category,
@@ -2522,9 +2508,76 @@ class MessageThreadRepository extends ServiceEntityRepository
             ) sub
             WHERE t.id = sub.thread_id
               AND t.category_pinned_at IS NULL
+              -- Only what moves: a phone is told about every row returned.
+              AND (t.category IS DISTINCT FROM sub.category
+                   OR t.user_category_id IS DISTINCT FROM sub.rule_category_id)
+            RETURNING t.id, t.account_id
             SQL,
             ['threadIds' => $threadIds],
             ['threadIds' => ArrayParameterType::INTEGER],
+        );
+
+        $changed = [];
+
+        foreach ($rows as $row) {
+            $changed[(int) $row['account_id']][] = (int) $row['id'];
+        }
+
+        return $changed;
+    }
+
+    /**
+     * Resolve every thread's category from its own messages, most-recent-wins,
+     * in one statement, for one account.
+     *
+     * Raw SQL because DISTINCT ON is a Postgres extension DQL has no form of,
+     * and because this is an UPDATE ... FROM over a derived table: the ORM's
+     * write path is per-entity, so the alternative is loading every thread and
+     * its messages to compute in PHP what the database can answer in one pass.
+     *
+     * Threads whose category was chosen by hand are excluded, which is the same
+     * rule MessageThreader::adoptCategory() applies one row at a time. It has
+     * to be stated in both places: the backfill does not go through the
+     * threader, so a run of `app:backfill category` would otherwise wipe every
+     * category anybody had ever dragged a conversation into — the whole install
+     * at once, which is worse than the arrival-time case the flag was written
+     * for.
+     *
+     * RETURNS THE CONVERSATIONS THAT MOVED, and only writes those. A re-sort
+     * used to rewrite every row with its own value and tell nobody, so a JMAP
+     * client went on drawing a conversation in the tab it had left until
+     * something else happened to it. The caller records these.
+     *
+     * @return list<int>
+     */
+    public function recomputeCategoriesForAccount(Account $account): array
+    {
+        $sql = <<<'SQL'
+        UPDATE message_thread t
+        SET category = sub.category,
+            user_category_id = sub.rule_category_id
+        FROM (
+            SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category, m.rule_category_id
+            FROM message m
+            WHERE m.category IS NOT NULL
+              AND (m.category_held_at IS NULL OR m.category_released_at IS NOT NULL)
+              -- This account's conversations only. Without it the DISTINCT ON
+              -- sorted every message on the installation, every user's, once
+              -- per account re-sorted — and switching a tab on or off re-sorts.
+              AND m.thread_id IN (SELECT id FROM message_thread WHERE account_id = :accountId)
+            ORDER BY m.thread_id, m.received_at DESC NULLS LAST
+        ) sub
+        WHERE t.id = sub.thread_id
+          AND t.account_id = :accountId
+          AND t.category_pinned_at IS NULL
+          AND (t.category IS DISTINCT FROM sub.category
+               OR t.user_category_id IS DISTINCT FROM sub.rule_category_id)
+        RETURNING t.id
+        SQL;
+
+        return array_map(
+            intval(...),
+            $this->getEntityManager()->getConnection()->fetchFirstColumn($sql, ['accountId' => $account->id]),
         );
     }
 
@@ -2551,34 +2604,6 @@ class MessageThreadRepository extends ServiceEntityRepository
               AND t.category_pinned_at IS NOT NULL
             SQL,
             ['user' => $user->id, 'category' => $category->value],
-        );
-    }
-
-    public function recomputeCategoriesForAccount(Account $account): int
-    {
-        $sql = <<<'SQL'
-        UPDATE message_thread t
-        SET category = sub.category,
-            user_category_id = sub.rule_category_id
-        FROM (
-            SELECT DISTINCT ON (m.thread_id) m.thread_id, m.category, m.rule_category_id
-            FROM message m
-            WHERE m.category IS NOT NULL
-              AND (m.category_held_at IS NULL OR m.category_released_at IS NOT NULL)
-              -- This account's conversations only. Without it the DISTINCT ON
-              -- sorted every message on the installation, every user's, once
-              -- per account re-sorted — and switching a tab on or off re-sorts.
-              AND m.thread_id IN (SELECT id FROM message_thread WHERE account_id = :accountId)
-            ORDER BY m.thread_id, m.received_at DESC NULLS LAST
-        ) sub
-        WHERE t.id = sub.thread_id
-          AND t.account_id = :accountId
-          AND t.category_pinned_at IS NULL
-        SQL;
-
-        return (int) $this->getEntityManager()->getConnection()->executeStatement(
-            $sql,
-            ['accountId' => $account->id],
         );
     }
 

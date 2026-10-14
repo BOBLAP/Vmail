@@ -235,20 +235,27 @@ Get these wrong and things fail quietly rather than loudly.
   category` is what fills those in, and re-running it after a change to
   `MessageCategorizer` needs no resync — it reads only persisted data.
 
-  **The tabs a reader makes themselves are not in this vocabulary, on purpose.**
-  The five are a closed, documented set that clients draw their tabs from, so a
-  sixth value would be a breaking change for every client that has never heard of
-  it — and `null` instead would make the conversation vanish from all of their
-  tabs. A conversation filed under one of the reader's own tabs
-  (`message_thread.user_category_id`) is therefore served here as the built-in
-  category the rules decided, which is what `message_thread.category` keeps, and
-  `threadCategory` still refuses anything outside the five. The consequence is
-  stated rather than hidden: for a reader who uses own tabs, the web and a JMAP
-  client differ about which tab such a conversation is in, and the JMAP client
-  shows it where it always would have. One consequence of dragging: a
-  conversation the reader drags onto a tab of their own is pinned, and a pin
-  stops the built-in category beneath it following new messages, so a JMAP
-  client keeps seeing it in the tab it was in when it was dragged.
+  **The tabs as the reader arranged them are a second, separate surface:
+  `urn:plmail:params:jmap:inboxtabs`.** The five stay a closed vocabulary on
+  `Thread.category` and `threadCategory`, because a sixth value would break
+  every client that has never heard of it. A client that knows the extension
+  reads `InboxTab/get` instead — every tab in the reader's order, the built-in
+  ones with `isEnabled`, the reader's own with their `name` — and draws from
+  `Thread.inboxTab`, filters with `threadInboxTab`, and moves a conversation
+  with `Thread/set { inboxTab }`. Those three follow the web exactly: a
+  conversation filed in a tab of the reader's own is in that tab and in no
+  built-in one, a category the reader switched off is listed under Primary,
+  and a switched-off tab is no tab (`threadInboxTab` matches nothing,
+  `Thread/set` refuses it). `InboxTabMapper` is where that rule is written for
+  JMAP and `MessageThreadRepository::narrowToCategory()` for the web.
+
+  The tabs are the user's, and JMAP state is per account, so a change is
+  recorded in every account's change log (`InboxTabChanges`) — the way a label
+  is a Mailbox in each account — and every account answers `InboxTab/get`
+  with the same list. A re-sort that moves conversations between tabs records
+  each one it moved as a Thread change, so `Thread/changes` tells a phone; it
+  used to rewrite the column and tell nobody.
+
 - **A JMAP CalendarEvent id is a `calendar_event` id — the series.** The query
   that finds events is a `tsrange &&` overlap over `calendar_event_occurrence`,
   so the ids the database hands back are *occurrence* ids and

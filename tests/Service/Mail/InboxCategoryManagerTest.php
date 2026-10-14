@@ -49,6 +49,8 @@ final class InboxCategoryManagerTest extends KernelTestCase
             $container->get(MessageThreadRepository::class),
             $this->em,
             $container->get(\Symfony\Contracts\Translation\TranslatorInterface::class),
+            $container->get(\App\Jmap\State\StateManager::class),
+            $container->get(\App\Service\Mail\InboxTabChanges::class),
         );
 
         $this->connection->beginTransaction();

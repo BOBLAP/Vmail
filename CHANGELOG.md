@@ -23,7 +23,9 @@ listed twice. **Migration:** clears the record of
 skipped Gmail messages except chats, and the backfill markers of Gmail
 accounts. [#90](https://github.com/karatektus/pl_mail/issues/90), reported by @karamanliev. The progress line also counts mail the import
 stored on another connected account — Gmail collecting a mailbox that is connected here too — so it
-no longer stops short of Gmail's total by that mailbox's size.
+no longer stops short of Gmail's total by that mailbox's size. Once everything is in, the import confirms it within
+about ten minutes instead of showing "Importing · 100%" for up to an hour, and the count no longer
+runs past a total that new mail has outgrown.
 
 **Spam and Trash are kept, not worked on.** Mail arriving in either — from any provider, and now
 from a Gmail import — is no longer categorised by the language model, held back from the inbox

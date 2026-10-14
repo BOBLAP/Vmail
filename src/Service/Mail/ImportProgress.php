@@ -100,6 +100,12 @@ final readonly class ImportProgress
                         + $this->messages->countCarriedBy($account)
                         + $this->skipped->countForAccount($account);
 
+                    // Never past the total. It is Gmail's count when it was
+                    // last asked, and mail that arrived since is stored too.
+                    if (null !== $account->importTotal) {
+                        $done = min($done, $account->importTotal);
+                    }
+
                     $lines[] = new ImportLine(
                         $account,
                         $done,

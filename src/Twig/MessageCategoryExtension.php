@@ -156,6 +156,7 @@ final class MessageCategoryExtension extends AbstractExtension
                 $sorting->overrideProvider,
                 $sorting->ignoresAi(),
                 $sorting->assistantFirst(),
+                $sorting->switchedOff(),
             ),
 
             // Gmail's own answer, on its own line, because it is one of the
@@ -188,7 +189,8 @@ final class MessageCategoryExtension extends AbstractExtension
     }
 
     /**
-     * @param array<string,true> $correspondents
+     * @param array<string,true>         $correspondents
+     * @param list<MessageCategory>      $switchedOff
      *
      * @return array{category: string, reason: string, signal: string|null}
      */
@@ -198,6 +200,7 @@ final class MessageCategoryExtension extends AbstractExtension
         bool $ignoreProviderLabels,
         bool $ignoreAi,
         bool $aiFirst = false,
+        array $switchedOff = [],
     ): array {
         $explanation = $this->categorizer->explain(
             $message,
@@ -205,6 +208,7 @@ final class MessageCategoryExtension extends AbstractExtension
             $ignoreProviderLabels,
             $ignoreAi,
             $aiFirst,
+            $switchedOff,
         );
 
         return [

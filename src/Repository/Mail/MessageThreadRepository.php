@@ -152,7 +152,7 @@ class MessageThreadRepository extends ServiceEntityRepository
             ->setMaxResults($perPage)
             ->distinct();
 
-        $this->narrowToCategory($qb, $category);
+        $this->narrowToCategory($qb, $category, $this->switchedOffBy($user));
 
         $this->excludeTrashed($qb);
         $this->narrowToUnread($qb, $unreadOnly);
@@ -167,7 +167,11 @@ class MessageThreadRepository extends ServiceEntityRepository
      * count so the two cannot come to mean different things — a pager offering
      * a page the list does not have is what that looks like.
      */
-    private function narrowToCategory(QueryBuilder $qb, MessageCategory|InboxTab|null $category): void
+    /**
+     * @param list<string> $absorbed built-in values switched off — their
+     *                               conversations are listed under Primary
+     */
+    private function narrowToCategory(QueryBuilder $qb, MessageCategory|InboxTab|null $category, array $absorbed = []): void
     {
         if (null === $category) {
             return;
@@ -188,9 +192,39 @@ class MessageThreadRepository extends ServiceEntityRepository
             return;
         }
 
+        // Primary also holds whatever is in a category the reader switched
+        // off. The re-sort a switch queues moves those messages for good, but
+        // it takes minutes on a big mailbox, and a conversation somebody
+        // pinned there is not its to move: until then they would be in no tab
+        // at all.
+        if (MessageCategory::Primary === $tab->builtIn && [] !== $absorbed) {
+            $qb->andWhere('t.userCategory IS NULL')
+                ->andWhere('t.category IN (:categories)')
+                ->setParameter('categories', [MessageCategory::Primary->value, ...$absorbed]);
+
+            return;
+        }
+
         $qb->andWhere('t.userCategory IS NULL')
             ->andWhere('t.category = :category')
             ->setParameter('category', $tab->builtIn);
+    }
+
+    /**
+     * The built-in categories this reader switched off, as stored values.
+     *
+     * @return list<string>
+     */
+    private function switchedOffBy(UserInterface $user): array
+    {
+        if (false === $user instanceof \App\Entity\User\User) {
+            return [];
+        }
+
+        return array_map(
+            static fn (MessageCategory $category): string => $category->value,
+            $user->categorySorting->switchedOff(),
+        );
     }
 
     /**
@@ -202,17 +236,18 @@ class MessageThreadRepository extends ServiceEntityRepository
      * different tabs. The key is InboxTab's, which for a built-in is the value
      * it always was.
      */
-    private function tabKeyOf(mixed $category, mixed $userCategoryId): string
+    /**
+     * @param list<string> $absorbed switched-off built-ins, counted as Primary
+     */
+    private function tabKeyOf(mixed $category, mixed $userCategoryId, array $absorbed = []): string
     {
         if (null !== $userCategoryId) {
             return InboxTab::CUSTOM_PREFIX . (int) $userCategoryId;
         }
 
-        if ($category instanceof MessageCategory) {
-            return $category->value;
-        }
+        $value = $category instanceof MessageCategory ? $category->value : (string) $category;
 
-        return (string) $category;
+        return true === in_array($value, $absorbed, true) ? MessageCategory::Primary->value : $value;
     }
 
     /**
@@ -224,15 +259,16 @@ class MessageThreadRepository extends ServiceEntityRepository
      * last of them would report a fraction of the tab.
      *
      * @param iterable<array<string,mixed>> $rows
+     * @param list<string>                  $absorbed switched-off built-ins, counted as Primary
      *
      * @return array<string,int>
      */
-    private function foldByTab(iterable $rows, string $countField): array
+    private function foldByTab(iterable $rows, string $countField, array $absorbed = []): array
     {
         $counts = [];
 
         foreach ($rows as $row) {
-            $key = $this->tabKeyOf($row['category'], $row['userCategory'] ?? null);
+            $key = $this->tabKeyOf($row['category'], $row['userCategory'] ?? null, $absorbed);
 
             $counts[$key] = ($counts[$key] ?? 0) + (int) $row[$countField];
         }
@@ -260,7 +296,7 @@ class MessageThreadRepository extends ServiceEntityRepository
             ->setParameter('user', $user)
             ->setParameter('inbox', LabelRole::Inbox);
 
-        $this->narrowToCategory($qb, $category);
+        $this->narrowToCategory($qb, $category, $this->switchedOffBy($user));
 
         // The same exclusion findForUnifiedInbox() applies, and it was missing
         // here. A thread keeps its Inbox label when it goes to the bin — the
@@ -298,7 +334,7 @@ class MessageThreadRepository extends ServiceEntityRepository
 
         $this->excludeTrashed($qb);
 
-        return $this->foldByTab($qb->getQuery()->getResult(), 'threadCount');
+        return $this->foldByTab($qb->getQuery()->getResult(), 'threadCount', $this->switchedOffBy($user));
     }
 
     /**
@@ -333,7 +369,7 @@ class MessageThreadRepository extends ServiceEntityRepository
 
         $this->excludeTrashed($qb);
 
-        return $this->foldByTab($qb->getQuery()->getResult(), 'threadCount');
+        return $this->foldByTab($qb->getQuery()->getResult(), 'threadCount', $this->switchedOffBy($user));
     }
 
     /**
@@ -983,7 +1019,7 @@ class MessageThreadRepository extends ServiceEntityRepository
         $this->restrictToNew($qb, $now);
         $this->excludeTrashed($qb);
 
-        return $this->foldByTab($qb->getQuery()->getResult(), 'newCount');
+        return $this->foldByTab($qb->getQuery()->getResult(), 'newCount', $this->switchedOffBy($user));
     }
 
     /**
@@ -1009,6 +1045,8 @@ class MessageThreadRepository extends ServiceEntityRepository
         \DateTimeImmutable $now,
         int $perCategory = 3,
     ): array {
+        $absorbed = $this->switchedOffBy($user);
+
         $qb = $this->createQueryBuilder('t')
             ->select(
                 't.id AS threadId',
@@ -1053,7 +1091,7 @@ class MessageThreadRepository extends ServiceEntityRepository
             }
 
             $threads[$id] = [
-                'category'  => $this->tabKeyOf($row['category'], $row['userCategory'] ?? null),
+                'category'  => $this->tabKeyOf($row['category'], $row['userCategory'] ?? null, $absorbed),
                 'arrivedAt' => $row['arrivedAt'],
                 'name'      => $name,
                 'at'        => $at,

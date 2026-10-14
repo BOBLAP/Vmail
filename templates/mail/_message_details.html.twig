@@ -267,6 +267,10 @@ mailed-by and signed-by were silently missing from every IMAP message.
                             — {{ 'message.details.categorised.pinned'|trans }}
                         {%- elseif category.own %}
                             — {{ 'message.details.categorised.own_filter'|trans }}
+                        {%- elseif category.effective.reason == 'switched_off' %}
+                            {#- The signal is the category it would have been, named
+                                the way its tab was. #}
+                            — {{ 'message.details.categorised.switched_off'|trans({'%category%': ('tabs.' ~ category.effective.signal)|trans}) }}
                         {%- else %}
                             — {{ ('message.details.categorised.' ~ category.effective.reason)|trans }}
                             {%- if category.effective.signal %}

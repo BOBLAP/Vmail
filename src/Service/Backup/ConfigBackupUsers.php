@@ -624,9 +624,8 @@ final readonly class ConfigBackupUsers
 
         foreach ($this->inboxCategories->findForUserOrdered($user) as $category) {
             $exported[] = [
-                'id'       => $category->id,
-                'name'     => $category->name,
-                'position' => $category->position,
+                'id'   => $category->id,
+                'name' => $category->name,
             ];
         }
 

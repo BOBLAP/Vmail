@@ -2223,6 +2223,7 @@ message:
             pinned: 'ye hauled it here yerself'
             promotion: 'a bulk-cargo header: '
             social: 'the sender port '
+            switched_off: "it'd be %category%, an' ye scuttled that one"
             thread_differs: "This message alone would be %category% — a yarn takes th' category o' its newest message."
             update: 'a sign of an unmanned sender: '
         category: rank

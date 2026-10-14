@@ -74,7 +74,7 @@ final class InboxTabsTest extends TestCase
         self::assertNull($tabs->resolve($this->user('stranger'), 'c12'), 'resolved a category the asking reader does not own');
     }
 
-    public function testAllForListsTheFiveThenTheReadersOwnInTheirOrder(): void
+    public function testWithNoOrderStoredTheFiveComeFirstThenTheReadersOwnOldestFirst(): void
     {
         $repository = $this->createStub(InboxCategoryRepository::class);
         $repository->method('findForUserOrdered')->willReturn([$this->category('Shipping', 12), $this->category('Receipts', 40)]);
@@ -90,6 +90,47 @@ final class InboxTabsTest extends TestCase
         );
     }
 
+    /**
+     * Primary first whatever the stored order says; then the reader's order,
+     * mixing built-ins and their own; then whatever the order does not name.
+     * A stale key — a category since deleted — is skipped.
+     */
+    public function testTheReadersOrderPutsTheirTabsAmongTheBuiltInsAfterPrimary(): void
+    {
+        $repository = $this->createStub(InboxCategoryRepository::class);
+        $repository->method('findForUserOrdered')->willReturn([$this->category('Shipping', 12), $this->category('Receipts', 40)]);
+
+        $reader = $this->user('reader');
+        $reader->categorySorting->tabOrder = ['c40', 'updates', 'primary', 'c99', 'social'];
+
+        self::assertSame(
+            ['primary', 'c40', 'updates', 'social', 'promotions', 'forums', 'c12'],
+            $this->keys((new InboxTabs($repository))->allFor($reader)),
+        );
+    }
+
+    /**
+     * A switched-off built-in is no tab: not listed, and its key resolves to
+     * nothing, as a deleted category's does. The settings page still lists it,
+     * in its place, so it can be switched back on.
+     */
+    public function testASwitchedOffBuiltInIsNoTabButIsStillManaged(): void
+    {
+        $repository = $this->createStub(InboxCategoryRepository::class);
+        $repository->method('findForUserOrdered')->willReturn([]);
+
+        $reader = $this->user('reader');
+        $reader->categorySorting->switchOff([MessageCategory::Forums, MessageCategory::Primary]);
+
+        $tabs = new InboxTabs($repository);
+
+        self::assertNotContains('forums', $this->keys($tabs->allFor($reader)));
+        self::assertContains('primary', $this->keys($tabs->allFor($reader)), 'Primary cannot be switched off');
+        self::assertNull($tabs->resolve($reader, 'forums'));
+        self::assertSame('updates', $tabs->resolve($reader, 'updates')?->value);
+        self::assertSame(['primary', 'social', 'promotions', 'updates', 'forums'], $this->keys($tabs->managedFor($reader)));
+    }
+
     public function testAResetForgetsTheLastReader(): void
     {
         $repository = $this->createMock(InboxCategoryRepository::class);
@@ -100,6 +141,16 @@ final class InboxTabsTest extends TestCase
         $tabs->customFor($this->user('reader'));
         $tabs->reset();
         $tabs->customFor($this->user('reader'));
+    }
+
+    /**
+     * @param list<\App\Domain\DTO\Mail\InboxTab> $tabs
+     *
+     * @return list<string>
+     */
+    private function keys(array $tabs): array
+    {
+        return array_map(static fn ($tab): string => $tab->value, $tabs);
     }
 
     private function user(string $email): User

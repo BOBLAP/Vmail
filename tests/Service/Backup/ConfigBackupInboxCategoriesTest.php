@@ -105,6 +105,31 @@ final class ConfigBackupInboxCategoriesTest extends KernelTestCase
     }
 
     /**
+     * The order of the strip and the switched-off tabs come back too, with the
+     * order's own tabs named by the ids the restore gave them. A key the file
+     * carries no category for is dropped.
+     */
+    public function testTheTabOrderAndTheSwitchedOffTabsComeBackWithTheirNewIds(): void
+    {
+        $this->seedReader();
+
+        $document = $this->exporter->document();
+
+        $this->becomeADifferentInstallation();
+        $this->importer->apply($document);
+        $this->entityManager->flush();
+        $this->entityManager->clear();
+
+        $user = static::getContainer()->get(UserRepository::class)->findOneBy(['email' => self::EMAIL]);
+        self::assertInstanceOf(User::class, $user);
+
+        [$shipping, $receipts] = static::getContainer()->get(InboxCategoryRepository::class)->findForUserOrdered($user);
+
+        self::assertSame([$receipts->tabKey(), 'promotions', $shipping->tabKey()], $user->categorySorting->tabOrder);
+        self::assertSame(['forums'], $user->categorySorting->disabled);
+    }
+
+    /**
      * A reference to a category the file does not carry is dropped, not carried
      * as a number that now names somebody else's row or nothing at all. The
      * action beside it survives, so "everything is dropped" cannot pass.
@@ -162,9 +187,9 @@ final class ConfigBackupInboxCategoriesTest extends KernelTestCase
 
         $document = $this->exporter->document();
         $document['users'][self::EMAIL]['inboxCategories'] = [
-            ['id' => 1, 'name' => str_repeat('x', 60), 'position' => 0],
-            ['id' => 2, 'name' => '   ', 'position' => 1],
-            ['id' => 3, 'name' => 'Receipts', 'position' => 2],
+            ['id' => 1, 'name' => str_repeat('x', 60)],
+            ['id' => 2, 'name' => '   '],
+            ['id' => 3, 'name' => 'Receipts'],
         ];
 
         $this->becomeADifferentInstallation();
@@ -199,19 +224,22 @@ final class ConfigBackupInboxCategoriesTest extends KernelTestCase
         $user->roles     = ['ROLE_USER'];
         $this->entityManager->persist($user);
 
-        $shipping           = new InboxCategory();
-        $shipping->usr      = $user;
-        $shipping->name     = 'Shipping';
-        $shipping->position = 0;
+        $shipping       = new InboxCategory();
+        $shipping->usr  = $user;
+        $shipping->name = 'Shipping';
         $this->entityManager->persist($shipping);
 
-        $receipts           = new InboxCategory();
-        $receipts->usr      = $user;
-        $receipts->name     = 'Receipts';
-        $receipts->position = 1;
+        $receipts       = new InboxCategory();
+        $receipts->usr  = $user;
+        $receipts->name = 'Receipts';
         $this->entityManager->persist($receipts);
 
         $this->entityManager->flush();
+
+        // Receipts before Promotions before Shipping, and a key for a category
+        // that is gone; Forums switched off.
+        $user->categorySorting->arrange([$receipts->tabKey(), 'promotions', $shipping->tabKey(), 'c999999']);
+        $user->categorySorting->switchOff([\App\Domain\Enum\Mail\MessageCategory::Forums]);
 
         $rule          = new MailRule();
         $rule->usr     = $user;

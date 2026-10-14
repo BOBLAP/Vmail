@@ -52,21 +52,21 @@ final class InboxCategoryTest extends KernelTestCase
         parent::tearDown();
     }
 
-    public function testACategoryIsStoredForItsOwnerAndKeepsItsOrder(): void
+    public function testACategoryIsStoredForItsOwner(): void
     {
         $account = $this->seedAccount();
 
-        $first  = $this->category($account->usr, 'Shipping', 0);
-        $second = $this->category($account->usr, 'Receipts', 1);
+        $first  = $this->category($account->usr, 'Shipping');
+        $second = $this->category($account->usr, 'Receipts');
 
         $this->em->clear();
 
         $rows = $this->connection->fetchAllAssociative(
-            'SELECT name, position FROM inbox_category WHERE usr_id = :usr ORDER BY position',
+            'SELECT name FROM inbox_category WHERE usr_id = :usr ORDER BY id',
             ['usr' => $account->usr->id],
         );
 
-        self::assertSame([['name' => 'Shipping', 'position' => 0], ['name' => 'Receipts', 'position' => 1]], $rows);
+        self::assertSame([['name' => 'Shipping'], ['name' => 'Receipts']], $rows);
         self::assertNotNull($first->id);
         self::assertNotNull($second->id);
     }
@@ -76,7 +76,7 @@ final class InboxCategoryTest extends KernelTestCase
         // A user with no account: an account's own foreign key to its user is
         // not what this is about, and would refuse the delete before it began.
         $user = $this->seedUser();
-        $this->category($user, 'Shipping', 0);
+        $this->category($user, 'Shipping');
         $userId = (int) $user->id;
 
         $this->connection->executeStatement('DELETE FROM "user" WHERE id = :id', ['id' => $userId]);
@@ -96,8 +96,8 @@ final class InboxCategoryTest extends KernelTestCase
     public function testRemovingACategoryUnfilesItsMailAndThreadsAndNothingElse(): void
     {
         $account  = $this->seedAccount();
-        $doomed   = $this->category($account->usr, 'Shipping', 0);
-        $survivor = $this->category($account->usr, 'Receipts', 1);
+        $doomed   = $this->category($account->usr, 'Shipping');
+        $survivor = $this->category($account->usr, 'Receipts');
 
         $inDoomed   = $this->threadWithMessage($account, 'filed under the doomed category');
         $inSurvivor = $this->threadWithMessage($account, 'filed under the surviving category');
@@ -137,12 +137,11 @@ final class InboxCategoryTest extends KernelTestCase
 
     // ── fixture ──────────────────────────────────────────────────────────────
 
-    private function category(User $user, string $name, int $position): InboxCategory
+    private function category(User $user, string $name): InboxCategory
     {
-        $category           = new InboxCategory();
-        $category->usr      = $user;
-        $category->name     = $name;
-        $category->position = $position;
+        $category       = new InboxCategory();
+        $category->usr  = $user;
+        $category->name = $name;
         $this->em->persist($category);
         $this->em->flush();
 

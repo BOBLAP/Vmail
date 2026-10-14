@@ -2362,6 +2362,7 @@ message:
             pinned: 'vous l’avez déplacé ici'
             promotion: 'un en-tête de courrier de masse : '
             social: 'le domaine de l’expéditeur '
+            switched_off: "ce serait %category%, que vous avez désactivé"
             # A conversation takes ONE category, from its newest message, so a
             # reply can carry the whole thread out of the tab this message
             # belongs in. Said outright, because without it the panel reads as

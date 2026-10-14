@@ -67,15 +67,12 @@ final class InboxCategoryManagerTest extends KernelTestCase
         parent::tearDown();
     }
 
-    public function testACategoryIsTrimmedAndAppendedAfterTheOnesThereAlready(): void
+    public function testACategoryIsTrimmed(): void
     {
-        $first  = $this->manager->create($this->user, '  Shipping  ');
-        $second = $this->manager->create($this->user, 'Receipts');
+        $first = $this->manager->create($this->user, '  Shipping  ');
 
         self::assertNotNull($first->id);
         self::assertSame('Shipping', $first->name);
-        self::assertSame(0, $first->position);
-        self::assertSame(1, $second->position, 'a new tab did not go to the end of the strip');
     }
 
     /**

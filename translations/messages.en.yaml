@@ -2351,6 +2351,7 @@ message:
             pinned: 'you moved it here'
             promotion: 'a bulk-mail header: '
             social: 'the sender domain '
+            switched_off: "it would be %category%, which you switched off"
             # A conversation takes ONE category, from its newest message, so a
             # reply can carry the whole thread out of the tab this message
             # belongs in. Said outright, because without it the panel reads as

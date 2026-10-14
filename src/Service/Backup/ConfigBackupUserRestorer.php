@@ -195,10 +195,41 @@ final readonly class ConfigBackupUserRestorer
         $this->retargetAccountCalendars($accounts, $calendars);
         $this->applyAliasOverrides($accounts, $this->rows($document, 'accounts'));
         $this->createRules($user, $this->rows($document, 'rules'), $accounts, $labels, $integrations, $categories);
+        $this->retargetTabOrder($user, $categories);
 
         $this->entityManager->flush();
 
         return $user;
+    }
+
+    /**
+     * The tab order names the person's own tabs by their category ids, which
+     * were rows in the source database. Each is rewritten to the row it became,
+     * and dropped when the file did not carry that category — left as it was,
+     * the number could name somebody else's tab on this installation, though
+     * InboxTabs would only ever show the reader their own.
+     *
+     * @param array<int, InboxCategory> $categories keyed by the id in the file
+     */
+    private function retargetTabOrder(User $user, array $categories): void
+    {
+        $keys = [];
+
+        foreach ($user->categorySorting->tabOrder as $key) {
+            if (false === \App\Domain\DTO\Mail\InboxTab::looksCustom($key, $match)) {
+                $keys[] = $key;
+
+                continue;
+            }
+
+            $category = $categories[(int) $match[1]] ?? null;
+
+            if (null !== $category?->id) {
+                $keys[] = $category->tabKey();
+            }
+        }
+
+        $user->categorySorting->arrange($keys);
     }
 
     // ── Private: the user row ─────────────────────────────────────────────────
@@ -569,7 +600,6 @@ final readonly class ConfigBackupUserRestorer
             $category           = new InboxCategory();
             $category->usr      = $user;
             $category->name     = $name;
-            $category->position = $this->number($row, 'position') ?? 0;
 
             $this->entityManager->persist($category);
 

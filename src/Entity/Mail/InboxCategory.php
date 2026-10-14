@@ -33,9 +33,10 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity(repositoryClass: InboxCategoryRepository::class)]
 #[ORM\Table(name: 'inbox_category')]
-// The only lookup is "this user's categories, in order" — on every inbox render
-// and every filter edit — so owner leads and position follows.
-#[ORM\Index(name: 'idx_inbox_category_usr_position', columns: ['usr_id', 'position'])]
+// The only lookup is "this user's categories" — on every inbox render and every
+// filter edit. Their order is not here: it is one list across the built-in tabs
+// and these, so it lives with the other sorting choices (CategorySorting).
+#[ORM\Index(name: 'idx_inbox_category_usr', columns: ['usr_id'])]
 #[ORM\HasLifecycleCallbacks]
 class InboxCategory
 {
@@ -55,7 +56,9 @@ class InboxCategory
     #[ORM\Column(length: self::NAME_MAX_LENGTH)]
     public string $name;
 
-    /** Left to right among the user's own tabs; ties break on id. */
-    #[ORM\Column(options: ['default' => 0])]
-    public int $position = 0;
+    /** The key this category's tab goes by — see InboxTab. */
+    public function tabKey(): string
+    {
+        return \App\Domain\DTO\Mail\InboxTab::CUSTOM_PREFIX . (int) $this->id;
+    }
 }

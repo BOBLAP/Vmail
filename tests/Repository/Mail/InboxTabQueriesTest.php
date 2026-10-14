@@ -171,6 +171,37 @@ final class InboxTabQueriesTest extends KernelTestCase
         self::assertSame(['Promo Co'], $senders['promotions'] ?? null);
     }
 
+    /**
+     * Promotions switched off: its conversation is listed and counted under
+     * Primary — until the re-sort that the switch queues has moved it, and for
+     * good when somebody had pinned it there. The one filed in the reader's own
+     * tab stays where it is; switching a built-in off says nothing about that.
+     */
+    public function testASwitchedOffCategoryIsListedAndCountedUnderPrimary(): void
+    {
+        $this->user->categorySorting->switchOff([MessageCategory::Promotions]);
+
+        $primary = InboxTab::builtIn(MessageCategory::Primary);
+
+        self::assertSame(
+            ['primary, read', 'promo, new'],
+            $this->subjects($this->repository->findForUnifiedInbox($this->user, $primary)),
+        );
+        self::assertSame(2, $this->repository->countForUnifiedInbox($this->user, $primary));
+
+        $key = 'c' . $this->shipping->id;
+
+        self::assertEquals(
+            [$key => 2, 'primary' => 2],
+            $this->sorted($this->repository->countByCategoryForUnifiedInbox($this->user)),
+        );
+        self::assertEquals(
+            [$key => 1, 'primary' => 1],
+            $this->sorted($this->repository->countUnreadByCategoryForUnifiedInbox($this->user)),
+        );
+        self::assertSame(['Promo Co'], $this->repository->newSendersByCategoryForUnifiedInbox($this->user, new DateTimeImmutable())['primary'] ?? null);
+    }
+
     // ── fixture ──────────────────────────────────────────────────────────────
 
     /**

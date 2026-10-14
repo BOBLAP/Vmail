@@ -57,7 +57,6 @@ final readonly class InboxCategoryManager
         $category           = new InboxCategory();
         $category->usr      = $owner;
         $category->name     = $this->validName($owner, $name, null);
-        $category->position = $this->categories->nextPositionFor($owner);
 
         $this->em->persist($category);
         $this->em->flush();

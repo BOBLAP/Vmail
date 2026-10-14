@@ -2344,6 +2344,7 @@ message:
             pinned: 'du hast sie hierher verschoben'
             promotion: 'ein Massenmail-Header: '
             social: 'die Absenderdomain '
+            switched_off: "es wäre %category%, und das hast du ausgeschaltet"
             thread_differs: 'Diese Nachricht allein wäre %category% — eine Unterhaltung übernimmt die Kategorie ihrer neuesten Nachricht.'
             update: 'ein Hinweis auf automatischen Versand: '
         category: Kategorie

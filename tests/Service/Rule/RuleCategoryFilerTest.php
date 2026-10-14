@@ -118,21 +118,20 @@ final class RuleCategoryFilerTest extends TestCase
         self::assertNull($deleted->ruleCategory);
     }
 
-    public function testGmailsOwnLabelsDecideUnlessTheReaderOverrodeThem(): void
+    /**
+     * A filter the reader wrote outranks Google's category, whether or not they
+     * asked plMail's own sorting to: Google's label and plMail's rules are both
+     * guesses, and a filter is an instruction.
+     */
+    public function testAFilterFilesGmailMailWhateverTheReaderSaidAboutGooglesSorting(): void
     {
-        $respected = $this->message(self::PASS);
-        $respected->gmailLabelIds = ['INBOX', 'CATEGORY_PROMOTIONS'];
+        self::assertFalse($this->owner->categorySorting->overrideProvider, 'the default leaves Google\'s categories in charge of the rest');
 
-        self::assertFalse($this->file($respected), 'filed over Gmail\'s own category although the reader did not ask plMail to overrule it');
-        self::assertNull($respected->ruleCategory);
+        $gmail = $this->message(self::PASS);
+        $gmail->gmailLabelIds = ['INBOX', 'CATEGORY_PROMOTIONS'];
 
-        $this->owner->categorySorting->overrideProvider = true;
-
-        $overruled = $this->message(self::PASS);
-        $overruled->gmailLabelIds = ['INBOX', 'CATEGORY_PROMOTIONS'];
-
-        self::assertTrue($this->file($overruled));
-        self::assertSame($this->shipping, $overruled->ruleCategory);
+        self::assertTrue($this->file($gmail), 'a filter was refused on Gmail mail');
+        self::assertSame($this->shipping, $gmail->ruleCategory);
     }
 
     public function testAThreadTheReaderPinnedKeepsItsTabButTheMessageStillRecordsTheVerdict(): void

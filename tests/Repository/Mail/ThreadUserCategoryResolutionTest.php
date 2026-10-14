@@ -137,39 +137,59 @@ final class ThreadUserCategoryResolutionTest extends KernelTestCase
     }
 
     /**
-     * A verdict on Gmail-labelled mail counts only while the reader has asked
-     * plMail to overrule Google — the same rule the filter applied when it filed
-     * the message, kept true afterwards. Switching the setting OFF later queues
-     * exactly this re-sort, and a statement that copied the verdict regardless
-     * would leave Google's mail in a tab of the reader's own, against the
-     * setting they just chose.
-     *
-     * Both directions in one test, each starting from the opposite of the
-     * expected answer, so neither "never copies it" nor "always copies it"
-     * passes.
+     * A verdict on Gmail-labelled mail counts like any other, with Google's
+     * categories left in charge of everything else: the reader wrote the
+     * filter. Starts from no tab, so "never copies it" cannot pass.
      */
     #[DataProvider('bothStatements')]
-    public function testAVerdictOnGmailLabelledMailOnlyCountsWhileTheReaderOverrulesGoogle(string $which): void
+    public function testAVerdictOnGmailLabelledMailCounts(string $which): void
     {
         $shipping = $this->category('Shipping');
 
         $thread = $this->thread('gmail notice');
         $message = $this->message($thread, '2026-03-02 09:00', MessageCategory::Promotions, $shipping);
         $message->gmailLabelIds = ['INBOX', 'CATEGORY_PROMOTIONS'];
-        $thread->userCategory   = $shipping;
+        $thread->userCategory   = null;
         $this->em->flush();
 
-        // Google's categories are respected: the verdict does not count.
-        $this->resolve($which, [$thread]);
-        self::assertNull($this->userCategoryOf($thread), 'a verdict on Gmail mail was kept although the reader does not overrule Google');
+        self::assertFalse($this->account->usr->categorySorting->overrideProvider);
 
-        // The reader overrules Google: now it does.
-        $this->account->usr->categorySorting->overrideProvider = true;
-        $thread->userCategory = null;
+        $this->resolve($which, [$thread]);
+        self::assertSame($shipping->id, $this->userCategoryOf($thread), 'a verdict on Gmail mail was dropped');
+    }
+
+    /**
+     * The per-account statement resolves this account's conversations and
+     * leaves another account's alone, now that it reads only this account's
+     * messages.
+     */
+    public function testThePerAccountStatementLeavesOtherAccountsAlone(): void
+    {
+        $shipping = $this->category('Shipping');
+
+        $other           = new \App\Entity\Mail\Account();
+        $other->usr      = $this->account->usr;
+        $other->name     = 'Other';
+        $other->email    = 'other@example.test';
+        $other->username = uniqid('other-', true);
+        $other->authType = \App\Domain\Enum\Account\AuthType::Password->value;
+        $other->imapHost = 'imap.example.test';
+        $other->isActive = true;
+        $this->em->persist($other);
+
+        $mine = $this->thread('mine');
+        $this->message($mine, '2026-03-02 09:00', MessageCategory::Updates, $shipping);
+
+        $theirs = $this->thread('theirs');
+        $theirs->account = $other;
+        $theirMessage = $this->message($theirs, '2026-03-02 09:00', MessageCategory::Updates, $shipping);
+        $theirMessage->account = $other;
         $this->em->flush();
 
-        $this->resolve($which, [$thread]);
-        self::assertSame($shipping->id, $this->userCategoryOf($thread), 'a verdict was dropped although the reader overrules Google');
+        $this->repository->recomputeCategoriesForAccount($this->account);
+
+        self::assertSame($shipping->id, $this->userCategoryOf($mine));
+        self::assertNull($this->userCategoryOf($theirs), 'another account\'s conversation was resolved too');
     }
 
     // ── fixture ──────────────────────────────────────────────────────────────

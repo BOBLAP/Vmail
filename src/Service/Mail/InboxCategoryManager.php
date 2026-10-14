@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Mail;
 
+use App\Domain\Enum\AppLocale;
 use App\Domain\Enum\Mail\MessageCategory;
 use App\Domain\Exception\InvalidInboxCategoryException;
 use App\Entity\Mail\InboxCategory;
@@ -11,6 +12,7 @@ use App\Entity\User\User;
 use App\Repository\Mail\InboxCategoryRepository;
 use App\Repository\Mail\MessageThreadRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Making, renaming and removing the inbox tabs a reader made themselves.
@@ -19,9 +21,11 @@ use Doctrine\ORM\EntityManagerInterface;
  * case, which an index cannot say in Doctrine attributes (see InboxCategory),
  * and a built-in tab's name is refused outright: a strip with two tabs both
  * called Promotions, or one a reader typed beside the real one, is a strip
- * nobody can trust. The built-ins are refused by their English names — what the
- * enum stores — and not by their translated labels, which differ per language
- * and are the reader's to confuse themselves with.
+ * nobody can trust. The built-ins are refused by every name they go by: the
+ * value the enum stores and the label each interface language shows, since a
+ * German reader's "Werbung" beside the built-in Werbung is the same two tabs
+ * called the same thing — and a household where one person reads German and
+ * another English shares an installation, not a language.
  *
  * REMOVAL DOES WHAT THE DATABASE CANNOT. The two columns that file mail under a
  * category are ON DELETE SET NULL, so the foreign keys un-file the mail and the
@@ -41,6 +45,7 @@ final readonly class InboxCategoryManager
         private InboxCategoryRepository $categories,
         private MessageThreadRepository $threads,
         private EntityManagerInterface $em,
+        private TranslatorInterface $translator,
     ) {
     }
 
@@ -108,6 +113,28 @@ final readonly class InboxCategoryManager
         });
     }
 
+    /** A built-in tab's stored value, or its label in any interface language. */
+    private function isBuiltInName(string $name): bool
+    {
+        $wanted = mb_strtolower($name);
+
+        foreach (MessageCategory::cases() as $category) {
+            if ($wanted === $category->value) {
+                return true;
+            }
+
+            foreach (AppLocale::cases() as $locale) {
+                $label = $this->translator->trans('tabs.' . $category->value, [], 'messages', $locale->value);
+
+                if ($wanted === mb_strtolower($label)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private function validName(User $owner, string $name, ?InboxCategory $renaming): string
     {
         // Unicode whitespace both ends: a name pasted with a non-breaking space
@@ -122,7 +149,7 @@ final readonly class InboxCategoryManager
             throw new InvalidInboxCategoryException('settings.categories.error.too_long');
         }
 
-        if (null !== MessageCategory::tryFrom(mb_strtolower($name))) {
+        if (true === $this->isBuiltInName($name)) {
             throw new InvalidInboxCategoryException('settings.categories.error.reserved');
         }
 

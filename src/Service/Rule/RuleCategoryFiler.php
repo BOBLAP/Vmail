@@ -51,11 +51,11 @@ use Psr\Log\LoggerInterface;
  * chooses a tab — it never touches labels, the Spam folder, read state or the
  * authentication warning the message view shows.
  *
- * Gmail's own category is respected the way the categoriser respects it: a
- * message carrying Gmail's labels is filed only when the reader asked plMail's
- * sorting to overrule the provider's (CategorySorting::$overrideProvider). The
- * test is the labels on the row, not the account's type, because that is what
- * the categoriser keys on — a Gmailified IMAP row carries them too.
+ * Gmail's own categories do not stand in the way. They outrank plMail's own
+ * sorting unless the reader says otherwise (CategorySorting::$overrideProvider),
+ * because both are guesses and Google's was there first. A filter is not a
+ * guess: the reader wrote it, naming the mail it is for, and it files Gmail
+ * mail like any other.
  *
  * Two filters matching one message: the one that runs last decides, because the
  * column is single-valued and this overwrites. "Stop after this filter" is the
@@ -95,10 +95,6 @@ final readonly class RuleCategoryFiler
                 'categoryId' => $categoryId,
             ]);
 
-            return false;
-        }
-
-        if (null !== $message->gmailLabelIds && false === $rule->usr->categorySorting->overrideProvider) {
             return false;
         }
 

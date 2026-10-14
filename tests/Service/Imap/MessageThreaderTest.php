@@ -194,37 +194,25 @@ final class MessageThreaderTest extends TestCase
     }
 
     /**
-     * The same rule the filter applied when it filed the message: a verdict on
-     * Gmail-labelled mail is the reader's own tab only while they have asked
-     * plMail to overrule Google. Enrichment re-adopts a message's verdict long
-     * after it was filed, so the check cannot live only at filing time.
+     * A filter's verdict moves the conversation on Gmail mail too, with Google's
+     * categories otherwise in charge: the reader wrote the filter.
      */
-    public function testAVerdictOnGmailLabelledMailOnlyMovesTheThreadWhileTheReaderOverrulesGoogle(): void
+    public function testAVerdictOnGmailLabelledMailMovesTheThread(): void
     {
         $shipping = new InboxCategory();
         $owner    = new \App\Entity\User\User();
         $account  = new Account();
         $account->usr = $owner;
 
-        $withoutOverride = $this->message(MessageCategory::Promotions, '2026-07-28 10:00:00');
-        $withoutOverride->account       = $account;
-        $withoutOverride->gmailLabelIds = ['INBOX', 'CATEGORY_PROMOTIONS'];
-        $withoutOverride->ruleCategory  = $shipping;
+        $message = $this->message(MessageCategory::Promotions, '2026-07-28 10:00:00');
+        $message->account       = $account;
+        $message->gmailLabelIds = ['INBOX', 'CATEGORY_PROMOTIONS'];
+        $message->ruleCategory  = $shipping;
 
-        $this->threaderWithThreadLookup(null)->assignThread($withoutOverride, $account);
+        $this->threaderWithThreadLookup(null)->assignThread($message, $account);
 
-        self::assertNull($withoutOverride->thread->userCategory, 'Google\'s mail went to the reader\'s own tab although they do not overrule Google');
-
-        $owner->categorySorting->overrideProvider = true;
-
-        $withOverride = $this->message(MessageCategory::Promotions, '2026-07-28 10:00:00');
-        $withOverride->account       = $account;
-        $withOverride->gmailLabelIds = ['INBOX', 'CATEGORY_PROMOTIONS'];
-        $withOverride->ruleCategory  = $shipping;
-
-        $this->threaderWithThreadLookup(null)->assignThread($withOverride, $account);
-
-        self::assertSame($shipping, $withOverride->thread->userCategory);
+        self::assertFalse($owner->categorySorting->overrideProvider);
+        self::assertSame($shipping, $message->thread->userCategory);
     }
 
     /**

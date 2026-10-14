@@ -48,6 +48,7 @@ final class InboxCategoryManagerTest extends KernelTestCase
             $container->get(InboxCategoryRepository::class),
             $container->get(MessageThreadRepository::class),
             $this->em,
+            $container->get(\Symfony\Contracts\Translation\TranslatorInterface::class),
         );
 
         $this->connection->beginTransaction();
@@ -87,6 +88,11 @@ final class InboxCategoryManagerTest extends KernelTestCase
         yield 'forty-one characters'  => [str_repeat('x', 41), 'settings.categories.error.too_long'];
         yield 'a built-in name'       => ['Primary', 'settings.categories.error.reserved'];
         yield 'a built-in in capitals' => ['FORUMS', 'settings.categories.error.reserved'];
+        // A built-in's label in any interface language, not only the reader's:
+        // the German Promotions tab is "Werbung", the French Primary "Principal".
+        yield 'a German label'        => ['Werbung', 'settings.categories.error.reserved'];
+        yield 'a French label'        => ['principal', 'settings.categories.error.reserved'];
+        yield 'a two-word label'      => ['Soziale Netzwerke', 'settings.categories.error.reserved'];
         yield 'one the reader has'    => ['shipping', 'settings.categories.error.taken'];
     }
 

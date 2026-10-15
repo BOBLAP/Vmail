@@ -15,6 +15,16 @@ proxy, so a sender learns that the message was opened but not your address. Mail
 blocked as before, and the senders you trusted one by one are kept for when it is switched off
 again. The choice lives in your user settings and a config backup carries it. No migration.
 
+**An account's own inbox can have the category tabs (#55).** Clicking an account in the sidebar
+opened a plain list, so on an Outlook account — or any account — the tabs were nowhere to be found
+unless you went back to the top-level Inbox. The categories were being worked out all along; that
+page just never drew them. Settings → Mail → Categories now has **Tabs on each account**, off until
+you turn it on: with it on, an account's page shows Primary, Social, Promotions, Updates, Forums and
+your own tabs for that account's mail; off, it stays the account's whole inbox in one list, as
+before. It is offered only while **Inbox tabs** is on, and a config backup carries it. The tabs on
+this page are plainer than the top-level Inbox's: no "new" pills, sender hints or unread tint
+(those add up every account), and no dropping a conversation onto a tab. No migration.
+
 **Signing in through single sign-on keeps you signed in, as "Keep me signed in" does on the password form.**
 A single sign-on sign-in left nothing but the PHP session holding you in: a cookie that ends with the
 browser, kept in a file that is cleaned up after 24 minutes without a request and that goes with the
@@ -305,6 +315,12 @@ import line in the background-work indicator now shows the quota, roughly how mu
 use, how many messages a minute are coming in, how long the rest of the import takes, and says
 so when Google has paused it. No
 migration. [#90](https://github.com/karatektus/pl_mail/issues/90), reported by @karamanliev.
+**An account's page shows your own tabs, so mail filed in one can be found there.** Clicking an
+account in the sidebar offered the five built-in tabs and none of the ones you made. Mail filed in
+one of yours is in that tab only — not in Primary or any other — so on an account's page it was in
+no tab at all. The page now has the same tabs as the top-level Inbox, yours included, each shown
+while it holds mail in that account, and `?tab=` accepts yours. Counts are per account; a link to a
+tab that is not yours, or was deleted, opens Primary as it does in the Inbox. No migration.
 
 **The tab icon is the one you picked, in Firefox too.** Settings → Appearance → Logo changed the
 icon in the app but not in the tab, which kept showing the wax seal. Every page also linked a

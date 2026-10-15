@@ -1,4 +1,4 @@
-<!-- translated-from: features/mail.md sha1:175617fd64542d859658e6386d29320816c99f58 -->
+<!-- translated-from: features/mail.md sha1:30bda5df940795ddf3d3cb5ef13bbd9ae0233ba8 -->
 
 # Mail
 
@@ -90,6 +90,18 @@ Netzwerke**, **Werbung**, **Updates** und **Foren**. Bei einem Gmail-Konto vertr
 Gmails eigenen `CATEGORY_*`-Labels. Bei allem anderen leitet es die Kategorie aus Headern ab,
 die ohnehin schon gespeichert sind — darum braucht eine Neukategorisierung nie eine erneute
 Synchronisierung.
+
+Die Tabs gibt es im Posteingang ganz oben, und du kannst sie auch im **Posteingang eines einzelnen
+Kontos** haben (Klick auf das Konto in der Seitenleiste): **Einstellungen → Mail → Kategorien**,
+**Tabs in jedem Konto**. Es ist aus, bis du es einschaltest; dann hat ein Outlook-Konto oder jedes
+andere sie auch, [eigene Tabs](#eigene-tabs) eingeschlossen. Ist es aus, zeigt die Seite eines Kontos
+seinen ganzen Posteingang als eine Liste. Den Schalter gibt es nur, solange **Tabs im Posteingang**
+an ist, und eine Konfigurationssicherung enthält ihn. Ein Tab ist da, solange er Mail enthält, und auf der Seite
+eines Kontos zählt er nur dessen Mail — ein eigener Tab, der nur in einem anderen Konto Mail
+enthält, fehlt auf dieser Seite also. Die Tabs auf
+der Kontoseite sind schlichter: keine „neu“-Markierungen, keine Absenderhinweise und keine
+Ungelesen-Färbung, denn die zählen alle Konten zusammen und würden dort das falsche Postfach
+beschreiben. Eine Konversation auf einen Tab zu ziehen geht nur im Posteingang ganz oben.
 
 ### Ein Posteingang ohne Tabs
 

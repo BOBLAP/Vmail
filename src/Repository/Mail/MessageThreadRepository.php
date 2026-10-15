@@ -494,8 +494,7 @@ class MessageThreadRepository extends ServiceEntityRepository
     }
 
     /**
-     * One account's inbox — findForUnifiedInbox() narrowed to a single account
-     * and widened across every category.
+     * One account's inbox — findForUnifiedInbox() narrowed to a single account.
      *
      * This is the account row in the sidebar, and it used to list EVERYTHING in
      * the account whatever it was labelled. That is not what clicking a mailbox
@@ -505,17 +504,25 @@ class MessageThreadRepository extends ServiceEntityRepository
      * bin was already excluded, which was the first half of this same
      * realisation.
      *
-     * Deliberately NOT filtered by category, unlike the unified inbox above.
-     * The tabs are a property of that one screen; here the account's Inbox
-     * FOLDER is what is being shown, and it is the same list the account's own
-     * "Inbox" row in the expanded folder tree gives — which is exactly what a
-     * reader comparing the two would expect.
+     * Filtered by tab only when asked, and the default is not to. A tab is a
+     * built-in category or one the reader made, and it narrows by the same
+     * rule as the unified inbox's — narrowToCategory(), shared — so a thread
+     * is in exactly one of them.
+     *
+     * This used to say the tabs belong to the unified inbox alone and that the
+     * account's Inbox FOLDER is what is shown here. It does not hold any more:
+     * the account page draws the same tab strip, because an installation whose
+     * accounts are all Outlook is otherwise a client whose categories are
+     * nowhere a person would look. A null category is still the whole folder,
+     * which is what somebody who switched the tabs off gets, and it is still
+     * what the account's own "Inbox" row in the expanded folder tree lists —
+     * that row is a label view and does not have tabs.
      *
      * No `isActive` filter either, again unlike the unified list. A switched-off
      * account is still in the sidebar and still clickable; answering with an
      * empty list because it is asleep would read as lost mail.
      */
-    public function findForAccountInbox(Account $account, int $page = 1, int $perPage = 50, ListSortOrder $sort = ListSortOrder::Newest): array
+    public function findForAccountInbox(Account $account, int $page = 1, int $perPage = 50, ListSortOrder $sort = ListSortOrder::Newest, MessageCategory|InboxTab|null $category = null): array
     {
         $qb = $this->createQueryBuilder('t')
             ->join('t.labels', 'l')
@@ -527,6 +534,8 @@ class MessageThreadRepository extends ServiceEntityRepository
             ->setMaxResults($perPage)
             ->distinct();
 
+        $this->narrowToCategory($qb, $category, $this->switchedOffBy($account->usr));
+
         $this->excludeTrashed($qb);
 
         $sort->applyTo($qb);
@@ -535,7 +544,7 @@ class MessageThreadRepository extends ServiceEntityRepository
     }
 
     /** Same two conditions as findForAccountInbox(), so the same reason to keep it. */
-    public function countForAccountInbox(Account $account): int
+    public function countForAccountInbox(Account $account, MessageCategory|InboxTab|null $category = null): int
     {
         // COUNT(DISTINCT t.id) for the reason countForUnifiedInbox() spells
         // out: the label join is to-many, and a thread carrying two labels of
@@ -550,9 +559,51 @@ class MessageThreadRepository extends ServiceEntityRepository
             ->setParameter('account', $account)
             ->setParameter('inbox', LabelRole::Inbox);
 
+        $this->narrowToCategory($qb, $category, $this->switchedOffBy($account->usr));
+
         $this->excludeTrashed($qb);
 
         return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Threads per category in one account's inbox, regardless of read state.
+     *
+     * What decides which tabs the account page shows — the same question
+     * countByCategoryForUnifiedInbox() answers for every account at once, with
+     * the same two conditions findForAccountInbox() lists by, so a tab offered
+     * here cannot open on an empty list. A tab with nothing in it has no key
+     * rather than a zero.
+     *
+     * Keyed by tab, in InboxTab's keys: a thread filed in one of the reader's
+     * own categories counts for that tab ONLY, and for the built-in one it was
+     * assigned never — the rule narrowToCategory() lists by, and the reason the
+     * counts add up to the inbox. Grouped by the reader's column as well as the
+     * built-in one, because a count by `category` alone cannot say that a thread
+     * has left its built-in tab, and a tab of the reader's own would then be
+     * missing from the strip and its threads from every tab.
+     *
+     * A built-in the reader switched off is counted under Primary, as the list
+     * puts it there (narrowToCategory()), so the account's tabs still add up to
+     * its inbox.
+     *
+     * @return array<string, int>
+     */
+    public function countByCategoryForAccountInbox(Account $account): array
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->select('t.category AS category', 'IDENTITY(t.userCategory) AS userCategory', 'COUNT(DISTINCT t.id) AS threadCount')
+            ->join('t.labels', 'l')
+            ->where('t.account = :account')
+            ->andWhere('l.role = :inbox')
+            ->groupBy('t.category')
+            ->addGroupBy('t.userCategory')
+            ->setParameter('account', $account)
+            ->setParameter('inbox', LabelRole::Inbox);
+
+        $this->excludeTrashed($qb);
+
+        return $this->foldByTab($qb->getQuery()->getResult(), 'threadCount', $this->switchedOffBy($account->usr));
     }
 
     /** No-op when no account was asked for, so callers need no branch. */

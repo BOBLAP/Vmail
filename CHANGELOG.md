@@ -8,6 +8,17 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**A draft you started in another mail app opens in plMail.**
+A draft that arrived by sync (from Outlook or Gmail) was listed in its
+conversation, and clicking it gave a "Not found" page: it had been marked as already sent, which the
+editor refuses to open. It is now kept as the unsent draft it is, like one written in plMail. The
+visible side effect is that a conversation holding such a draft is no longer moved up the list by the
+draft's date, the same as for a draft written here. A draft you then send from Outlook or Gmail is
+recognised as sent, and no longer offered for editing. **Migration:** drafts already stored that
+the provider still files as drafts are made openable too; one that was sent elsewhere before the
+upgrade is left as it was.
+[#164](https://github.com/karatektus/pl_mail/pull/164), by @Flouss.
+
 **Pull the mail list down to sync it, on a phone.** Reaching for the button at the top of the screen
 is no longer the only way: pulling the mail list down from its top now syncs it, through the same
 sync as that button. Drag past the *Release to sync* indicator and let go, and the sync icon spins
@@ -23,8 +34,9 @@ starring, archiving, a spam move, a copy of something you sent — and again a f
 Outlook reported your own reading back, and it always read "New mail". A device switched on under
 Settings → Notifications is now told when mail arrives in the Inbox of a mailbox that has finished
 importing, and about nothing else. Spam, drafts, sent copies and an import in progress no longer
-notify, and neither does a message whose arrival time plMail cannot work out from its headers. Reminders from Calendar alerts and the update notice for administrators
-are separate pushes and unchanged. Apps that register through JMAP, and an Android phone through
+notify, and neither does a message whose arrival time plMail cannot work out from its headers.
+Reminders from Calendar alerts and the update notice for administrators are separate pushes and
+unchanged. Apps that register through JMAP, and an Android phone through
 Firebase, are still told about every change: they ask what moved. **Migration:** one boolean column
 on `jmap_push_subscription`, false by default; devices registered through the in-app toggle (an id
 starting `web-`) are switched to the new behaviour once, so nobody has to turn notifications off and

@@ -638,8 +638,10 @@ final class GraphApiSyncer
      * Graph has no flag list, so the two booleans it does answer are turned
      * into one: RemoteFlagState::storedFlags() synthesises the mirror. \Draft
      * is deliberately not carried here — isDraft is a property of the message
-     * that GraphMessageBuilder sets at ingest and that a delta on a stored
-     * message does not change without the message being rewritten anyway.
+     * that GraphMessageBuilder sets at ingest, and a delta does not say when it
+     * changes. A draft being sent is heard elsewhere instead: attachFolderLabel()
+     * for a move into Sent Items, SyncGraphMessageBatchHandler for a new id
+     * (both Message::settleAsSent()).
      *
      * @param array<string,mixed> $item
      */
@@ -716,6 +718,22 @@ final class GraphApiSyncer
         }
 
         $message->addLabel($label);
+
+        // Filed in Sent Items, so it was sent. A delta says nothing about
+        // isDraft and a stored message is never rebuilt, so this is the only
+        // place a draft sent from Outlook (same id under immutable ids) is
+        // heard. Trash and Drafts are not it: a draft thrown away or put back
+        // is still unsent.
+        //
+        // A settle is a change of its own, even with no move: a draft filed in
+        // Sent Items before settling existed still wears \Draft beside its
+        // Sent label, and the next re-report is the first chance to end that.
+        // It changes the Email's keywords and the list's draft marker, so it
+        // is recorded and announced like a move.
+        if (LabelRole::Sent === $label->role && true === $message->isDraft()) {
+            $message->settleAsSent(new DateTimeImmutable());
+            $moved = true;
+        }
 
         // A folder move on the Microsoft side changes Email.mailboxIds, which
         // is the single most visible thing a JMAP client watches for. Without

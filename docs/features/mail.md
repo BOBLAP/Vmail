@@ -100,6 +100,8 @@ account page's tabs are plainer: no
 "new" pills, sender hints or unread tint, because those add up every account and would describe the
 wrong mailbox there. Dragging a conversation onto a tab is on the top-level Inbox only.
 
+Switching tabs replaces the entry in the browser's history rather than adding one, as Gmail does, so the browser's Back leaves the inbox instead of stepping back through the tabs you looked at. The same goes for the tabs on an account's page.
+
 ### An inbox without tabs
 
 If you would rather have one list, switch **Inbox tabs** to **One list** under **Settings →

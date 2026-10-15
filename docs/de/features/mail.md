@@ -1,4 +1,4 @@
-<!-- translated-from: features/mail.md sha1:b428fb2515e88b031a0c96177c0c01b48a94b76e -->
+<!-- translated-from: features/mail.md sha1:aafa725dd0343a8e15a1cb0e8f4ad13942ae2b05 -->
 
 # Mail
 
@@ -115,6 +115,8 @@ enthält, fehlt auf dieser Seite also. Die Tabs auf
 der Kontoseite sind schlichter: keine „neu“-Markierungen, keine Absenderhinweise und keine
 Ungelesen-Färbung, denn die zählen alle Konten zusammen und würden dort das falsche Postfach
 beschreiben. Eine Konversation auf einen Tab zu ziehen geht nur im Posteingang ganz oben.
+
+Ein Tab-Wechsel ersetzt den Eintrag im Browser-Verlauf, statt einen neuen anzulegen, so wie in Gmail. Die Zurück-Taste des Browsers verlässt darum den Posteingang, statt dich durch die Tabs zurückzuführen, die du dir angesehen hast. Für die Tabs auf der Seite eines Kontos gilt dasselbe.
 
 ### Ein Posteingang ohne Tabs
 

@@ -8,6 +8,12 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**Switching category tabs no longer adds an entry to the browser's history.** A tab switch, in the
+inbox or on an account's page, replaces the current entry, as Gmail does, so the browser's Back
+leaves the inbox instead of stepping back through every tab you looked at. The address still follows
+the tab. No migration.
+[#161](https://github.com/karatektus/pl_mail/pull/161), by @Flouss.
+
 **Mail read, unread, starred or unstarred in Outlook now reaches plMail.**
 An Outlook account follows each folder with a change feed, and the feed was begun asking for a
 message's id, folder and Message-ID only. Exchange reports a change in the properties a feed asks

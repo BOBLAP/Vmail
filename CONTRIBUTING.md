@@ -314,7 +314,9 @@ That makes the tag the only gate there is, and two things have to be true before
 Then, and in this order: rename `## Unreleased` in `CHANGELOG.md` to `## vX.Y.Z — date` in a pull
 request titled `Release vX.Y.Z` — `main` is protected, so the release commit goes through one like
 everything else — merge it, tag the commit it made on `main` and push the tag. The release commit
-changes the changelog and nothing else, so what was tested is what is tagged. Then close the
+changes the changelog and nothing else, so what was tested is what is tagged — except for the
+highlight pictures that release pushes past their ten releases, which it deletes (see
+[Release notes](#release-notes)). Then close the
 milestone of that name, moving anything still open in it to the next one (see
 [How work gets in](#how-work-gets-in)).
 
@@ -352,6 +354,42 @@ It seeds the demo mailbox onto two users of its own, `e2e-demo-w0@plmail.test` a
 already owns a mailbox.
 
 Never point it at a stack holding real mail.
+
+## Release notes
+
+`CHANGELOG.md` is not only for people reading GitHub: every installation reads it from its own image
+and shows it in **What's new** after an update (see
+[What everyone sees after an update](docs/install/upgrading.md#what-everyone-sees-after-an-update)).
+So an entry is written for the person using plMail, and three conventions decide how it is shown:
+
+- **An entry is a paragraph that opens with a bold sentence.** The bold part is its headline in the
+  dialog; the rest, until the next bold paragraph, is what opens under it.
+- **`**Migration:**` and `### Before you upgrade` are for administrators.** They are shown in a box
+  only administrators see, so say there what the server needs and leave it out of the rest.
+- **A highlight is marked by a comment on the line above the entry**, which GitHub does not render:
+
+  ```markdown
+  <!-- highlight screenshot=pull-to-sync -->
+  **Pull the mail list down to sync it, on a phone.** …
+  ```
+
+  `<!-- highlight -->` alone makes a highlight without a picture. With `screenshot=`, the dialog
+  shows `public/whats-new/pull-to-sync.png` beside it, and `ChangelogReaderTest` fails until that
+  file exists. Take it with a test of the same name in `tests/e2e/whats-new-screenshots.spec.ts`,
+  run like the README's pictures:
+
+  ```bash
+  npm run test:e2e:screenshots -- --project=chromium --workers=1
+  ```
+
+  Named by feature, not by release, because the pull request that adds a feature does not know which
+  release it will ship in. Mark a handful per release; a dialog where everything is a highlight has
+  none.
+- **A picture is kept for its release and the ten after it.** Every file in `public/whats-new/` ships
+  in every image, so they do not stay for good: the `Release vX.Y.Z` pull request that pushes a
+  release more than ten back deletes its pictures and turns their markers into plain
+  `<!-- highlight -->`, so the entries stay highlights without the picture. `ChangelogReaderTest`
+  fails until that is done, and also fails on a file in `public/whats-new/` that no highlight names.
 
 ## Secrets and the encryption key
 

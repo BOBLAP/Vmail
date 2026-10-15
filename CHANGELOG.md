@@ -8,6 +8,13 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**Remote images can be shown in every message without asking (#124).**
+Settings → Mail → Images has one switch, **Always show remote images**, off until you turn it on.
+With it on, no message asks before loading its pictures; they still come through plMail's image
+proxy, so a sender learns that the message was opened but not your address. Mail in Spam stays
+blocked as before, and the senders you trusted one by one are kept for when it is switched off
+again. The choice lives in your user settings and a config backup carries it. No migration.
+
 **Signing in through single sign-on keeps you signed in, as "Keep me signed in" does on the password form.**
 A single sign-on sign-in left nothing but the PHP session holding you in: a cookie that ends with the
 browser, kept in a file that is cleaned up after 24 minutes without a request and that goes with the

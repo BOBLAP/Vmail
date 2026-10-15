@@ -8,6 +8,14 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**All Mail, if you want it: every conversation outside Spam and the bin, in one list (#57).**
+Archived mail had no list of its own to be browsed in, only search. All Mail holds it, together
+with what arrived, what you sent and your drafts, as Gmail's All Mail does, leaving out only Spam
+and the bin. It is off until you switch it on with its eye in Settings → Mail → Labels; then it is
+a row beside Drafts for every account together, and a row at the top of each account's folders for
+that account alone. Archiving or snoozing from it leaves the conversation in the list. A
+conversation with several labels is listed once. No migration.
+
 **Remote images can be shown in every message without asking (#124).**
 Settings → Mail → Images has one switch, **Always show remote images**, off until you turn it on.
 With it on, no message asks before loading its pictures; they still come through plMail's image

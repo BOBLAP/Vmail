@@ -15,6 +15,7 @@ use App\Entity\Label\Label;
 use App\Entity\Mail\Account;
 use App\Entity\Mail\Message;
 use App\Entity\Mail\MessageThread;
+use App\Entity\User\User;
 use App\Service\Search\FreeTextCompiler;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
@@ -564,6 +565,94 @@ class MessageThreadRepository extends ServiceEntityRepository
         $this->excludeTrashed($qb);
 
         return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * One account's All Mail: every conversation outside Spam and the bin.
+     *
+     * Archived, unlabelled, snoozed, sent and draft mail all included — Gmail's
+     * All Mail holds drafts and sent mail too, and archived mail is what this
+     * list exists to make browsable. See LabelRole::AllMail and AllMailView.
+     *
+     * @return list<MessageThread>
+     */
+    public function findForAccountAllMail(Account $account, int $page = 1, int $perPage = 50, ListSortOrder $sort = ListSortOrder::Newest, bool $unreadOnly = false): array
+    {
+        $qb = $this->allMailQuery($account, $unreadOnly)
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage);
+
+        $sort->applyTo($qb);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** Same query as findForAccountAllMail(), so the pager counts what it lists. */
+    public function countForAccountAllMail(Account $account, bool $unreadOnly = false): int
+    {
+        return (int) $this->allMailQuery($account, $unreadOnly)
+            ->select('COUNT(t.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * All Mail across the reader's accounts — the active ones, as the unified
+     * Inbox lists: a switched-off account's mail is still reachable from its
+     * own row in the sidebar.
+     *
+     * @return list<MessageThread>
+     */
+    public function findForUnifiedAllMail(User $user, int $page = 1, int $perPage = 50, ListSortOrder $sort = ListSortOrder::Newest, bool $unreadOnly = false): array
+    {
+        $qb = $this->allMailQuery($user, $unreadOnly)
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage);
+
+        $sort->applyTo($qb);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** Same query as findForUnifiedAllMail(). */
+    public function countForUnifiedAllMail(User $user, bool $unreadOnly = false): int
+    {
+        return (int) $this->allMailQuery($user, $unreadOnly)
+            ->select('COUNT(t.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * The one definition of All Mail, for one account or for a user's.
+     *
+     * Spam and the bin are left out by a subquery rather than by a join on
+     * the labels. Labels are per thread and a thread can wear several, so a
+     * join would list a conversation once per label — and would lose old mail
+     * that wears no label at all, which is precisely the archived mail this
+     * view is for. Any Spam or Trash label takes the whole conversation out,
+     * the rule every other list follows.
+     */
+    private function allMailQuery(Account|User $owner, bool $unreadOnly): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->andWhere('t.id NOT IN (SELECT excluded.id FROM ' . MessageThread::class
+                . ' excluded JOIN excluded.labels excludedLabel WHERE excludedLabel.role IN (:excludedRoles))')
+            ->setParameter('excludedRoles', [LabelRole::Spam, LabelRole::Trash]);
+
+        if ($owner instanceof Account) {
+            $qb->andWhere('t.account = :account')
+                ->setParameter('account', $owner);
+        } else {
+            $qb->join('t.account', 'allAccount')
+                ->andWhere('allAccount.usr = :user')
+                ->andWhere('allAccount.isActive = true')
+                ->setParameter('user', $owner);
+        }
+
+        $this->narrowToUnread($qb, $unreadOnly);
+
+        return $qb;
     }
 
     /**

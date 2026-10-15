@@ -4,9 +4,10 @@ import { test, expect } from "./support/test";
  * What's new in a browser: the ? menu, the dialog, and the parts of it that
  * only work with the script running (#165).
  *
- * The e2e stack is not a release build, so nothing here opens by itself and
- * there is no "New to you" — WhatsNewTest covers that on the server, pinned to
- * a release. What it cannot see is the dialog's wiring: links that stay in the
+ * The users here are created after the migration that gives everybody who
+ * already existed 0.3.1, so they start on the running release and nothing
+ * opens by itself — WhatsNewTest covers that on the server, pinned to a
+ * release. What it cannot see is the dialog's wiring: links that stay in the
  * shared modal's frame, the footer's checkbox submitting without closing it,
  * and Done closing it.
  */
@@ -61,4 +62,101 @@ test.describe("What's new", () => {
         await dialog.getByRole("button", { name: "Done" }).click();
         await expect(dialog).toBeHidden();
     });
+
+    /**
+     * Over the calendar, whose day headings painted on top of the menu while
+     * it was an ordinary dropdown inside the header's stacking context. Asked
+     * the way menu-escapes-pane.spec.ts asks it: what is at the menu's centre
+     * is the menu.
+     */
+    test("the ? menu is above the calendar", async ({ page }) => {
+        await page.goto("/calendar/week");
+
+        await page.locator("[data-whats-new-menu] > button").click();
+        const item = page.getByRole("menuitem", { name: "What's new" });
+        await expect(item).toBeVisible();
+
+        const onTop = await item.evaluate((el) => {
+            const box = el.getBoundingClientRect();
+            const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+
+            return null !== hit && el.contains(hit);
+        });
+
+        expect(onTop, "something is painted over the What's new item").toBe(true);
+
+        // And choosing it closes the menu, so it does not stay above the dialog.
+        await item.click();
+        await expect(page.locator("#modal [data-whats-new-notes]")).toBeVisible();
+        await expect(item).toBeHidden();
+    });
+
+    /**
+     * A refusal from something in front of plMail — here a proxy's 413 for a
+     * large body — is said in the form, and the dialog stays. It used to be
+     * visited as a page by Turbo, which closed the dialog and said nothing.
+     */
+    test("a refused feedback request says so and the dialog stays", async ({ page }) => {
+        await page.route("**/whats-new/feedback", (route) => route.fulfill({
+            status: 413,
+            contentType: "text/html",
+            body: "<html><body><h1>413 Request Entity Too Large</h1></body></html>",
+        }));
+
+        await page.goto("/settings?section=general");
+        await page.locator("[data-whats-new-menu] > button").click();
+
+        const feedback = page.getByRole("menuitem", { name: "Send feedback" });
+        test.skip(0 === (await feedback.count()), "the fixture user has no account to send from");
+        await feedback.click();
+
+        const form = page.locator("#modal [data-whats-new-feedback]");
+        await form.locator("textarea[name=message]").fill("Hello");
+        await form.getByLabel("Attach a screenshot of the page you were on").check();
+        await expect(form.locator("input[name=screenshot]")).not.toHaveValue("", { timeout: 15_000 });
+
+        await form.getByRole("button", { name: "Send feedback" }).click();
+
+        await expect(form.getByRole("alert")).toContainText("413");
+        await expect(page.locator("#modal-backdrop")).toBeVisible();
+        await expect(form.locator("textarea[name=message]")).toHaveValue("Hello");
+    });
+
+    /**
+     * Sent with a screenshot: the answer is drawn in the dialog and the
+     * dialog stays. The server's side of a real send is WhatsNewTest's; the
+     * answer here is the one it gives, so this proves the page's side.
+     */
+    test("feedback with a screenshot ends on the sent screen, in the dialog", async ({ page }) => {
+        let body = "";
+
+        await page.route("**/whats-new/feedback", async (route) => {
+            body = route.request().postData() ?? "";
+
+            await route.fulfill({
+                status: 200,
+                contentType: "text/html",
+                body: '<turbo-frame id="modal"><div role="status" data-whats-new-feedback-sent><h3>Feedback sent.</h3></div></turbo-frame>',
+            });
+        });
+
+        await page.goto("/mail/inbox");
+        await page.locator("[data-whats-new-menu] > button").click();
+
+        const feedback = page.getByRole("menuitem", { name: "Send feedback" });
+        test.skip(0 === (await feedback.count()), "the fixture user has no account to send from");
+        await feedback.click();
+
+        const form = page.locator("#modal [data-whats-new-feedback]");
+        await form.locator("textarea[name=message]").fill("With a picture");
+        await form.getByLabel("Attach a screenshot of the page you were on").check();
+        await expect(form.locator("input[name=screenshot]")).toHaveValue(/^data:image\/jpeg;base64,/, { timeout: 15_000 });
+
+        await form.getByRole("button", { name: "Send feedback" }).click();
+
+        await expect(page.locator("#modal [data-whats-new-feedback-sent]")).toBeVisible();
+        await expect(page.locator("#modal-backdrop")).toBeVisible();
+        expect(body).toContain("data:image/jpeg;base64,");
+    });
 });
+

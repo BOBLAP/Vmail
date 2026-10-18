@@ -167,7 +167,10 @@ export default class extends Controller {
     }
 
     /** Make the box agree with `?q=` in the address bar. */
-    #syncToUrl() {
+    #syncToUrl(event) {
+        // Loading a dialog is not a search navigation. In particular the
+        // advanced form must see a query typed but not yet submitted.
+        if (event?.type === "turbo:frame-load" && event.target.id !== LIST_FRAME_ID) return;
         if (false === this.hasInputTarget) {
             return;
         }
@@ -243,6 +246,22 @@ export default class extends Controller {
             event.preventDefault();
             this.#move(-1);
         }
+    }
+
+    dismissSuggestions() {
+        clearTimeout(this.#debounce);
+        this.#liveRequest?.abort();
+        this._closeDropdown();
+    }
+
+    applyAdvanced(event) {
+        this.inputTarget.value = event.detail.query;
+        if (event.detail.query === "") {
+            this.dismissSuggestions();
+            this._navigate("");
+            return;
+        }
+        this._submit();
     }
 
     onFocus() {

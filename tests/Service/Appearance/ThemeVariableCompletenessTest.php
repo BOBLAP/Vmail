@@ -146,6 +146,7 @@ final class ThemeVariableCompletenessTest extends TestCase
         '--surface-reading-row-y',
         '--surface-reading-gap',
         '--pane-header-h',
+        '--message-body-height',
     ];
 
     /** Blocks that must carry the whole palette. */

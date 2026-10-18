@@ -80,7 +80,14 @@ final class SearchQueryParser
 
             [$operator, $value] = explode(':', $token, 2);
             $operator = strtolower(trim($operator));
-            $value    = trim(trim($value), '"\'');
+            $value    = trim($value);
+            if (str_starts_with($value, '"') && str_ends_with($value, '"')) {
+                // The advanced form uses JSON quoting for spaces, literal
+                // quotes and backslashes. Older hand-written quotes still work.
+                $value = json_decode($value, true) ?? substr($value, 1, -1);
+            } else {
+                $value = trim($value, "'");
+            }
 
             // "from:" with nothing after it, which is every query on its way to
             // being typed. Not a filter — an empty LIKE matches every message,
@@ -133,6 +140,11 @@ final class SearchQueryParser
 
         for ($i = 0, $len = strlen($input); $i < $len; $i++) {
             $char = $input[$i];
+
+            if ($inQuote && '\\' === $char && $i + 1 < $len && in_array($input[$i + 1], ['"', '\\'], true)) {
+                $current .= $char.$input[++$i];
+                continue;
+            }
 
             if ($char === '"') {
                 $inQuote  = !$inQuote;

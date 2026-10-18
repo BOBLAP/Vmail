@@ -79,6 +79,7 @@ final class AppearanceMapper
         'sidebarDensity',
         'listDensity',
         'readingDensity',
+        'messageBodySize',
     ];
 
     /**
@@ -197,6 +198,7 @@ final class AppearanceMapper
             'sidebarDensity' => $appearance->sidebarDensity?->value,
             'listDensity' => $appearance->listDensity?->value,
             'readingDensity' => $appearance->readingDensity?->value,
+            'messageBodySize' => $appearance->messageBodySize->value,
         ];
     }
 

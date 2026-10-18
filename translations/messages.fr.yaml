@@ -2640,6 +2640,18 @@ pull_to_refresh:
     pull: 'Tirez vers le bas pour synchroniser'
     release: 'Relâchez pour synchroniser'
 search:
+    advanced:
+        title: 'Recherche avancée'
+        hint: 'Les champs renseignés deviennent des filtres. Les autres termes de la recherche sont conservés.'
+        from: 'Expéditeur'
+        to: 'Destinataire'
+        cc: 'Copie (Cc)'
+        subject: 'Objet'
+        label: 'Libellé'
+        attachment: 'Avec une pièce jointe'
+        unread: 'Messages non lus'
+        read: 'Messages lus'
+        submit: 'Rechercher'
     empty:
         or_keyword: ou tapez simplement un mot-clé.
         title: Rechercher dans votre courrier
@@ -2985,6 +2997,13 @@ settings:
             Connectez-vous à des applications mail tierces qui parlent JMAP. Chaque
             application reçoit son propre mot de passe, révocable séparément.
     appearance:
+        message_body_size:
+            heading: 'Hauteur du message'
+            hint: 'Adaptatif suit la hauteur du contenu. Les autres choix fixent la zone de lecture et permettent de faire défiler le contenu, indépendamment de la densité du volet.'
+            adaptive: 'Adaptatif'
+            compact: 'Compact · 80 px'
+            cosy: 'Cosy · 200 px'
+            comfortable: 'Confortable · 1080 px'
         accent:
             heading: Couleur d’accent
         background:
@@ -3161,6 +3180,7 @@ settings:
             more: 'Plus de thèmes'
             light: Clair
             nord: Nord
+            vinz: Vinz
             paper: Papier
             solar: Solaire
             subheading: Jeu de couleurs de toute l’interface.

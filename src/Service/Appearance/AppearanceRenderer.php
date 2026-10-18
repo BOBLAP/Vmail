@@ -133,6 +133,7 @@ final readonly class AppearanceRenderer
             '--surface-list-gap'      => $appearance->densityFor('list')->gap(),
             '--surface-reading-row-y' => $appearance->densityFor('reading')->readingBlockPadding(),
             '--surface-reading-gap'   => $appearance->densityFor('reading')->gap(),
+            '--message-body-height' => $appearance->messageBodySize->cssHeight(),
         ];
 
         $background = $this->backgroundResolver->cssValue($appearance, $userId);

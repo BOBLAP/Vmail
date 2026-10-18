@@ -52,7 +52,10 @@ final class MessageFrameScript
     public function source(): string
     {
         return $this->source ??= rtrim(
-            (string) file_get_contents($this->path()),
+            // HTML normalises CRLF/CR before executing an inline script. Hash
+            // those same bytes, including on a Windows checkout, or CSP blocks
+            // the reporter and the reading frame stays at its 80px fallback.
+            str_replace(["\r\n", "\r"], "\n", (string) file_get_contents($this->path())),
             "\n",
         );
     }

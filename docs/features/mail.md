@@ -504,6 +504,12 @@ is not offered when the action ran over a whole view in the background.
 
 ## Search
 
+The advanced-search button to the right of the search box opens a dialog for
+sender, recipient, Cc, subject and label, plus attachment and read/unread filters.
+Submitting writes the corresponding operators into the search box and runs the
+search. Existing free text and other operators are retained; opening the dialog
+again fills its fields from the current query. Read and unread are exclusive.
+
 The search box is at the top of every page and answers at `/mail/search`. Free text runs as a real
 full-text query against Postgres — stemmed and ranked, not a substring scan — and combines with
 any operators you type. Hostnames and addresses are indexed by their parts, so `wirhub` finds a mail

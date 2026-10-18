@@ -2627,6 +2627,18 @@ pull_to_refresh:
     pull: 'Pull down to sync'
     release: 'Release to sync'
 search:
+    advanced:
+        title: 'Advanced search'
+        hint: 'Filled fields become filters. Other search terms are kept.'
+        from: 'From'
+        to: 'To'
+        cc: 'Cc'
+        subject: 'Subject'
+        label: 'Label'
+        attachment: 'Has attachment'
+        unread: 'Unread messages'
+        read: 'Read messages'
+        submit: 'Search'
     empty:
         or_keyword: or just type a keyword.
         title: Search your mail
@@ -2942,6 +2954,13 @@ settings:
             Sign in to third-party mail apps that speak JMAP. Each app gets its
             own password you can revoke on its own.
     appearance:
+        message_body_size:
+            heading: 'Message height'
+            hint: 'Adaptive follows the content height. Other choices set a fixed reading area with scrolling, independently of reading-pane density.'
+            adaptive: 'Adaptive'
+            compact: 'Compact · 80 px'
+            cosy: 'Cosy · 200 px'
+            comfortable: 'Comfortable · 1080 px'
         accent:
             heading: Accent colour
         background:
@@ -3118,6 +3137,7 @@ settings:
             more: 'More themes'
             light: Light
             nord: Nord
+            vinz: Vinz
             paper: Paper
             solar: Solar
             subheading: Colour scheme for the whole interface.

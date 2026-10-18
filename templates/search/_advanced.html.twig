@@ -1,0 +1,39 @@
+{% extends '_layout/app.html.twig' %}
+
+{% block body %}
+<turbo-frame id="modal">
+    <template data-ui--modal-frame-title>{{ 'search.advanced.title'|trans }}</template>
+    <form action="{{ path('app_mail_search') }}" method="get"
+          data-controller="mail--advanced-search"
+          data-action="submit->mail--advanced-search#submit"
+          class="flex-1 min-h-0 flex flex-col">
+        <input type="hidden" name="q" data-mail--advanced-search-target="query">
+        <div class="flex-1 min-h-0 overflow-y-auto px-6 pb-6 space-y-4">
+            <p class="text-sm text-ink-muted">{{ 'search.advanced.hint'|trans }}</p>
+            {% for field in ['from', 'to', 'cc', 'subject', 'label'] %}
+                <div>
+                    <label for="advanced-search-{{ field }}" class="block mb-1.5 text-sm font-medium text-ink-soft">{{ ('search.advanced.' ~ field)|trans }}</label>
+                    <input type="text" id="advanced-search-{{ field }}" name="{{ field }}"
+                           data-mail--advanced-search-target="field"
+                           class="w-full h-9 px-3 rounded-lg border border-field bg-field text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent">
+                </div>
+            {% endfor %}
+            <div class="space-y-3 pt-1">
+                {% for field in ['attachment', 'unread', 'read'] %}
+                    <label class="flex items-center gap-2.5 text-sm text-ink-soft">
+                        <input type="checkbox" name="{{ field }}"
+                               data-mail--advanced-search-target="field"
+                               {% if field != 'attachment' %}data-action="change->mail--advanced-search#changeState"{% endif %}
+                               class="h-4 w-4 accent-accent">
+                        {{ ('search.advanced.' ~ field)|trans }}
+                    </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 px-6 pb-6 pt-3 shrink-0">
+            <button type="button" data-action="click->ui--modal#close" class="h-9 px-4 rounded-lg text-sm btn-quiet focus-visible:ring-2 focus-visible:ring-accent">{{ 'form.cancel'|trans }}</button>
+            <button type="submit" class="h-9 px-4 rounded-lg text-sm font-medium bg-accent text-accent-ink hover:bg-accent-strong focus-visible:ring-2 focus-visible:ring-accent">{{ 'search.advanced.submit'|trans }}</button>
+        </div>
+    </form>
+</turbo-frame>
+{% endblock %}

@@ -584,6 +584,23 @@
                 <p class="text-xs text-ink-faint mt-2">{{ 'settings.appearance.motion.reduced'|trans }}</p>
             </section>
 
+            <section>
+                <h3 id="message-body-size-label" class="text-sm font-semibold text-ink">{{ 'settings.appearance.message_body_size.heading'|trans }}</h3>
+                <p class="text-xs text-ink-faint mt-0.5 mb-4">{{ 'settings.appearance.message_body_size.hint'|trans }}</p>
+                <div class="{{ segGroup }}" role="radiogroup" aria-labelledby="message-body-size-label">
+                    {% for size in enum('App\\Domain\\Enum\\Theme\\MessageBodySize').cases %}
+                        <label class="cursor-pointer">
+                            <input type="radio" name="messageBodySize" value="{{ size.value }}" class="peer sr-only"
+                                   data-settings--appearance-field="messageBodySize"
+                                   data-css-vars="{{ { '--message-body-height': size.cssHeight }|json_encode }}"
+                                   data-action="change->settings--appearance#applyVars"
+                                   {{ a.messageBodySize == size ? 'checked' : '' }}>
+                            <span class="{{ segText }}">{{ ('settings.appearance.message_body_size.' ~ size.value)|trans }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </section>
+
             {# ── Density ───────────────────────────────────────────────── #}
             <section>
                 <div class="mb-4">

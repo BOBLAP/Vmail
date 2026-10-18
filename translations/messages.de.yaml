@@ -2613,6 +2613,18 @@ pull_to_refresh:
     pull: 'Zum Synchronisieren nach unten ziehen'
     release: 'Loslassen zum Synchronisieren'
 search:
+    advanced:
+        title: 'Erweiterte Suche'
+        hint: 'Ausgefüllte Felder werden zu Filtern. Andere Suchbegriffe bleiben erhalten.'
+        from: 'Von'
+        to: 'An'
+        cc: 'Cc'
+        subject: 'Betreff'
+        label: 'Label'
+        attachment: 'Mit Anhang'
+        unread: 'Ungelesene Nachrichten'
+        read: 'Gelesene Nachrichten'
+        submit: 'Suchen'
     empty:
         or_keyword: oder tippe einfach ein Stichwort.
         title: Durchsuche deine Mail
@@ -2933,6 +2945,13 @@ settings:
             Jede App bekommt ein eigenes Passwort, das du einzeln widerrufen
             kannst.
     appearance:
+        message_body_size:
+            heading: 'Nachrichtenhöhe'
+            hint: 'Adaptiv passt sich dem Inhalt an. Die anderen Optionen legen einen festen Lesebereich mit Scrollen fest, unabhängig von der Dichte des Lesebereichs.'
+            adaptive: 'Adaptiv'
+            compact: 'Kompakt · 80 px'
+            cosy: 'Gemütlich · 200 px'
+            comfortable: 'Komfortabel · 1080 px'
         accent:
             heading: Akzentfarbe
         background:
@@ -3112,6 +3131,7 @@ settings:
             more: 'Mehr Themes'
             light: Hell
             nord: Nord
+            vinz: Vinz
             paper: Papier
             solar: Solar
             subheading: Farbschema für die gesamte Oberfläche.

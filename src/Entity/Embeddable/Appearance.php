@@ -7,6 +7,7 @@ namespace App\Entity\Embeddable;
 use App\Domain\Enum\Theme\BackgroundKind;
 use App\Domain\Enum\Theme\BackgroundPreset;
 use App\Domain\Enum\Theme\Density;
+use App\Domain\Enum\Theme\MessageBodySize;
 use App\Domain\Enum\Theme\MotionLevel;
 use App\Domain\Enum\Theme\FontFamily;
 use App\Domain\Enum\Theme\Layout;
@@ -443,6 +444,9 @@ final class Appearance
     #[ORM\Column(type: 'string', length: 16, nullable: true, enumType: Density::class)]
     public ?Density $readingDensity = null;
 
+    #[ORM\Column(type: 'string', length: 16, enumType: MessageBodySize::class, options: ['default' => 'adaptive'])]
+    public MessageBodySize $messageBodySize = MessageBodySize::Adaptive;
+
     /** The density a surface actually renders at: its own, or the global one. */
     public function densityFor(string $surface): Density
     {
@@ -515,11 +519,15 @@ final class Appearance
             'sidebarDensity' => $this->sidebarDensity?->value,
             'listDensity' => $this->listDensity?->value,
             'readingDensity' => $this->readingDensity?->value,
+            'messageBodySize' => $this->messageBodySize->value,
         ];
     }
 
     public function applyArray(array $data): static
     {
+        if (isset($data['messageBodySize']) && is_string($data['messageBodySize'])) {
+            $this->messageBodySize = MessageBodySize::tryFrom($data['messageBodySize']) ?? $this->messageBodySize;
+        }
         // First: a layout seeds the knobs, so any explicit knob value in the
         // same payload has to be applied after it to win.
         if (true === isset($data['layout'])) {

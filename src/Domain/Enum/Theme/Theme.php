@@ -11,6 +11,7 @@ enum Theme: string
     case Paper  = 'paper';
     case Dark   = 'dark';
     case Nord   = 'nord';
+    case Vinz   = 'vinz';
     case Dusk   = 'dusk';
     case Solar  = 'solar';
 
@@ -67,7 +68,7 @@ enum Theme: string
     public function isDark(): bool
     {
         return match ($this) {
-            self::Dark, self::Nord, self::Dusk => true,
+            self::Dark, self::Nord, self::Vinz, self::Dusk => true,
             // The seven logo themes whose palette blocks are dark palettes —
             // kept in step with the generated blocks in app.css by the
             // generator script referenced there.
@@ -140,6 +141,7 @@ enum Theme: string
             self::Paper  => ['#f7f5ef', '#232220', '#7d6b4f'],
             self::Dark   => ['#1c1b1a', '#d6d1ca', '#3a6f5c'],
             self::Nord   => ['#2e3440', '#eceff4', '#88c0d0'],
+            self::Vinz   => ['#2e3440', '#eceff4', '#0f766e'],
             self::Dusk   => ['#1e1b2e', '#ede9fe', '#a78bfa'],
             self::Solar  => ['#fdf6e3', '#586e75', '#b58900'],
 

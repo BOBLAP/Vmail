@@ -199,6 +199,14 @@
        calendar toolbar sit side by side once the pane is docked, so two
        independently-derived heights are visibly two heights. */
     --pane-header-h: 2.75rem;
+    --message-body-height: auto;
+}
+
+/* A message viewport is separate from the reading pane's spacing. HTML
+   frames are sized by message-frame; plain text and the preview use this. */
+.mail-body-text {
+    height: var(--message-body-height);
+    overflow-y: auto;
 }
 
 /* ── The dark base — what a `system` theme paints in when the OS is dark.
@@ -563,6 +571,68 @@
     --rgb-sheet-warning:    126  94  12;  /* 251 191 36, deepened */
     --rgb-sheet-success:     34 113  63;  /* 74 222 128, deepened */
     --rgb-sheet-info:        88 101 114;  /* 167 190 212, deepened */
+}
+
+/* Vinz — Nord surfaces and snow-storm ink, deep teal controls, orange
+   interaction washes, yellow warnings and violet information. Keep the whole
+   palette explicit so switching themes cannot inherit another theme's colours. */
+:root[data-theme="vinz"] {
+    color-scheme: dark;
+
+    --rgb-surface:    46  52  64;
+    --rgb-border:    255 255 255;
+    --rgb-line:      255 255 255;
+    --rgb-raised:    253 186 116;
+    --rgb-sunken:    255 255 255;
+    --rgb-shadow:      0   0   0;
+
+    --rgb-ink:       236 239 244;
+    --rgb-ink-soft:  229 233 240;
+    --rgb-ink-muted: 216 222 233;
+
+    --rgb-ink-faint: 178 189 203;
+
+    --rgb-accent: 15 118 110;
+    --rgb-accent-ink: 255 255 255;
+
+    --rgb-field: 24 57 57;
+    --rgb-field-border: 75 139 133;
+
+    --rgb-danger:      255 163 159;
+    --rgb-warning: 253 224 71;
+    --rgb-success: 94 234 212;
+    --rgb-info: 216 180 254;
+
+    --rgb-inverse:     243 244 246;
+    --rgb-inverse-ink:  17  24  39;
+
+    --border-alpha:       0.1;
+    --line-alpha:         0.1;
+    --raised-alpha:       0.06;
+    --hover-alpha:        0.04;
+    --shadow-alpha:       0.3;
+    --sunken-alpha:       0.06;
+
+    --unread-tint-alpha:  0.03;
+    --field-alpha:        0.4;
+    --field-border-alpha: 0.3;
+    --danger-soft-alpha:  0.12;
+    --info-soft-alpha:    0.12;
+
+    --app-bg: linear-gradient(to bottom right, #2e3440, #3b4252, #434c5e);
+
+    --rgb-sheet:            236 239 244;
+    --rgb-sheet-ink:         46  52  64;
+    --rgb-sheet-ink-soft:    66  70  78;
+    --rgb-sheet-ink-muted:  83 87 94;
+    --rgb-sheet-ink-faint:  104 107 113;
+
+    --rgb-sheet-link: 15 118 110;
+    --rgb-sheet-danger:     153  76  84;
+
+    --rgb-sheet-warning: 126 94 12;
+    --rgb-sheet-success: 11 101 95;
+    --rgb-sheet-info: 107 33 168;
 }
 
 /* Dusk — violet, and violet all the way down. The ink ramp had the same

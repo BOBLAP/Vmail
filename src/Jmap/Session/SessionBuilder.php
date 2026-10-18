@@ -7,6 +7,7 @@ namespace App\Jmap\Session;
 use App\Domain\Enum\Theme\BackgroundKind;
 use App\Domain\Enum\Theme\BackgroundPreset;
 use App\Domain\Enum\Theme\Density;
+use App\Domain\Enum\Theme\MessageBodySize;
 use App\Domain\Enum\Theme\FontFamily;
 use App\Domain\Enum\Theme\Layout;
 use App\Domain\Enum\Theme\LogoMotif;
@@ -349,6 +350,7 @@ final class SessionBuilder
             'logoMotifs' => array_column(LogoMotif::cases(), 'value'),
             'layouts' => array_column(Layout::cases(), 'value'),
             'densities' => array_column(Density::cases(), 'value'),
+            'messageBodySizes' => array_column(MessageBodySize::cases(), 'value'),
             'backgroundKinds' => array_column(BackgroundKind::cases(), 'value'),
             'backgroundPresets' => array_column(BackgroundPreset::cases(), 'value'),
             'unreadEmphases' => array_column(UnreadEmphasis::cases(), 'value'),

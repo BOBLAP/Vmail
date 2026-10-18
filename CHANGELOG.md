@@ -6,7 +6,15 @@ so anything that changes the schema irreversibly is called out explicitly.
 The published image tags: `latest` follows the most recent release below,
 `main` follows the tip of the default branch, and `sha-…` pins one commit.
 
-## Unreleased
+## Vinz 1.0.0 — 2026-10-18 (fork BOBLAP/Vmail)
+
+Theme Vinz, advanced search dialog, configurable message body height and code/UI
+documentation. Includes a Windows line-ending fix for the message frame CSP hash.
+See [release notes](docs/releases/Vinz-1.0.0.md) for installation and validation.
+This source release does not publish a Docker image; the image tags described
+above refer to upstream releases.
+
+## Unreleased (upstream)
 
 **A mail can go to Bcc recipients only.** Sending with nobody in To was refused with "Add at least
 one recipient before sending", even with addresses in Cc or Bcc: the window counted all three, but

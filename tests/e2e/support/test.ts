@@ -50,6 +50,14 @@ export const test = base.extend<object, { workerAuth: string }>({
             const context = await browser.newContext({
                 baseURL: workerInfo.project.use.baseURL,
             });
+            // A manually created context does not inherit the page fixture's
+            // configured timeouts either (notably on slow Windows mounts).
+            if (workerInfo.project.use.actionTimeout !== undefined) {
+                context.setDefaultTimeout(workerInfo.project.use.actionTimeout);
+            }
+            if (workerInfo.project.use.navigationTimeout !== undefined) {
+                context.setDefaultNavigationTimeout(workerInfo.project.use.navigationTimeout);
+            }
             const page = await context.newPage();
 
             await login(page, TEST_USER.email, TEST_USER.password);

@@ -1,0 +1,15 @@
+# Build Vinz from this checkout instead of using the upstream image.
+# docker compose -f compose.yaml -f compose.vinz.yaml up -d --build
+x-vinz-build: &vinz-build
+  image: pl-mail-vinz:local
+  build:
+    context: .
+    target: frankenphp_prod
+
+services:
+  secrets-init:
+    <<: *vinz-build
+  php:
+    <<: *vinz-build
+  worker:
+    <<: *vinz-build

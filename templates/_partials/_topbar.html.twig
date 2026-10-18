@@ -165,44 +165,57 @@
         data-open="false"
         data-ui--mobile-search-target="panel"
         data-controller="mail--search"
+        data-action="mail:advanced-search@document->mail--search#applyAdvanced"
         data-mail--search-suggest-url-value="{{ path('app_mail_search_suggest') }}"
         data-mail--search-recents-title-value="{{ 'header.search.recents.title'|trans }}"
         data-mail--search-operators-title-value="{{ 'header.search.suggestions.title'|trans }}"
     >
-        <div class="relative">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-sm pointer-events-none" aria-hidden="true"></i>
-            <input
-                type="search"
-                name="q"
-                value="{{ app.request.query.get('q', '') }}"
-                placeholder="{{ 'header.search.placeholder'|trans }}"
-                autocomplete="off"
-                {# role="combobox" and not the input's own type, which says
-                   nothing about the list underneath it. aria-expanded starts
-                   false and is written on every open and close: a combobox
-                   whose aria-expanded never changes announces a popup that is
-                   never there. #}
-                role="combobox"
-                aria-expanded="false"
-                aria-controls="search-listbox"
-                aria-haspopup="listbox"
-                {# "list", not "both": nothing is ever written into the box on
-                   the user's behalf, and claiming inline completion would have
-                   a screen reader expect selected text that is not there. #}
-                aria-autocomplete="list"
-                aria-label="{{ 'header.search.placeholder'|trans }}"
-                data-mail--search-target="input"
-                data-ui--mobile-search-target="field"
-                data-action="keydown->mail--search#onKeydown focus->mail--search#onFocus input->mail--search#onInput"
-                class="w-full pl-10 pr-4 py-2 text-sm
-                       bg-sunken
-                       border border-transparent rounded-xl
-                       text-ink
-                       placeholder:text-ink-faint
-                       focus:outline-none focus:ring-2 focus:ring-accent
-                       focus:bg-field
-                       transition-colors"
-            >
+        <div class="relative flex items-center gap-2">
+            <div class="relative flex-1 min-w-0">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-sm pointer-events-none" aria-hidden="true"></i>
+                <input
+                    type="search"
+                    name="q"
+                    value="{{ app.request.query.get('q', '') }}"
+                    placeholder="{{ 'header.search.placeholder'|trans }}"
+                    autocomplete="off"
+                    {# role="combobox" and not the input's own type, which says
+                       nothing about the list underneath it. aria-expanded starts
+                       false and is written on every open and close: a combobox
+                       whose aria-expanded never changes announces a popup that is
+                       never there. #}
+                    role="combobox"
+                    aria-expanded="false"
+                    aria-controls="search-listbox"
+                    aria-haspopup="listbox"
+                    {# "list", not "both": nothing is ever written into the box on
+                       the user's behalf, and claiming inline completion would have
+                       a screen reader expect selected text that is not there. #}
+                    aria-autocomplete="list"
+                    aria-label="{{ 'header.search.placeholder'|trans }}"
+                    data-mail--search-target="input"
+                    data-ui--mobile-search-target="field"
+                    data-action="keydown->mail--search#onKeydown focus->mail--search#onFocus input->mail--search#onInput"
+                    class="w-full pl-10 pr-4 py-2 text-sm
+                           bg-sunken
+                           border border-transparent rounded-xl
+                           text-ink
+                           placeholder:text-ink-faint
+                           focus:outline-none focus:ring-2 focus:ring-accent
+                           focus:bg-field
+                           transition-colors"
+                >
+            </div>
+            <button type="button"
+                    data-controller="ui--modal"
+                    data-ui--modal-src-value="{{ path('app_mail_search_advanced') }}"
+                    data-ui--modal-title-value="{{ 'search.advanced.title'|trans }}"
+                    data-action="click->mail--search#dismissSuggestions click->ui--modal#open"
+                    aria-label="{{ 'search.advanced.title'|trans }}"
+                    title="{{ 'search.advanced.title'|trans }}"
+                    class="shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-xl btn-quiet focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+            </button>
         </div>
 
         {# Three kinds of row, one popup. Recent searches and operator

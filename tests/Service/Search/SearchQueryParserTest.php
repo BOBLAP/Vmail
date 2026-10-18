@@ -55,6 +55,16 @@ final class SearchQueryParserTest extends TestCase
         self::assertSame('invoice', $parsed->freeText);
     }
 
+    public function testAdvancedSearchEscapesLiteralQuotesAndPreservesApostrophes(): void
+    {
+        $subject = 'report "Q4" \\ draft';
+        $parsed = $this->parser->parse('subject:'.json_encode($subject).' label:'.json_encode("Clients'"));
+
+        self::assertSame($subject, $parsed->subject);
+        self::assertSame("Clients'", $parsed->label);
+        self::assertSame('', $parsed->freeText);
+    }
+
     /**
      * Half-typed, which every query is on its way to being finished. An empty
      * value must not become a filter: `LIKE '%%'` matches every message, so the

@@ -1,5 +1,8 @@
 # Appearance
 
+For implementation, customization procedures and the local Docker workflow, see
+[Affichage et personnalisation](../PERSONNALISATION.md) (French maintenance guide).
+
 **Settings → Appearance** decides what plMail looks like for you and nobody else. Every control
 applies as you touch it and saves itself — there is no Save button on this page.
 
@@ -10,7 +13,7 @@ applies as you touch it and saves itself — there is no Save button on this pag
 The theme picks the palette; the layout picks how it is painted. They are independent, which is why
 they are two controls rather than one long list.
 
-**Theme** offers **System**, **Light**, **Paper**, **Dark**, **Nord**, **Dusk** and **Solar**, each
+**Theme** offers **System**, **Light**, **Paper**, **Dark**, **Nord**, **Vinz**, **Dusk** and **Solar**, each
 shown as a swatch of its own colours. A new account starts on **Paper** rather than System: "follow
 the OS" resolves to whichever of plain white or plain dark the machine happens to prefer, which are
 the two least considered palettes here. Picking System is still there for anyone who wants the
@@ -166,6 +169,11 @@ Somebody who has told their operating system that movement makes them ill has no
 its opinion.
 
 ## Density, and giving a pane its own
+
+**Message height** is a separate control: **Adaptive** fits the message content;
+**Compact**, **Cosy** and **Comfortable** provide fixed reading areas of 80, 200
+and 1080 pixels with scrolling. This applies to HTML and plain-text bodies, not
+attachments or warning bars. It is saved per user and included in appearance exports.
 
 **Density** is **Comfortable**, **Cosy** or **Compact**, and it sets row height and spacing across
 the app. Under it, the **Sidebar**, the **Message list** and the **Reading pane** can each **Follow**
@@ -354,3 +362,5 @@ the answer is a rejection rather than a partial apply.
 
 **Appearance is per user, not per device.** There is no way to have the dark theme on the phone and
 the light one on the desktop except by choosing **System** and letting each device decide.
+
+**Vinz** keeps Nord’s dark surfaces and light text, with deep teal buttons, orange hover tints, yellow warnings and violet information accents.

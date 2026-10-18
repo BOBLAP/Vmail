@@ -37,6 +37,12 @@ final class SearchController extends AbstractController
         private readonly ThreadRows              $threadRows,
     ) {}
 
+    #[Route('/advanced', name: '_advanced', methods: ['GET'])]
+    public function advanced(): Response
+    {
+        return $this->render('search/_advanced.html.twig');
+    }
+
     #[Route('', name: '', methods: ['GET'])]
     public function search(Request $request): Response
     {

@@ -151,6 +151,9 @@ export default class extends Controller {
     }
 
     _closeOnOutside(event) {
+        // Advanced search is a child interaction of this panel, rendered in
+        // the shared body-level modal. Keep its opener visible on return.
+        if (event.target.closest('[data-ui--modal-dialog]')) return;
         if (false === this._isOpen() || this.element.contains(event.target)) {
             return;
         }
@@ -159,6 +162,7 @@ export default class extends Controller {
     }
 
     _closeOnEscape(event) {
+        if (event.target.closest('[data-ui--modal-dialog]')) return;
         if ('Escape' !== event.key || false === this._isOpen()) {
             return;
         }

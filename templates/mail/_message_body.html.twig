@@ -188,7 +188,7 @@ Variables:
                 referrerpolicy="no-referrer"
                 loading="lazy"
                 class="w-full block border-0 bg-transparent"
-                style="height: 80px;"
+                style="height: {{ appearance().messageBodySize.height ?? 80 }}px;"
                 srcdoc="{{ frameDocument|e('html') }}"
             ></iframe>
 
@@ -203,7 +203,7 @@ Variables:
     {% elseif render.text %}
         {# No HTML body: plain text needs no sandbox, because there is no markup
            to sandbox. Twig escapes it, so it is text all the way down. #}
-        <pre class="mail-sheet whitespace-pre-wrap break-words font-sans text-sm">{{ render.text }}</pre>
+        <pre class="mail-body-text mail-sheet whitespace-pre-wrap break-words font-sans text-sm">{{ render.text }}</pre>
     {% endif %}
 
     {% if render.senderTrusted and render.content.allowed > 0 %}

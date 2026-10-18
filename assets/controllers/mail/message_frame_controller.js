@@ -25,6 +25,10 @@ export default class extends Controller {
         this.onMessage = this.handleMessage.bind(this);
         window.addEventListener("message", this.onMessage);
 
+        this.sizes = new MutationObserver(() => this.applySize());
+        this.sizes.observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
+        this.applySize();
+
         // The frame may already have loaded before this controller connected —
         // srcdoc content is parsed synchronously and Stimulus connects on the
         // next microtask, so `load` can be gone by the time we could listen,
@@ -43,6 +47,23 @@ export default class extends Controller {
 
     disconnect() {
         window.removeEventListener("message", this.onMessage);
+        this.sizes?.disconnect();
+        if (this.hasFrameTarget) this.frameTarget.removeEventListener("load", this.sync);
+    }
+
+    fixedHeight() {
+        const value = getComputedStyle(document.documentElement).getPropertyValue("--message-body-height").trim();
+        return /^\d+px$/.test(value) ? Number.parseInt(value, 10) : null;
+    }
+
+    applySize() {
+        const height = this.fixedHeight();
+        if (this.configuredHeight === height) return;
+        this.configuredHeight = height;
+        // Reset the viewport before remeasuring: scrollHeight cannot shrink
+        // below its previous viewport when returning from a fixed size.
+        this.frameTarget.style.height = `${height ?? this.minHeightValue}px`;
+        if (height === null) this.post({ plmail: "measure" });
     }
 
     handleMessage(event) {
@@ -56,7 +77,7 @@ export default class extends Controller {
 
         if (data.plmail === "height") {
             const height = Number(data.height);
-            if (Number.isFinite(height) && height > 0) {
+            if (this.fixedHeight() === null && Number.isFinite(height) && height > 0) {
                 this.frameTarget.style.height = `${Math.max(height, this.minHeightValue)}px`;
             }
         }

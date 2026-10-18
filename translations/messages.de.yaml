@@ -2615,6 +2615,8 @@ pull_to_refresh:
 search:
     advanced:
         title: 'Erweiterte Suche'
+        after: 'Ab dem (einschließlich)'
+        before: 'Vor dem (ausschließlich)'
         hint: 'Ausgefüllte Felder werden zu Filtern. Andere Suchbegriffe bleiben erhalten.'
         from: 'Von'
         to: 'An'

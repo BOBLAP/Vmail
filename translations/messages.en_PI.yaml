@@ -2489,6 +2489,8 @@ pull_to_refresh:
 search:
     advanced:
         title: 'Advanced treasure hunt'
+        after: 'On or after this day (included)'
+        before: 'Before this day (excluded)'
         hint: 'Filled fields become filters. Other search terms stay aboard.'
         from: 'From'
         to: 'To'

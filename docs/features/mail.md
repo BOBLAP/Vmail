@@ -506,6 +506,8 @@ is not offered when the action ran over a whole view in the background.
 
 The advanced-search button to the right of the search box opens a dialog for
 sender, recipient, Cc, subject and label, plus attachment and read/unread filters.
+Date inputs generate `after:YYYY-MM-DD` (inclusive) and `before:YYYY-MM-DD`
+(exclusive). Existing dates fill these inputs; clearing one removes its filter.
 Submitting writes the corresponding operators into the search box and runs the
 search. Existing free text and other operators are retained; opening the dialog
 again fills its fields from the current query. Read and unread are exclusive.

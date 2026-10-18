@@ -11,6 +11,8 @@ test('advanced fields become search operators and survive reload', async ({ page
     await page.locator(trigger).click();
     const form = page.locator(advanced);
     await expect(form).toBeVisible();
+    await expect(form.locator('[name="after"]')).toHaveValue('2026-01-01');
+    await form.locator('[name="before"]').fill('2026-09-01');
     for (const [name, value] of Object.entries({ from: 'alice', to: 'bob', cc: 'carol', subject: 'Q4 report', label: 'Team work' })) {
         await form.locator(`[name="${name}"]`).fill(value);
     }
@@ -20,7 +22,7 @@ test('advanced fields become search operators and survive reload', async ({ page
     await expect(form.locator('[name="read"]')).not.toBeChecked();
     await page.screenshot({ path: testInfo.outputPath('advanced-search.png') });
     await form.locator('button[type="submit"]').click();
-    const query = 'quarterly after:2026-01-01 from:alice to:bob cc:carol subject:"Q4 report" label:"Team work" has:attachment is:unread';
+    const query = 'quarterly from:alice to:bob cc:carol subject:"Q4 report" label:"Team work" after:2026-01-01 before:2026-09-01 has:attachment is:unread';
     await expect(page).toHaveURL(new RegExp('/mail/search\\?q='));
     expect(new URL(page.url()).searchParams.get('q')).toBe(query);
     await expect(page.locator(box)).toHaveValue(query);
@@ -28,6 +30,8 @@ test('advanced fields become search operators and survive reload', async ({ page
     await page.locator(trigger).click();
     await expect(page.locator(advanced).locator('[name="subject"]')).toHaveValue('Q4 report');
     await expect(page.locator(advanced).locator('[name="attachment"]')).toBeChecked();
+    await expect(page.locator(advanced).locator('[name="after"]')).toHaveValue('2026-01-01');
+    await expect(page.locator(advanced).locator('[name="before"]')).toHaveValue('2026-09-01');
     await page.keyboard.press('Escape');
     await expect(page.locator('#modal-backdrop')).toBeHidden();
     await expect(page.locator(trigger)).toBeFocused();

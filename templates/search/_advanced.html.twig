@@ -18,6 +18,14 @@
                            class="w-full h-9 px-3 rounded-lg border border-field bg-field text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent">
                 </div>
             {% endfor %}
+            {% for field in ['after', 'before'] %}
+                <div>
+                    <label for="advanced-search-{{ field }}" class="block mb-1.5 text-sm font-medium text-ink-soft">{{ ('search.advanced.' ~ field)|trans }}</label>
+                    <input type="date" id="advanced-search-{{ field }}" name="{{ field }}"
+                           data-mail--advanced-search-target="field"
+                           class="w-full min-w-0 h-9 px-3 rounded-lg border border-field bg-field text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent">
+                </div>
+            {% endfor %}
             <div class="space-y-3 pt-1">
                 {% for field in ['attachment', 'unread', 'read'] %}
                     <label class="flex items-center gap-2.5 text-sm text-ink-soft">

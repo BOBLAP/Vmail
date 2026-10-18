@@ -179,6 +179,9 @@ Actualiser cet inventaire quand un composant, un contrat ou un usage change.
 
 Les tests autonomes de conversion de recherche se lancent avec
 `node --experimental-default-type=module --test tests/js/advanced-search.test.mjs`.
+La modale propose aussi deux champs date : `after` (borne incluse) et `before`
+(borne exclue), transmis en `YYYY-MM-DD`. Les tags existants préremplissent les
+champs ; vider une date retire son filtre à la validation.
 La modale conserve les termes hors de ses champs, les valeurs avec espaces ou
 guillemets et rend exclusifs lu/non lu. Elle émet `mail:advanced-search` vers le
 contrôleur de recherche, qui réutilise sa navigation et son historique existants.

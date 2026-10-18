@@ -2629,6 +2629,8 @@ pull_to_refresh:
 search:
     advanced:
         title: 'Advanced search'
+        after: 'On or after (inclusive)'
+        before: 'Before (exclusive)'
         hint: 'Filled fields become filters. Other search terms are kept.'
         from: 'From'
         to: 'To'

@@ -2642,6 +2642,8 @@ pull_to_refresh:
 search:
     advanced:
         title: 'Recherche avancée'
+        after: 'À partir du (inclus)'
+        before: 'Avant le (exclu)'
         hint: 'Les champs renseignés deviennent des filtres. Les autres termes de la recherche sont conservés.'
         from: 'Expéditeur'
         to: 'Destinataire'

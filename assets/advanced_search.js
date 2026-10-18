@@ -1,6 +1,6 @@
-// Only the fields this dialog edits are replaced; dates, starred state and
+// Only the fields this dialog edits are replaced; starred state and
 // free text survive opening and submitting it. Keep quoted values as one token.
-export const TEXT_FILTERS = ["from", "to", "cc", "subject", "label"];
+export const TEXT_FILTERS = ["from", "to", "cc", "subject", "label", "after", "before"];
 
 export function readAdvancedSearch(query) {
     const fields = {};
@@ -8,7 +8,7 @@ export function readAdvancedSearch(query) {
     const tokens = query.match(/(?:[^\s"]|"(?:\\.|[^"\\])*")+/g) ?? [];
 
     for (const token of tokens) {
-        const match = token.match(/^(from|to|cc|subject|label):(.+)$/i);
+        const match = token.match(/^(from|to|cc|subject|label|after|before):(.+)$/i);
         if (match) {
             let value = match[2];
             if (value.startsWith('"') && value.endsWith('"')) {

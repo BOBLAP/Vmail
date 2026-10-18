@@ -7,7 +7,7 @@ test('keeps free text and unsupported dialog filters while replacing edited filt
     assert.equal(fields.label, 'Team work');
     assert.equal(fields.attachment, true);
     assert.equal(writeAdvancedSearch({ ...fields, from: 'new', attachment: false }, rest),
-        'quarterly after:2026-01-01 is:starred from:new label:"Team work"');
+        'quarterly is:starred from:new label:"Team work" after:2026-01-01');
 });
 
 test('quotes values that contain spaces, operators, literal quotes or backslashes', () => {
@@ -21,4 +21,13 @@ test('does not emit empty fields or contradictory read filters', () => {
     assert.equal(writeAdvancedSearch({ from: '  ', read: true, unread: true }), 'is:unread');
     assert.equal(writeAdvancedSearch({}), '');
     assert.deepEqual(readAdvancedSearch('is:unread is:read').fields, { unread: false, read: true });
+});
+
+test('loads, replaces and clears date filters without keeping stale date tags', () => {
+    const { fields, rest } = readAdvancedSearch('invoice after:2026-01-01 before:2026-09-01 is:starred');
+    assert.equal(fields.after, '2026-01-01');
+    assert.equal(fields.before, '2026-09-01');
+    assert.equal(writeAdvancedSearch({ ...fields, after: '', before: '2026-10-01' }, rest),
+        'invoice is:starred before:2026-10-01');
+    assert.equal(writeAdvancedSearch({ after: '', before: '' }, rest), 'invoice is:starred');
 });

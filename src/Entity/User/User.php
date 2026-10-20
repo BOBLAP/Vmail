@@ -1047,6 +1047,16 @@ class User extends UserEntityModel implements UserInterface, PasswordAuthenticat
         }
     }
 
+    public const string SETTING_REMOTE_HTTPS_ONLY = 'security.remote_https_only';
+
+    /** Remote content is HTTPS-only unless the reader explicitly opts out. */
+    public bool $remoteHttpsOnly {
+        get => false !== $this->getSetting(self::SETTING_REMOTE_HTTPS_ONLY, true);
+        set(bool $on) {
+            $this->setSetting(self::SETTING_REMOTE_HTTPS_ONLY, $on ? null : false);
+        }
+    }
+
     /**
      * Whether remote images load in every message without the "Show images"
      * bar, as if every sender were on the allowlist (#124).

@@ -60,11 +60,17 @@ class ThreadStatusController extends AbstractController
         $messages = $this->resolveMessages($request, $type, $id);
         $message  = $messages[0];
 
-        $this->status->star($messages);
+        /** @var User $user */
+        $user = $this->getUser();
+        $this->status->star($messages, $user->appearance->starColors, 'thread' === $type);
 
-        return $this->renderTurboStream('thread/status/_star.stream.html.twig', [
+        $response = $this->renderTurboStream('thread/status/_star.stream.html.twig', [
             $type => 'message' === $type ? $message : $message->thread,
         ]);
+        $subject = 'thread' === $type ? $message->thread : $message;
+        $response->headers->set('X-Star-Color', (string) (null === $subject->starredAt ? 0 : ($user->appearance->starColors ? max(1, $subject->starColor) : 1)));
+
+        return $response;
     }
 
     #[Route('/archive', name: 'archive', methods: ['POST'])]

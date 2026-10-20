@@ -94,6 +94,10 @@ class MessageThread
     #[ORM\Column(nullable: true)]
     public ?\DateTimeImmutable $starredAt = null;
 
+    /** Local colour index; provider flags continue to use the usual starred status. */
+    #[ORM\Column(type: 'smallint', options: ['default' => 0])]
+    public int $starColor = 0;
+
     #[ORM\Column]
     public int $attachmentCount = 0;
 

@@ -116,7 +116,7 @@ final readonly class MessageRenderer
         // are pure display transformations over the same safe HTML — the image
         // counts the blocker measured are about images, so wrapping a quote
         // leaves them untouched.
-        $blocked = $this->blocker->rewrite($message->bodyHtmlSafe, $allow);
+        $blocked = $this->blocker->rewrite($message->bodyHtmlSafe, $allow, $user instanceof User ? $user->remoteHttpsOnly : true);
         $content = new RemoteContent(
             $this->quoteCollapser->collapse($blocked->html),
             $blocked->blocked,

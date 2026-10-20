@@ -4292,3 +4292,34 @@ whats_new:
     screenshot_close: 'Stow the likeness'
     screenshot_open: 'Open the likeness full size'
     title: 'What''s new aboard'
+
+settings.appearance.star_colors: Coloured stars
+settings.appearance.star_colors_hint: Yellow → orange → red → green → turquoise → navy → black → unstarred. Turn off for standard On/Off stars.
+
+settings.appearance.logo.motif.vinz: Vinz
+
+settings.appearance.label_style.heading: "Label style"
+settings.appearance.label_style.hint: "Choose outlined labels or a solid background in the label colour."
+settings.appearance.label_style.subtle: "Subtle"
+settings.appearance.label_style.plain: "Plain"
+
+settings.appearance.density.neat: "Neat"
+settings.appearance.invert_message_panel: "Invert message panel"
+settings.appearance.invert_message_panel_hint: "In dark themes, use a light central panel with black text."
+settings.appearance.message_panel_contrast: "Contrast strength"
+settings.appearance.panel_grey: "Mid grey"
+settings.appearance.panel_white: "White"
+
+attachment.office.preparing: "Preparing preview…"
+attachment.office.too_large: "This file exceeds the 25 MB preview limit. You can still download it."
+attachment.office.busy: "Another preview is being prepared. Please try again in a few seconds."
+attachment.office.unavailable: "Preview is temporarily unavailable. You can download the original file."
+attachment.office.failed: "This document could not be converted. It may be protected, damaged or too complex. You can download the original."
+
+content_security:
+    heading: 'Remote content'
+    https_only: 'Only download HTTPS content'
+    hint: 'Blocks HTTP images and backgrounds in emails, including after redirects. Attachments remain available. HTTPS certificates are always verified.'
+
+message_panel_opacity:
+    label: 'Opacity'

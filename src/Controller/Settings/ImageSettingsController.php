@@ -34,6 +34,20 @@ final class ImageSettingsController extends AbstractController
 {
     use ChecksCsrf;
 
+    #[Route('/settings/security/content', name: 'app_settings_content_security_update', methods: ['POST'])]
+    public function updateSecurity(Request $request, EntityManagerInterface $em): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $this->assertCsrf($request, 'settings-content-security');
+        if ($request->request->has('httpsOnly')) {
+            $user->remoteHttpsOnly = '1' === (string) $request->request->get('httpsOnly');
+        }
+        $em->flush();
+
+        return $this->redirectToRoute('app_settings_index', ['section' => 'security']);
+    }
+
     #[Route('/settings/images', name: 'app_settings_images_update', methods: ['POST'])]
     public function update(Request $request, EntityManagerInterface $em): Response
     {

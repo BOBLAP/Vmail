@@ -194,6 +194,11 @@ export default class extends Controller {
      * contract the checkbox kept, with the radio's own value ('1' = shown)
      * standing in for `checked`.
      */
+    toggleStarColors(event) {
+        this.element.querySelector('[data-settings--appearance-field="starColors"]').value = event.currentTarget.checked ? '1' : '0';
+        this.queue();
+    }
+
     toggleListOption(event) {
         const input = event.currentTarget;
         const on = input.value === '1';
@@ -239,6 +244,20 @@ export default class extends Controller {
         reading: { 'row-y': 'readingRowY', gap: 'gap' },
     };
 
+    invertMessagePanel() {
+        const enabled = this.element.querySelector('[data-panel-invert-switch]').checked;
+        const contrast = Number(this.element.querySelector('[data-settings--appearance-field="messagePanelContrast"]').value);
+        this.element.querySelector('[data-settings--appearance-field="invertMessagePanel"]').value = enabled ? '1' : '0';
+        this.element.querySelector('[data-panel-contrast-output]').textContent = `${contrast}%`;
+        this.root.classList.toggle('invert-message-panel', enabled);
+        const opacity = Number(this.element.querySelector('[data-settings--appearance-field="messagePanelOpacity"]').value);
+        this.element.querySelector('[data-panel-opacity-output]').textContent = `${opacity}%`;
+        this.root.style.setProperty('--message-panel-opacity', `${opacity}%`);
+        const grey = Math.round(128 + 127 * contrast / 100);
+        this.root.style.setProperty('--message-panel-grey', `${grey} ${grey} ${grey}`);
+        this.queue();
+    }
+
     pickSurfaceDensity() {
         this.refreshSurfaces();
         this.queue();
@@ -256,7 +275,11 @@ export default class extends Controller {
                 `[data-surface-density="${surface}"]:checked`,
             );
 
-            const source = chosen && chosen.value !== ''
+            if (surface === 'list') {
+                this.root.classList.toggle('list-neat', chosen?.value === 'neat');
+            }
+
+            const source = chosen?.value === 'neat' ? chosen : chosen && chosen.value !== ''
                 ? this.element.querySelector(
                     `[data-settings--appearance-field="density"][value="${chosen.value}"]`,
                 )

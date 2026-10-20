@@ -24,6 +24,43 @@ use Symfony\Component\HttpClient\Response\MockResponse;
  */
 final class ImageProxyFetcherTest extends TestCase
 {
+    public function testHttpsPolicyCannotBeBypassedByRedirectOrCache(): void
+    {
+        $client = new MockHttpClient([
+            new MockResponse('', ['http_code' => 302, 'response_headers' => ['location' => 'http://93.184.216.34/pixel.png']]),
+        ]);
+        $fetcher = new ImageProxyFetcher($client, new NullLogger(), sys_get_temp_dir() . '/https-policy-' . bin2hex(random_bytes(4)));
+        self::assertNull($fetcher->fetch('https://93.184.216.34/redirect.png'));
+        self::assertSame(1, $client->getRequestsCount(), 'No HTTP hop may be attempted.');
+    }
+
+    public function testExplicitOptOutAllowsHttpButStrictModeCannotReadItsCache(): void
+    {
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=');
+        $client = new MockHttpClient(static fn () => new MockResponse($png, ['response_headers' => ['content-type' => 'image/png']]));
+        $fetcher = new ImageProxyFetcher($client, new NullLogger(), sys_get_temp_dir() . '/https-policy-' . bin2hex(random_bytes(4)));
+        self::assertNotNull($fetcher->fetch('http://93.184.216.34/pixel.png', false));
+        self::assertNull($fetcher->fetch('http://93.184.216.34/pixel.png'));
+        self::assertSame(1, $client->getRequestsCount());
+        self::assertNull($fetcher->fetch('http://127.0.0.1/pixel.png', false));
+        self::assertSame(1, $client->getRequestsCount(), 'Opt-out must retain SSRF protection.');
+    }
+
+    public function testPermissiveRedirectCacheIsNotSharedWithStrictMode(): void
+    {
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=');
+        $client = new MockHttpClient(static function (string $method, string $url) use ($png): MockResponse {
+            return str_starts_with($url, 'https:')
+                ? new MockResponse('', ['http_code' => 302, 'response_headers' => ['location' => 'http://93.184.216.34/pixel.png']])
+                : new MockResponse($png, ['response_headers' => ['content-type' => 'image/png']]);
+        });
+        $fetcher = new ImageProxyFetcher($client, new NullLogger(), sys_get_temp_dir() . '/https-policy-' . bin2hex(random_bytes(4)));
+        self::assertNotNull($fetcher->fetch('https://93.184.216.34/redirect.png', false));
+        self::assertSame(2, $client->getRequestsCount());
+        self::assertNull($fetcher->fetch('https://93.184.216.34/redirect.png'));
+        self::assertSame(3, $client->getRequestsCount());
+    }
+
     private ImageProxyFetcher $fetcher;
 
     protected function setUp(): void

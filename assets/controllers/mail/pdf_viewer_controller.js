@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import { jsonCsrfHeaders } from "../../csrf.js";
 
 /**
  * Reads a PDF attachment in the browser.
@@ -6,6 +7,7 @@ import { Controller } from "@hotwired/stimulus";
  * | Values  |                                                              |
  * |---------|--------------------------------------------------------------|
  * | src     | the attachment route the bytes are fetched from              |
+ * | method  | GET for original PDFs, CSRF-protected POST for Office PDFs    |
  * | assets  | {lib, worker, cMaps, fonts, wasm} — see App\Twig\PdfJsExtension |
  * | failedText | what to say when the document will not open, translated  |
  *
@@ -45,7 +47,7 @@ import { Controller } from "@hotwired/stimulus";
  */
 export default class extends Controller {
     static targets = ["stack", "pages", "scroller", "status"];
-    static values = { src: String, assets: Object, failedText: String };
+    static values = { src: String, assets: Object, failedText: String, method: { type: String, default: "GET" } };
 
     async connect() {
         this._doc = null;
@@ -165,10 +167,19 @@ export default class extends Controller {
         pdfjs.GlobalWorkerOptions.workerSrc = assets.worker;
         pdfjs.GlobalWorkerOptions.workerPort = this._port;
 
-        const response = await fetch(this.srcValue, { credentials: "same-origin" });
+        const options = { credentials: "same-origin", method: this.methodValue };
+        if (this.methodValue === "POST") {
+            options.headers = jsonCsrfHeaders();
+        }
+        const response = await fetch(this.srcValue, options);
 
         if (false === response.ok) {
-            throw new Error(`attachment responded ${response.status}`);
+            const failure = new Error(`attachment responded ${response.status}`);
+            if (this.methodValue === "POST" && response.headers.get("content-type")?.includes("application/json")) {
+                const detail = await response.json();
+                if (typeof detail.message === "string") failure.userMessage = detail.message;
+            }
+            throw failure;
         }
 
         // Kept whole. pdf.js DETACHES the buffer it is given as `data`, and the
@@ -348,7 +359,7 @@ export default class extends Controller {
 
         const text = document.createElement("p");
         text.className = "text-sm";
-        text.textContent = this.failedTextValue;
+        text.textContent = error.userMessage || this.failedTextValue;
 
         this.statusTarget.append(icon, text);
     }

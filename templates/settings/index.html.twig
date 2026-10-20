@@ -156,6 +156,7 @@
                                         { section: 'labels',        icon: 'fa-solid fa-tag' },
                                         { section: 'filters',       icon: 'fa-solid fa-filter' },
                                         { section: 'disposal',      icon: 'fa-solid fa-trash-can' },
+                                        { section: 'security',      icon: 'fa-solid fa-shield-halved' },
                                         { section: 'images',        icon: 'fa-regular fa-image' },
                                         { section: 'insights',      icon: 'fa-solid fa-satellite-dish' },
                                     ]|merge(ai_settings_available() or section == 'ai'
@@ -175,7 +176,6 @@
                                     { label: 'settings.nav.group.access', items: [
                                         { section: 'integrations',  icon: 'fa-solid fa-plug' },
                                         { section: 'app-passwords', icon: 'fa-solid fa-key',   label: 'settings.nav.app_passwords' },
-                                        { section: 'security',      icon: 'fa-solid fa-shield-halved' },
                                     ] },
                                 ] %}
 
@@ -331,6 +331,7 @@
                                            settings/_password.stream.html.twig
                                            identically. #}
                                         <div class="space-y-4">
+                                            {% include 'settings/_content_security.html.twig' %}
                                             <div id="settings-password">
                                                 {% include 'settings/_password.html.twig' %}
                                             </div>

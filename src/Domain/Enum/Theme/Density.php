@@ -9,6 +9,7 @@ enum Density: string
     case Comfortable = 'comfortable';
     case Cosy        = 'cosy';
     case Compact     = 'compact';
+    case Neat        = 'neat';
 
     /**
      * Vertical padding for one row of the SHELL — which in practice means the
@@ -32,7 +33,7 @@ enum Density: string
         return match ($this) {
             self::Comfortable => '0.5rem',
             self::Cosy        => '0.375rem',
-            self::Compact     => '0.25rem',
+            self::Compact, self::Neat => '0.25rem',
         };
     }
 
@@ -51,7 +52,7 @@ enum Density: string
         return match ($this) {
             self::Comfortable => '0.375rem',
             self::Cosy        => '0.25rem',
-            self::Compact     => '0.125rem',
+            self::Compact, self::Neat => '0.125rem',
         };
     }
 
@@ -68,7 +69,7 @@ enum Density: string
         return match ($this) {
             self::Comfortable => '0.75rem',
             self::Cosy        => '0.5rem',
-            self::Compact     => '0.375rem',
+            self::Compact, self::Neat => '0.375rem',
         };
     }
 
@@ -84,7 +85,7 @@ enum Density: string
         return match ($this) {
             self::Comfortable => '0.125rem',
             self::Cosy        => '0.0625rem',
-            self::Compact     => '0',
+            self::Compact, self::Neat => '0',
         };
     }
 
@@ -100,7 +101,7 @@ enum Density: string
         return match ($this) {
             self::Comfortable => '1rem',
             self::Cosy        => '0.75rem',
-            self::Compact     => '0.5rem',
+            self::Compact, self::Neat => '0.5rem',
         };
     }
 
@@ -120,7 +121,7 @@ enum Density: string
         return match ($this) {
             self::Comfortable => '0.625rem',
             self::Cosy        => '0.4375rem',
-            self::Compact     => '0.25rem',
+            self::Compact, self::Neat => '0.25rem',
         };
     }
 
@@ -135,7 +136,7 @@ enum Density: string
         return match ($this) {
             self::Comfortable => '1rem',
             self::Cosy        => '0.75rem',
-            self::Compact     => '0.5rem',
+            self::Compact, self::Neat => '0.5rem',
         };
     }
 }

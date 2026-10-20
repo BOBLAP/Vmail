@@ -6,6 +6,11 @@ namespace App\Controller\Mail;
 
 use App\Domain\Helper\InlineDisposition;
 use App\Domain\Helper\PdfAttachment;
+use App\Domain\Helper\OfficeAttachment;
+use App\Service\Mail\OfficePreviewConverter;
+use App\Service\Mail\OfficePreviewException;
+use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use App\Entity\Mail\MessagePart;
 use App\Security\Voter\OwnershipVoter;
 use App\Service\Mail\AttachmentResolver;
@@ -26,37 +31,69 @@ final class AttachmentController extends AbstractController
         private readonly AttachmentThumbnailer $thumbnailer,
     ) {}
 
-    /**
-     * The reader for a PDF attachment, rendered into the modal frame.
-     *
-     * Returns the viewer's HTML, not the document — the bytes are fetched by
-     * the browser from serve(), which is unchanged. That is the whole reason
-     * this feature needs no change to how attachments are served: `fetch()`
-     * ignores Content-Disposition, so a PDF can stay `attachment` (as
-     * InlineDisposition insists) and still be read. Widening the inline
-     * allow-list to admit application/pdf would hand mail-controlled bytes to
-     * the browser's own PDF plugin, which is precisely the "future widening is
-     * a bug" that helper's docblock warns about.
-     *
-     * 404 rather than a refusal for a non-PDF: there is no viewer for it, so
-     * the route does not exist for that part. The chip only renders this link
-     * where attachment_is_pdf() agrees, so reaching it otherwise means somebody
-     * typed the URL.
-     *
-     * Rendering PDFs in the browser rather than on the server is a standing
-     * decision, not a shortcut — see AttachmentThumbnailer's docblock and the
-     * README beside the vendored library under public/pdfjs.
-     */
+    /** The shared reader: native PDFs stay in the browser; Office bytes are converted separately. */
     #[Route('/mail/attachment/{id}/preview', name: 'app_mail_attachment_preview', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function preview(MessagePart $part): Response
+    public function preview(MessagePart $part, OfficePreviewConverter $converter): Response
     {
         $this->denyAccessUnlessGranted(OwnershipVoter::OWN, $part);
 
-        if (false === PdfAttachment::matches($part->contentType, $part->filename)) {
+        $isPdf = PdfAttachment::matches($part->contentType, $part->filename);
+        if (!$isPdf && (!$converter->enabled() || null === OfficeAttachment::extension($part->contentType, $part->filename))) {
             throw $this->createNotFoundException();
         }
 
-        return $this->render('mail/_attachment_preview.html.twig', ['part' => $part]);
+        return $this->render('mail/_attachment_preview.html.twig', ['part' => $part, 'isOffice' => !$isPdf]);
+    }
+
+    /** The expensive operation is a CSRF-protected POST, never an automatic email thumbnail. */
+    #[Route('/mail/attachment/{id}/preview.pdf', name: 'app_mail_attachment_office_pdf', methods: ['POST'], requirements: ['id' => '\\d+'])]
+    public function officePdf(
+        MessagePart $part,
+        Request $request,
+        OfficePreviewConverter $converter,
+        TranslatorInterface $translator,
+        LoggerInterface $logger,
+    ): Response {
+        $this->denyAccessUnlessGranted(OwnershipVoter::OWN, $part);
+        if (!$this->isCsrfTokenValid('ajax', $request->headers->get('X-CSRF-Token'))) {
+            throw $this->createAccessDeniedException();
+        }
+        $extension = OfficeAttachment::extension($part->contentType, $part->filename);
+        if (null === $extension) {
+            throw $this->createNotFoundException();
+        }
+        // Release the session lock before conversion so other tabs can keep using mail.
+        if ($request->hasSession() && $request->getSession()->isStarted()) {
+            $request->getSession()->save();
+        }
+        try {
+            if (!$converter->enabled()) {
+                throw new OfficePreviewException('attachment.office.unavailable', 503);
+            }
+            if (($part->size ?? 0) > OfficePreviewConverter::MAX_INPUT_BYTES) {
+                throw new OfficePreviewException('attachment.office.too_large', 413);
+            }
+            $source = $this->attachmentResolver->absolutePathFor($part);
+            $path = $converter->pdfPath($source, (int) $part->id, $extension);
+        } catch (OfficePreviewException $error) {
+            $logger->warning('Office preview failed', ['partId' => $part->id, 'exception' => $error]);
+            $response = $this->json(['message' => $translator->trans($error->translationKey)], $error->status);
+            $response->headers->set('Cache-Control', 'private, no-store');
+            if (429 === $error->status) {
+                $response->headers->set('Retry-After', '5');
+            }
+            return $response;
+        } catch (\Throwable $error) {
+            $logger->warning('Office attachment unavailable', ['partId' => $part->id, 'exception' => $error]);
+            return $this->json(['message' => $translator->trans('attachment.office.unavailable')], 503, ['Cache-Control' => 'private, no-store']);
+        }
+        $response = new BinaryFileResponse($path);
+        $response->headers->set('Content-Type', 'application/pdf');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Content-Security-Policy', InlineDisposition::SANDBOX_CSP);
+        $response->headers->set('Cache-Control', 'private, no-store');
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'preview.pdf');
+        return $response;
     }
 
     /**

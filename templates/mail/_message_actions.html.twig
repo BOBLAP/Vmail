@@ -16,11 +16,24 @@ Variables:
     ? { frame: 'compose_inline', thread: message.thread.id }
     : {} %}
 
+<a href="{{ path('app_compose_reply', composeParams|merge({ id: message.id })) }}"
+   data-message-quick-reply
+   data-turbo-frame="{{ composeFrame }}"
+   data-controller="compose--frame-target"
+   data-turbo-prefetch="false"
+   aria-label="{{ 'compose.reply'|trans }}"
+   title="{{ 'compose.reply'|trans }}"
+   class="flex items-center justify-center w-8 h-8 rounded-full text-ink-muted hover:text-ink hover:bg-hover
+          transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+    <i class="fa-solid fa-reply text-sm" aria-hidden="true"></i>
+</a>
+
 <div
     class="relative"
     data-controller="mail--message-actions"
     data-mail--message-actions-entity-id-value="{{ message.id }}"
     data-mail--message-actions-entity-type-value="message"
+    data-mail--message-actions-star-color-value="{{ starred ? (appearance().starColors ? max(1, message.starColor) : 1) : 0 }}"
     data-mail--message-actions-starred-value="{{ starred ? 'true' : 'false' }}"
 >
     <button

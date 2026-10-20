@@ -12,6 +12,7 @@ use App\Domain\Enum\Mail\LabelRole;
 use App\Domain\Enum\Mail\MessageCategory;
 use App\Entity\Mail\InboxCategory;
 use App\Domain\Enum\Mail\MessageFlag;
+use App\Domain\Enum\Mail\StarColor;
 use App\Entity\Label\Label;
 use App\Entity\Mail\Account;
 use App\Entity\Mail\Message;
@@ -100,10 +101,15 @@ final readonly class ThreadStatusUpdater
      *
      * @return bool whether the set is starred now
      */
-    public function star(array $messages): bool
+    public function star(array $messages, bool $colors = false, bool $thread = false): bool
     {
         $message = $messages[0];
-        $starred = null === $message->starredAt;
+        $subject = $thread ? $message->thread : $message;
+        $wasStarred = null !== $subject->starredAt;
+        $color = $colors ? StarColor::next($wasStarred, $subject->starColor) : ($wasStarred ? 0 : 1);
+        $starred = 0 !== $color;
+        $message->starColor = $color;
+        $message->thread->starColor = $color;
 
         if (true === $starred) {
             $message->addFlag(MessageFlag::FLAGGED);
@@ -115,7 +121,9 @@ final readonly class ThreadStatusUpdater
             $message->thread->starredAt = null;
         }
 
-        $this->propagator->star($messages, $starred);
+        if ($wasStarred !== $starred) {
+            $this->propagator->star($messages, $starred);
+        }
         $this->recordJmapUpdates($messages);
         $this->em->flush();
 

@@ -599,6 +599,15 @@
             <i class="fa-solid fa-rotate text-base" data-mail--sync-now-target="icon" aria-hidden="true"></i>
         </button>
 
+        <a href="{{ path('app_settings_index', accountHealth.attention ? { section: 'health' } : {}) }}"
+           data-topbar-settings
+           aria-label="{{ 'header.user_menu.settings'|trans }}"
+           title="{{ 'header.user_menu.settings'|trans }}"
+           class="flex items-center justify-center w-9 h-9 rounded-lg text-ink-muted hover:bg-hover transition-colors flex-shrink-0
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <i class="fa-solid fa-gear text-base" aria-hidden="true"></i>
+        </a>
+
         {# User menu #}
         {#
         Outlined when something has been logged at warning or worse that this

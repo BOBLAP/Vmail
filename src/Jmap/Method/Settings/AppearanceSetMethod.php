@@ -8,6 +8,7 @@ use App\Domain\Enum\Theme\BackgroundKind;
 use App\Domain\Enum\Theme\BackgroundPreset;
 use App\Domain\Enum\Theme\Density;
 use App\Domain\Enum\Theme\MessageBodySize;
+use App\Domain\Enum\Theme\LabelStyle;
 use App\Domain\Enum\Theme\MotionLevel;
 use App\Domain\Enum\Theme\FontFamily;
 use App\Domain\Enum\Theme\Layout;
@@ -216,13 +217,14 @@ final class AppearanceSetMethod implements JmapMethod
                 'theme' => $this->requireEnum(Theme::class, $value, $property, false),
                 'layout' => $this->requireEnum(Layout::class, $value, $property, false),
                 'density' => $this->requireEnum(Density::class, $value, $property, false),
+                'labelStyle' => $this->requireEnum(LabelStyle::class, $value, $property, false),
                 'messageBodySize' => $this->requireEnum(MessageBodySize::class, $value, $property, false),
                 'motion' => $this->requireEnum(MotionLevel::class, $value, $property, false),
                 'backgroundKind' => $this->requireEnum(BackgroundKind::class, $value, $property, false),
                 'backgroundPreset' => $this->requireEnum(BackgroundPreset::class, $value, $property, true),
                 'accent' => $this->requireHex($value, $property, false),
                 'backgroundSolid', 'inkColor', 'inkMuted', 'inkFaint', 'mainTint' => $this->requireHex($value, $property, true),
-                'paneBlur', 'previewLines' => $this->requireInt($value, $property),
+                'paneBlur', 'previewLines', 'messagePanelContrast', 'messagePanelOpacity' => $this->requireInt($value, $property),
                 'paneAlpha', 'popoverAlpha', 'radius', 'scrimAlpha', 'fontScale' => $this->requireNumber($value, $property, false),
                 'mainAlpha' => $this->requireNumber($value, $property, true),
                 'unreadEmphasis' => $this->requireEnum(UnreadEmphasis::class, $value, $property, false),
@@ -230,7 +232,7 @@ final class AppearanceSetMethod implements JmapMethod
                 // Nullable: null is the value meaning "follow the global
                 // density", not an omission — see AppearanceMapper.
                 'sidebarDensity', 'listDensity', 'readingDensity' => $this->requireEnum(Density::class, $value, $property, true),
-                'accountCorner', 'listAvatars', 'tabUnreadCount' => $this->requireBool($value, $property),
+                'accountCorner', 'listAvatars', 'tabUnreadCount', 'starColors', 'invertMessagePanel' => $this->requireBool($value, $property),
                 default => null,
             };
         }
@@ -346,6 +348,10 @@ final class AppearanceSetMethod implements JmapMethod
      */
     private function requireEnum(string $enum, mixed $value, string $property, bool $nullable): void
     {
+        if (Density::class === $enum && 'neat' === $value && 'listDensity' !== $property) {
+            throw new MethodException('invalidProperties', 'Neat is only available for listDensity.');
+        }
+
         if (null === $value && true === $nullable) {
             return;
         }

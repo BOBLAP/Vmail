@@ -65,7 +65,7 @@ final readonly class RemoteContentBlocker
      *                          IP either, which is the whole point of having a
      *                          proxy rather than just unblocking the src.
      */
-    public function rewrite(?string $html, bool $allowRemote): RemoteContent
+    public function rewrite(?string $html, bool $allowRemote, bool $httpsOnly = true): RemoteContent
     {
         if (null === $html || '' === trim($html)) {
             return new RemoteContent('', 0, 0);
@@ -103,8 +103,8 @@ final readonly class RemoteContentBlocker
             return new RemoteContent('', 0, 0);
         }
 
-        $touched = $this->rewriteImages($document, $allowRemote)
-            + $this->rewriteStyles($document, $allowRemote);
+        $touched = $this->rewriteImages($document, $allowRemote, $httpsOnly)
+            + $this->rewriteStyles($document, $allowRemote, $httpsOnly);
 
         return new RemoteContent(
             $body->innerHTML,
@@ -113,7 +113,7 @@ final readonly class RemoteContentBlocker
         );
     }
 
-    private function rewriteImages(\Dom\HTMLDocument $document, bool $allowRemote): int
+    private function rewriteImages(\Dom\HTMLDocument $document, bool $allowRemote, bool $httpsOnly): int
     {
         $touched = 0;
 
@@ -128,7 +128,7 @@ final readonly class RemoteContentBlocker
                 continue;
             }
 
-            $proxied = $this->signer->proxyUrl($absolute);
+            $proxied = $this->signer->proxyUrl($absolute, $httpsOnly);
 
             if (true === $allowRemote) {
                 $img->setAttribute('src', $proxied);
@@ -247,7 +247,7 @@ final readonly class RemoteContentBlocker
      * of the declaration (repeat, position, colour) survives intact. The
      * proxied original is parked on `data-plmail-style` for the un-block.
      */
-    private function rewriteStyles(\Dom\HTMLDocument $document, bool $allowRemote): int
+    private function rewriteStyles(\Dom\HTMLDocument $document, bool $allowRemote, bool $httpsOnly): int
     {
         $touched = 0;
 
@@ -263,7 +263,7 @@ final readonly class RemoteContentBlocker
             }
 
             $found    = 0;
-            $proxied  = $this->mapCssUrls($style, fn (string $url): string => $this->signer->proxyUrl($url), $found);
+            $proxied  = $this->mapCssUrls($style, fn (string $url): string => $this->signer->proxyUrl($url, $httpsOnly), $found);
 
             if (0 === $found) {
                 continue;

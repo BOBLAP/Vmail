@@ -38,14 +38,14 @@ final readonly class ImageProxySigner
     ) {
     }
 
-    public function sign(string $url): string
+    public function sign(string $url, bool $httpsOnly = true): string
     {
-        return substr(hash_hmac('sha256', $url, $this->secret), 0, self::SIGNATURE_LENGTH);
+        return substr(hash_hmac('sha256', $httpsOnly ? $url : "http-allowed\n" . $url, $this->secret), 0, self::SIGNATURE_LENGTH);
     }
 
-    public function isValid(string $url, string $signature): bool
+    public function isValid(string $url, string $signature, bool $httpsOnly = true): bool
     {
-        return hash_equals($this->sign($url), $signature);
+        return hash_equals($this->sign($url, $httpsOnly), $signature);
     }
 
     /**
@@ -56,11 +56,11 @@ final readonly class ImageProxySigner
      * request to derive a host from. A relative src inside the reading iframe
      * resolves against the parent document's URL, which is ours.
      */
-    public function proxyUrl(string $remoteUrl): string
+    public function proxyUrl(string $remoteUrl, bool $httpsOnly = true): string
     {
         return $this->urlGenerator->generate(
             'app_mail_image_proxy',
-            ['u' => $remoteUrl, 's' => $this->sign($remoteUrl)],
+            ['u' => $remoteUrl, 's' => $this->sign($remoteUrl, $httpsOnly)] + ($httpsOnly ? [] : ['httpsOnly' => '0']),
             UrlGeneratorInterface::ABSOLUTE_PATH,
         );
     }

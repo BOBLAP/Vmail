@@ -128,6 +128,17 @@ self-contained: no {% extends %}, no block dependencies.
     <span class="ml-2 text-sm text-ink-faint truncate min-w-0">
         {{ thread.subject ?: ('thread.no_subject'|trans) }}
     </span>
+    <div class="ml-auto flex items-center gap-1 shrink-0">
+        {% for nav in [[-1, 'fa-chevron-left', 'calendar.nav.previous'], [1, 'fa-chevron-right', 'calendar.nav.next']] %}
+            <button type="button" disabled
+                    data-mail-direction="{{ nav[0] }}"
+                    data-action="click->mail--mail-pane#navigate"
+                    aria-label="{{ nav[2]|trans }}" title="{{ nav[2]|trans }}"
+                    class="flex items-center justify-center w-8 h-8 rounded-full text-ink-muted hover:text-ink hover:bg-hover transition-colors disabled:opacity-30 disabled:pointer-events-none">
+                <i class="fa-solid {{ nav[1] }} text-sm" aria-hidden="true"></i>
+            </button>
+        {% endfor %}
+    </div>
 </div>
 </div>{# /toolbar #}
 

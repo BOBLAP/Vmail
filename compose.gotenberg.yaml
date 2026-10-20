@@ -1,0 +1,25 @@
+services:
+  gotenberg:
+    image: gotenberg/gotenberg:8.38.1-libreoffice
+    restart: unless-stopped
+    init: true
+    command:
+      - gotenberg
+      - --api-timeout=20s
+      - --api-body-limit=27MB
+      - --api-disable-download-from=true
+      - --webhook-disable=true
+      - --libreoffice-max-queue-size=2
+      - --libreoffice-deny-list=.*
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 256
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [document-preview]
+    healthcheck:
+      test: [CMD, curl, -fsS, http://localhost:3000/health]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

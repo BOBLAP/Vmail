@@ -16,7 +16,8 @@ use Psr\Log\LoggerInterface;
  *
  *   - four raster formats GD reads natively. No SVG (it is XML, and rendering
  *     untrusted XML from a stranger's mail is not a preview feature), no PDF,
- *     no video — those need a renderer this app does not ship.
+ *     no video — these are not GD thumbnails. Office previews are generated on
+ *     demand by OfficePreviewConverter in a separate container.
  *   - a byte ceiling, because decoding is linear in file size.
  *   - a pixel ceiling checked from the header *before* decoding, because file
  *     size is not: a few KB of PNG can expand to gigabytes of bitmap.

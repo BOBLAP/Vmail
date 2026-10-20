@@ -20,12 +20,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  *
  * THE RULES, in the order they are applied:
  *
- *  1. https only. Not a hardening flourish: an http fetch is a cleartext
- *     request our server makes on a schedule an attacker chooses, and every
- *     image host worth loading from has had TLS for a decade.
- *  2. Port 443 only. A URL is a fine way to ask a server to port-scan its own
- *     network; pinning the port to the one images live on removes the whole
- *     class rather than blacklisting the interesting ports.
+ *  1. HTTPS only by default; a signed per-reader opt-out may also allow HTTP.
+ *     Checked before cache access and at every redirect.
+ *  2. Only the scheme's standard port (443 or, on explicit opt-out, 80).
+ *     Arbitrary ports remain forbidden.
  *  3. The host is resolved HERE, every address it answers with is checked
  *     against the private/reserved ranges, and the connection is then PINNED to
  *     a checked address via the client's `resolve` option. Checking and then
@@ -78,9 +76,14 @@ final readonly class ImageProxyFetcher
      *
      * @return array{path: string, contentType: string}|null
      */
-    public function fetch(string $url): ?array
+    public function fetch(string $url, bool $httpsOnly = true): ?array
     {
-        $cacheKey  = hash('sha256', $url);
+        // Policy is part of the cache key: a cached HTTP redirect must never
+        // bypass HTTPS-only mode. Refuse even an initial cached HTTP URL.
+        if ($httpsOnly && 'https' !== strtolower((string) parse_url($url, PHP_URL_SCHEME))) {
+            return null;
+        }
+        $cacheKey  = hash('sha256', ($httpsOnly ? 'https-only:' : 'http-allowed:') . $url);
         $cacheDir  = $this->projectDir . '/var/image-proxy';
         $bytesPath = sprintf('%s/%s.bin', $cacheDir, $cacheKey);
         $typePath  = sprintf('%s/%s.type', $cacheDir, $cacheKey);
@@ -95,7 +98,7 @@ final readonly class ImageProxyFetcher
         }
 
         try {
-            $fetched = $this->request($url);
+            $fetched = $this->request($url, $httpsOnly);
         } catch (HttpClientException $exception) {
             // ROUTINE. The far end did not answer, or answered badly: DNS that
             // does not resolve, a TLS handshake that fails, a host that times
@@ -156,11 +159,14 @@ final readonly class ImageProxyFetcher
     /**
      * @return array{body: string, contentType: string}|null
      */
-    private function request(string $url): ?array
+    private function request(string $url, bool $httpsOnly): ?array
     {
         $hops = 0;
 
         while (true) {
+            if ($httpsOnly && 'https' !== strtolower((string) parse_url($url, PHP_URL_SCHEME))) {
+                return null;
+            }
             $target = $this->validate($url);
 
             if (null === $target) {
@@ -340,9 +346,9 @@ final readonly class ImageProxyFetcher
 
         $scheme = strtolower((string) ($parts['scheme'] ?? ''));
         $host   = (string) ($parts['host'] ?? '');
-        $port   = (int) ($parts['port'] ?? 443);
+        $port   = (int) ($parts['port'] ?? ('http' === $scheme ? 80 : 443));
 
-        if ('https' !== $scheme || '' === $host || 443 !== $port) {
+        if (!in_array($scheme, ['https', 'http'], true) || '' === $host || ('https' === $scheme ? 443 : 80) !== $port) {
             return null;
         }
 

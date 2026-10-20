@@ -164,6 +164,7 @@ export default class extends Controller {
     connect() {
         this._listUrl = this.openValue ? null : window.location.href;
         this._selectedPath = null;
+        this._navigationUrls = [];
         this._onPopState = this._handlePopState.bind(this);
         window.addEventListener("popstate", this._onPopState);
 
@@ -216,6 +217,8 @@ export default class extends Controller {
             }
 
             this._listUrl = window.location.href;
+            this._navigationUrls = [];
+            this._updateNavigation();
 
             if (this._besideList() && false === this.readingTarget.classList.contains("hidden")) {
                 return;
@@ -358,6 +361,8 @@ export default class extends Controller {
 
         const link = event.currentTarget;
         const url = link.href;
+        this._navigationUrls = [...this.listTarget.querySelectorAll(`${ROW}:not([data-leaving]) > a[data-action~="click->mail--mail-pane#open"]`)]
+            .map((candidate) => candidate.href);
 
         // Remember where to go back to, if we don't already know.
         if (!this._listUrl) {
@@ -367,6 +372,34 @@ export default class extends Controller {
         await this._loadMessage(url);
 
         history.pushState({ mailPaneOpen: true }, "", url);
+    }
+
+    async navigate(event) {
+        event.preventDefault();
+        if (this._navigating) return;
+        const index = this._navigationUrls.findIndex((url) => new URL(url).pathname === this._selectedPath);
+        const offset = Number(event.currentTarget.dataset.mailDirection);
+        const url = index < 0 ? null : this._navigationUrls[index + offset];
+        if (!url) return;
+
+        this._navigating = true;
+        this._updateNavigation();
+        try {
+            await this._loadMessage(url);
+            if (this._selectedPath === new URL(url).pathname) {
+                history.pushState({ mailPaneOpen: true }, "", url);
+            }
+        } finally {
+            this._navigating = false;
+            this._updateNavigation();
+        }
+    }
+
+    _updateNavigation() {
+        const index = this._navigationUrls.findIndex((url) => new URL(url).pathname === this._selectedPath);
+        this.readingTarget.querySelectorAll('[data-mail-direction]').forEach((button) => {
+            button.disabled = this._navigating || index < 0 || !this._navigationUrls[index + Number(button.dataset.mailDirection)];
+        });
     }
 
     close(event) {
@@ -499,6 +532,7 @@ export default class extends Controller {
      */
     _markSelected(path) {
         this._selectedPath = path;
+        this._updateNavigation();
 
         this.listTarget.querySelectorAll("li[data-selected]").forEach((row) => {
             delete row.dataset.selected;

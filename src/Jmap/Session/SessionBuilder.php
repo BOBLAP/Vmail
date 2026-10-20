@@ -349,7 +349,8 @@ final class SessionBuilder
             'logoStyles' => array_column(LogoStyle::cases(), 'value'),
             'logoMotifs' => array_column(LogoMotif::cases(), 'value'),
             'layouts' => array_column(Layout::cases(), 'value'),
-            'densities' => array_column(Density::cases(), 'value'),
+            'densities' => array_values(array_diff(array_column(Density::cases(), 'value'), ['neat'])),
+            'listDensities' => array_column(Density::cases(), 'value'),
             'messageBodySizes' => array_column(MessageBodySize::cases(), 'value'),
             'backgroundKinds' => array_column(BackgroundKind::cases(), 'value'),
             'backgroundPresets' => array_column(BackgroundPreset::cases(), 'value'),
@@ -372,6 +373,8 @@ final class SessionBuilder
                 'mainAlpha' => Appearance::RANGE_MAIN_ALPHA,
                 'previewLines' => Appearance::RANGE_PREVIEW_LINES,
                 'fontScale' => Appearance::RANGE_FONT_SCALE,
+                'messagePanelContrast' => ['min' => 0, 'max' => 100],
+                'messagePanelOpacity' => ['min' => 0, 'max' => 100],
             ],
         ];
     }

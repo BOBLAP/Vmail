@@ -4,6 +4,7 @@
 x-app-image: &app-image ghcr.io/karatektus/pl_mail:latest
 
 x-app-env: &app-env
+  GOTENBERG_URL: http://gotenberg:3000
   APP_ENV: prod
   APP_SECRET: ${APP_SECRET:-}
   APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:-}
@@ -30,6 +31,11 @@ x-app-storage: &app-storage
   - app_uploads:/app/var/uploads
 
 services:
+  gotenberg:
+    extends:
+      file: compose.gotenberg.yaml
+      service: gotenberg
+
   secrets-init:
     image: *app-image
     restart: "no"
@@ -43,6 +49,7 @@ services:
       - app_secrets:/app/var/secrets
 
   php:
+    networks: [default, document-preview]
     image: *app-image
     restart: unless-stopped
     environment:
@@ -68,6 +75,8 @@ services:
         published: ${HTTP3_PORT:-443}
         protocol: udp
     depends_on:
+      gotenberg:
+        condition: service_healthy
       secrets-init:
         condition: service_completed_successfully
       database:
@@ -147,6 +156,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+networks:
+  document-preview:
+    internal: true
 
 volumes:
   app_secrets:

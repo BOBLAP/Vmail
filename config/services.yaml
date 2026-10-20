@@ -7,6 +7,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.gotenberg_disabled: ''
     # Which clock a user who has never picked one is shown. Read through the
     # `default:` processor rather than straight from the env so a deployment
     # that never heard of the variable still gets a real zone instead of an
@@ -173,6 +174,11 @@ services:
     App\Service\Mail\PostIngest\RecentMailPolicy:
         arguments:
             $recentDays: '%app.enrich_recent_days%'
+    App\Service\Mail\OfficePreviewConverter:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $gotenbergUrl: '%env(default:app.gotenberg_disabled:GOTENBERG_URL)%'
+
     App\Service\Mail\AttachmentThumbnailer:
         arguments:
             $projectDir: '%kernel.project_dir%'

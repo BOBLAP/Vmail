@@ -317,3 +317,73 @@ Ne pas supprimer les volumes pour actualiser un thème : ils portent les donnée
 priorités, procédures et tests touchés. Signaler explicitement ce qui a été testé
 et ce qui reste une observation du code. Éviter de dupliquer tous les détails
 d'implémentation ou des numéros de ligne qui se périment à chaque modification.
+
+## Étoiles de couleur
+
+Le switch `starColors` dans Apparence active par défaut le cycle jaune, orange, rouge, vert, turquoise, marine, noir, puis sans étoile. Désactivé, le clic bascule On/Off et les favoris apparaissent jaunes. Les index locaux `starColor` des messages et conversations sont stockés séparément du drapeau fournisseur. Points d’entrée : `ThreadStatusController`, `ThreadStatusUpdater`, `StarColor`, `_thread_row.html.twig` et `message_actions_controller.js`. Migration : `Version20261018160000`.
+
+Le motif `Vinz` ajoute la favicon fournie dans la liste Logo. Son PNG est embarqué dans `templates/branding/motif/vinz.svg.twig` pour les trois rendus (logo, tuile et favicon) ; ses couleurs originales restent fixes. Source conservée dans `public/icons/vinz.png`.
+
+## Style des labels
+
+`labelStyle` (`LabelStyle.php`) choisit Discret (défaut) ou Plein dans Apparence.
+Le renderer et les options Twig partagent les variables de visibilité ;
+`_thread_labels.html.twig` et `_label_plain.html.twig` rendent les pastilles.
+Le mode Plein utilise la couleur du label (palette Tailwind 500) et le noir ou
+le blanc offrant le meilleur contraste WCAG selon la luminance relative.
+La préférence suit sauvegarde, export/import et JMAP ; migration `Version20261019120000`.
+
+## Liste Neat et inversion du panneau central
+
+`listDensity = neat` ajoute une ligne fixe de 30 px, un avatar de 22 px et les
+labels avant le sujet. Neat est proposé uniquement pour Message list, après Compact.
+Le sujet est suivi de `|` puis du début du message, tronqué selon la largeur disponible.
+Les labels sont affichés uniquement avant le sujet ; leurs copies standard restent masquées.
+Les hooks `data-row-neat-labels`, `data-row-neat-text`, `data-row-content` et la classe racine `list-neat`
+pilotent le rendu réel et la miniature ; les autres densités gardent leur disposition.
+
+`invertMessagePanel` (désactivé par défaut) ajoute la classe racine
+`invert-message-panel`. Avec `.dark`, les conteneurs `data-message-panel` reçoivent
+une palette locale claire ; la navigation et les réglages gardent leur thème.
+`messagePanelContrast` (défaut 70, borné 0–100) interpole entre #808080 et #ffffff.
+Le renderer et le contrôleur écrivent `--message-panel-grey` avec la même formule.
+L’inversion prend le dessus sur la teinte et l’ancienne opacité principale du panneau tant
+qu’elle est active et le thème sombre. Elle suit aussi le thème System.
+Stockage : migration `Version20261019140000`, export/import et contrat JMAP.
+
+### Opacité du bloc de courrier
+
+`messagePanelOpacity` (0–100, défaut 100) est le curseur suivant Contrast strength.
+La variable `--message-panel-opacity` règle uniquement le fond de `data-message-panel`,
+pas l’opacité du texte ou des boutons. Elle multiplie l’opacité principale existante
+et reste active quand le panneau est inversé (dont le fond était auparavant opaque).
+L’aperçu partage ce contrat. Sauvegarde, export/import et JMAP suivent `Appearance` ;
+migration `Version20261019160000`.
+
+### Raccourcis permanents Settings et Reply
+
+`_partials/_topbar.html.twig` ajoute un engrenage `data-topbar-settings` près de
+Help et Sync, vers la même destination que le menu utilisateur (Health si un
+compte nécessite une intervention). `mail/_message_actions.html.twig` ajoute
+`data-message-quick-reply` entre la date et le menu à trois points : même route,
+paramètres de conversation et contrôleur `compose--frame-target` que Reply dans
+le menu, vers `compose_inline` ou `compose_dock`. Noms accessibles et infobulles
+réutilisent les traductions existantes ; les boutons des menus restent disponibles.
+
+### Navigation entre les résultats ouverts
+
+La barre de `mail/_thread_content.html.twig` propose deux boutons précédent/suivant
+à droite du titre. `mail_pane_controller.js` mémorise les liens de la page de liste
+au clic d’ouverture et conserve leur ordre pendant la lecture (y compris pour une
+recherche de non-lus). Les extrémités et le chargement désactivent les boutons.
+Le retour conserve l’URL de recherche, ses filtres, son tri et sa page ; une nouvelle
+navigation de liste réinitialise le parcours. Le parcours couvre la page de résultats
+chargée, sans franchir la pagination. Test : `tests/e2e/search-navigation.spec.ts`.
+
+### Contraste des lignes lues et onglet actif
+
+`row-read` dans `assets/styles/app.css` pose un gris neutre (128 128 128 à 12 %)
+aux messages lus de `_thread_row.html.twig` et de l’aperçu Apparence. Les non-lus
+conservent `row-unread` et leur réglage d’accentuation ; le survol reste prioritaire.
+Dans `mail/inbox.html.twig`, les onglets de catégorie réservent une bordure basse
+de 4 px, colorée avec l’accent pour l’onglet actif, transparente au repos ailleurs.

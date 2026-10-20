@@ -48,7 +48,7 @@ const FIELDS = {
 const KEYWORDS = ["$seen", "$flagged", "$draft", "$answered"]
 
 export default class extends Controller {
-    static targets = ["tree", "conditions", "actions", "actionList", "summary", "count", "form"]
+    static targets = ["tree", "conditions", "actions", "actionList", "summary", "count", "form", "createdLabel"]
     static values = {
         conditions: Object,
         actions: Array,
@@ -56,6 +56,7 @@ export default class extends Controller {
         categories: Array,
         integrations: Array,
         previewUrl: String,
+        newLabelUrl: String,
         csrf: String,
         /** Open a fresh editor with one condition row to fill in. */
         seedCondition: Boolean,
@@ -337,6 +338,17 @@ export default class extends Controller {
                 })
 
                 row.append(label)
+                if (action.type === "applyLabel") {
+                    const create = document.createElement("button")
+                    create.type = "button"
+                    create.textContent = this._t("createLabel")
+                    create.className = "inline-flex items-center px-2 h-9 rounded-lg text-xs font-medium btn-quiet hover:bg-hover transition-colors cursor-pointer"
+                    create.setAttribute("data-controller", "ui--modal")
+                    create.setAttribute("data-ui--modal-src-value", this.newLabelUrlValue)
+                    create.setAttribute("data-action", "click->rules--rule-builder#prepareLabel click->ui--modal#open")
+                    create.dataset.actionIndex = String(i)
+                    row.append(create)
+                }
             }
 
             if (action.type === "fileInCategory") {
@@ -448,6 +460,30 @@ export default class extends Controller {
      * the row that is still waiting when the answer arrives, and the picker
      * would otherwise have to be told about an editor it knows nothing about.
      */
+    prepareLabel(event) {
+        this._labelPickFor = Number(event.currentTarget.dataset.actionIndex)
+        const url = new URL(this.newLabelUrlValue, window.location.href)
+        url.searchParams.set("name", this.element.querySelector('[name="name"]').value.trim())
+        event.currentTarget.dataset.modalSrcValue = url.href
+    }
+
+    createdLabelTargetConnected(element) {
+        const label = JSON.parse(element.dataset.label)
+        if (!this.labelsValue.some(entry => entry.id === label.id)) {
+            this.labelsValue = [...this.labelsValue, label]
+        }
+        const action = this.actions?.[this._labelPickFor]
+        if (action?.type === "applyLabel") {
+            action.labelId = label.id
+        }
+        this._labelPickFor = null
+        this.render()
+        this.renderActions()
+        this.serialise()
+        this.schedulePreview()
+        element.remove()
+    }
+
     folderChosen(event) {
         const index = this._folderPickFor
         const action = this.actions[index]

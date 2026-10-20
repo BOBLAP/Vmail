@@ -65,8 +65,9 @@ final class ImageProxyController extends AbstractController
     {
         $url       = (string) $request->query->get('u', '');
         $signature = (string) $request->query->get('s', '');
+        $httpsOnly = '0' !== (string) $request->query->get('httpsOnly', '1');
 
-        if ('' === $url || false === $this->signer->isValid($url, $signature)) {
+        if ('' === $url || false === $this->signer->isValid($url, $signature, $httpsOnly)) {
             // Without this line the refusal is completely invisible. The reader
             // gets the same 1x1 GIF as every other failure (deliberately, see
             // above), no fetch is attempted, so ImageProxyFetcher never logs
@@ -80,7 +81,7 @@ final class ImageProxyController extends AbstractController
             return $this->placeholder();
         }
 
-        $image = $this->fetcher->fetch($url);
+        $image = $this->fetcher->fetch($url, $httpsOnly);
 
         if (null === $image) {
             // The fetcher logs the reason it gave up; this is the line that ties

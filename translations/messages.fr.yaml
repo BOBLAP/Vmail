@@ -4546,3 +4546,34 @@ whats_new:
     screenshot_close: 'Fermer la capture'
     screenshot_open: 'Ouvrir la capture en taille réelle'
     title: 'Nouveautés'
+
+settings.appearance.star_colors: Étoiles de couleur
+settings.appearance.star_colors_hint: Jaune → orange → rouge → vert → turquoise → marine → noir → sans étoile. Désactivez pour revenir au mode On/Off.
+
+settings.appearance.logo.motif.vinz: Vinz
+
+settings.appearance.label_style.heading: "Style des labels"
+settings.appearance.label_style.hint: "Choisissez des pastilles discrètes ou un fond plein dans la couleur du label."
+settings.appearance.label_style.subtle: "Discret"
+settings.appearance.label_style.plain: "Plein"
+
+settings.appearance.density.neat: "Neat"
+settings.appearance.invert_message_panel: "Inverser le panneau des messages"
+settings.appearance.invert_message_panel_hint: "Avec un thème sombre, affiche le panneau central en gris clair avec du texte noir."
+settings.appearance.message_panel_contrast: "Force du contraste"
+settings.appearance.panel_grey: "Gris moyen"
+settings.appearance.panel_white: "Blanc"
+
+attachment.office.preparing: "Préparation de l’aperçu…"
+attachment.office.too_large: "Ce fichier dépasse la limite de 25 Mo pour l’aperçu. Vous pouvez le télécharger."
+attachment.office.busy: "Un autre aperçu est en préparation. Réessayez dans quelques secondes."
+attachment.office.unavailable: "L’aperçu est temporairement indisponible. Vous pouvez télécharger le fichier original."
+attachment.office.failed: "Impossible de convertir ce document. Il est peut-être protégé, endommagé ou trop complexe. Vous pouvez télécharger l’original."
+
+content_security:
+    heading: 'Contenus distants'
+    https_only: 'Ne télécharger que les éléments HTTPS'
+    hint: 'Bloque les images et fonds HTTP des courriels, y compris après une redirection. Les pièces jointes restent disponibles. Les certificats HTTPS sont toujours vérifiés.'
+
+message_panel_opacity:
+    label: 'Opacité'

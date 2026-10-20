@@ -50,6 +50,7 @@ enum LogoMotif: string
     case Mailbox = 'mailbox';
     case PlStamp = 'pl-stamp';
     case WaxSeal = 'wax-seal';
+    case Vinz = 'vinz';
 
     /**
      * The icon an account starts on, and the one a page with nobody signed in
@@ -122,6 +123,7 @@ enum LogoMotif: string
             self::Mailbox => ['box', 'paper', 'flag', 'post'],
             self::PlStamp => ['stamp', 'mark0', 'mark1', 'mark2', 'mark3', 'mark4', 'mark5', 'mark6', 'frame'],
             self::WaxSeal => ['wax', 'ring', 'mark'],
+            self::Vinz => [],
         };
     }
 
@@ -240,6 +242,7 @@ enum LogoMotif: string
         return match ($this) {
             // The product default: the mark's own original IS a colourway.
             self::Pl => self::plMark(LogoStyle::DEFAULT->strokes()),
+            self::Vinz => ['background' => '#ffffff'],
             self::BlueHorn => ['background' => self::WALL, 'horn' => self::AIR_BLUE, 'throat' => '#193e9c'],
             self::AtHorn => ['background' => self::AIR_BLUE, 'horn' => self::CREAM, 'throat' => '#cdd9f5'],
             self::LoveLetter => ['background' => '#ffe4e6', 'paper' => self::WHITE, 'line' => '#9f1239', 'heart' => self::ROSE],
@@ -272,6 +275,7 @@ enum LogoMotif: string
     {
         return match ($this) {
             self::Pl => self::plMark($way->strokes),
+            self::Vinz => $this->original(),
 
             // The horn is repainted; a second colour lines the bell. The cream
             // wall stays.

@@ -1,7 +1,8 @@
 # pdf.js 6.2.108, vendored
 
 Mozilla's PDF renderer, committed rather than installed. plMail renders PDF attachments in the
-browser because the server has no PDF capability and is not gaining any — see
+browser. Office attachments are converted separately by Gotenberg; original PDFs
+never go through that service. Raster thumbnails remain separate — see
 `App\Service\Mail\AttachmentThumbnailer`, whose docblock says as much, and the Dockerfile, which
 must build on arm64 as well as amd64.
 

@@ -13,6 +13,7 @@ x-test-app: &test-app
     - app_var_test:/app/var
     - app_public_assets_test:/app/public/assets
   environment: &test-env
+    GOTENBERG_URL: http://gotenberg:3000
     APP_ENV: test
     APP_DEBUG: "1"
     APP_SECRET: 282065e0f71bf96c0dbcf0496c1f5d3e
@@ -32,6 +33,11 @@ x-test-app: &test-app
       condition: service_healthy
 
 services:
+  gotenberg:
+    extends:
+      file: compose.gotenberg.yaml
+      service: gotenberg
+
   database:
     image: postgres:18-alpine
     environment:
@@ -78,6 +84,7 @@ services:
         cookie_name mercure_access_token
 
   app:
+    networks: [default, document-preview]
     <<: *test-app
     environment:
       <<: *test-env
@@ -85,6 +92,8 @@ services:
     ports:
       - "${TEST_HTTP_PORT:-8001}:80"
     depends_on:
+      gotenberg:
+        condition: service_healthy
       database:
         condition: service_healthy
       app-init:
@@ -110,6 +119,10 @@ services:
         condition: service_healthy
       app-init:
         condition: service_completed_successfully
+
+networks:
+  document-preview:
+    internal: true
 
 volumes:
   app_var_test:

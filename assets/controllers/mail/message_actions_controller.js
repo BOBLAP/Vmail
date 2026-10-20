@@ -21,6 +21,7 @@ export default class extends Controller {
         entityId: Number,
         entityType: { type: String, default: "message" },
         starred: Boolean,
+        starColor: Number,
     };
 
     connect() {
@@ -64,7 +65,9 @@ export default class extends Controller {
             return;
         }
 
-        this.starredValue = !this.starredValue;
+        this.starColorValue = this._lastStarColor;
+        this.starredValue = this.starColorValue > 0;
+        this.starredValueChanged();
     }
 
     async markUnread(event) {
@@ -124,8 +127,14 @@ export default class extends Controller {
         this._closePane();
     }
 
+    starColorValueChanged() {
+        this.starredValueChanged();
+    }
+
     starredValueChanged() {
         if (this.hasStarIconTarget) {
+            this.starIconTarget.classList.add("mail-star");
+            this.starIconTarget.dataset.starColor = String(this.starColorValue);
             this.starIconTarget.classList.toggle("fa-solid", this.starredValue);
             this.starIconTarget.classList.toggle("fa-regular", !this.starredValue);
             this.starIconTarget.classList.toggle("text-amber-400", this.starredValue);
@@ -166,6 +175,9 @@ export default class extends Controller {
             return false;
         }
 
+        if (response.headers.has("X-Star-Color")) {
+            this._lastStarColor = Number(response.headers.get("X-Star-Color"));
+        }
         const html = await response.text();
 
         if (html.trim() !== "") {

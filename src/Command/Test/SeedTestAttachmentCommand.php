@@ -84,6 +84,7 @@ final class SeedTestAttachmentCommand extends Command
     protected function configure(): void
     {
         $this->configureUserOption();
+        $this->addOption('office', null, \Symfony\Component\Console\Input\InputOption::VALUE_NONE, 'Also attach Office preview fixtures');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -203,6 +204,28 @@ final class SeedTestAttachmentCommand extends Command
         $pdfPart->isInline    = false;
 
         $message->addMessagePart($pdfPart);
+        if ($input->getOption('office')) {
+            $types = [
+                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'broken.docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ];
+            foreach ($types as $extension => $type) {
+                $filename = 'e2e-office.'.$extension;
+                $bytes = 'broken.docx' === $extension ? 'Not an Office document' : file_get_contents(dirname(__DIR__, 3).'/tests/fixtures/office/sample.'.$extension);
+                $office = new MessagePart();
+                $office->message = $message;
+                $office->filename = $filename;
+                $office->contentType = $type;
+                $office->disposition = 'attachment';
+                $office->isInline = false;
+                $office->size = strlen($bytes);
+                $office->storagePath = $this->attachmentStorage->store((int) $account->id, 0, (int) $message->id, $filename, $bytes);
+                $message->addMessagePart($office);
+                $this->entityManager->persist($office);
+            }
+        }
         $this->entityManager->persist($pdfPart);
         $this->entityManager->persist($part);
         $this->entityManager->flush();

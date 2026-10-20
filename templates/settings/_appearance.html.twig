@@ -349,6 +349,34 @@
                     {% endfor %}
                 </div>
                 <input type="hidden" data-settings--appearance-target="theme" data-settings--appearance-field="theme" value="{{ a.theme.value }}">
+                <div class="mt-4 space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" role="switch" class="peer sr-only" {{ a.invertMessagePanel ? 'checked' : '' }}
+                               data-panel-invert-switch data-action="change->settings--appearance#invertMessagePanel">
+                        <span aria-hidden="true" class="relative inline-flex h-5 w-9 shrink-0 rounded-full bg-hover peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4"></span>
+                        <span class="text-xs text-ink-muted">{{ 'settings.appearance.invert_message_panel'|trans }}</span>
+                    </label>
+                    <input type="hidden" data-settings--appearance-field="invertMessagePanel" value="{{ a.invertMessagePanel ? '1' : '0' }}">
+                    <p class="text-xs text-ink-faint">{{ 'settings.appearance.invert_message_panel_hint'|trans }}</p>
+                    <label class="block text-xs text-ink-muted">
+                        {{ 'settings.appearance.message_panel_contrast'|trans }}
+                        <output data-panel-contrast-output>{{ a.messagePanelContrast }}%</output>
+                        <input type="range" min="0" max="100" step="1" value="{{ a.messagePanelContrast }}"
+                               data-settings--appearance-field="messagePanelContrast"
+                               data-action="input->settings--appearance#invertMessagePanel"
+                               class="block w-full mt-2 accent-accent cursor-pointer">
+                    </label>
+                    <div class="flex justify-between text-xs text-ink-faint"><span>{{ 'settings.appearance.panel_grey'|trans }}</span><span>{{ 'settings.appearance.panel_white'|trans }}</span></div>
+                    <label class="block text-xs text-ink-muted">
+                        {{ 'message_panel_opacity.label'|trans }}
+                        <output data-panel-opacity-output>{{ a.messagePanelOpacity }}%</output>
+                        <input type="range" min="0" max="100" step="1" value="{{ a.messagePanelOpacity }}"
+                               data-settings--appearance-field="messagePanelOpacity"
+                               data-css-variable="--message-panel-opacity" data-css-suffix="%"
+                               data-action="input->settings--appearance#invertMessagePanel"
+                               class="block w-full mt-2 accent-accent cursor-pointer">
+                    </label>
+                </div>
             </section>
 
             {# ── Logo ──────────────────────────────────────────────────────
@@ -601,6 +629,30 @@
                 </div>
             </section>
 
+            <section>
+                <h3 id="label-style-label" class="text-sm font-semibold text-ink">{{ 'settings.appearance.label_style.heading'|trans }}</h3>
+                <p class="text-xs text-ink-faint mt-0.5 mb-4">{{ 'settings.appearance.label_style.hint'|trans }}</p>
+                <div class="{{ segGroup }}" role="radiogroup" aria-labelledby="label-style-label">
+                    {% for size in enum('App\\Domain\\Enum\\Theme\\LabelStyle').cases %}
+                        <label class="cursor-pointer">
+                            <input type="radio" name="labelStyle" value="{{ size.value }}" class="peer sr-only"
+                                   data-settings--appearance-field="labelStyle"
+                                   data-css-vars="{{ size.cssVariables|json_encode }}"
+                                   data-action="change->settings--appearance#applyVars"
+                                   {{ a.labelStyle == size ? 'checked' : '' }}>
+                            <span class="{{ segText }}">{{ ('settings.appearance.label_style.' ~ size.value)|trans }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                <div class="mt-3" aria-hidden="true">
+                    {% include '_partials/_thread_labels.html.twig' with { item: { labels: [
+                        { name: 'label.color.blue'|trans, color: 'blue', role: null, isVisible: true },
+                        { name: 'label.color.amber'|trans, color: 'amber', role: null, isVisible: true },
+                        { name: 'label.color.gray'|trans, color: 'gray', role: null, isVisible: true }
+                    ] } } only %}
+                </div>
+            </section>
+
             {# ── Density ───────────────────────────────────────────────── #}
             <section>
                 <div class="mb-4">
@@ -615,6 +667,7 @@
                         </span>
                         <div class="{{ segGroup }}" role="radiogroup" aria-labelledby="density-global-label">
                             {% for density in enum('App\\Domain\\Enum\\Theme\\Density').cases %}
+                                {% if density.value != 'neat' %}
                                 <label class="cursor-pointer">
                                     {# Every padding scale travels on the radio, so the JS
                                        resolving a surface has one place to read them from and
@@ -640,6 +693,7 @@
                                         {{ ('settings.appearance.density.' ~ density.value)|trans }}
                                     </span>
                                 </label>
+                            {% endif %}
                             {% endfor %}
                         </div>
                     </div>
@@ -684,11 +738,13 @@
                                 </label>
 
                                 {% for density in enum('App\\Domain\\Enum\\Theme\\Density').cases %}
+                                    {% if density.value != 'neat' or surface == 'list' %}
                                     <label class="cursor-pointer">
                                         <input type="radio" name="{{ surface }}Density" class="peer sr-only"
                                                value="{{ density.value }}"
                                                data-settings--appearance-field="{{ surface }}Density"
                                                data-surface-density="{{ surface }}"
+                                               data-list-row-y="{{ density.listRowPadding }}" data-gap="{{ density.gap }}"
                                                data-action="change->settings--appearance#pickSurfaceDensity"
                                                aria-label="{{ ('settings.appearance.density.surface.' ~ surface)|trans }} — {{ ('settings.appearance.density.' ~ density.value)|trans }}"
                                             {{ current == density ? 'checked' : '' }}>
@@ -696,6 +752,7 @@
                                             {{ ('settings.appearance.density.' ~ density.value)|trans }}
                                         </span>
                                     </label>
+                                {% endif %}
                                 {% endfor %}
                             </div>
                         </div>
@@ -718,6 +775,14 @@
                        the payload — save() reads `input.value`, which is "on" whether a
                        box is ticked or not — so each drives a hidden field holding "1" or
                        "0", the same pattern the ink and main-pane defaults use. #}
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" role="switch" class="peer sr-only" {{ a.starColors ? 'checked' : '' }}
+                               data-action="change->settings--appearance#toggleStarColors">
+                        <span aria-hidden="true" class="relative inline-flex h-5 w-9 shrink-0 rounded-full bg-hover peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4"></span>
+                        <span class="text-xs text-ink-muted">{{ 'settings.appearance.star_colors'|trans }}</span>
+                    </label>
+                    <p class="text-xs text-ink-faint">{{ 'settings.appearance.star_colors_hint'|trans }}</p>
+                    <input type="hidden" data-settings--appearance-field="starColors" value="{{ a.starColors ? '1' : '0' }}">
                     {% set toggles = [
                         {
                             field: 'accountCorner',

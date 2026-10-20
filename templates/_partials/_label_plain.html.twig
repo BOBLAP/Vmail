@@ -1,0 +1,14 @@
+{% set palette = {
+    'gray': ['#6b7280', '#ffffff'],
+    'red': ['#ef4444', '#000000'],
+    'orange': ['#f97316', '#000000'],
+    'amber': ['#f59e0b', '#000000'],
+    'green': ['#22c55e', '#000000'],
+    'teal': ['#14b8a6', '#000000'],
+    'blue': ['#3b82f6', '#000000'],
+    'violet': ['#8b5cf6', '#000000'],
+    'pink': ['#ec4899', '#000000']
+} %}
+{% set paint = palette[color ?? 'gray'] ?? palette.gray %}
+<span class="items-center px-2 py-px rounded-full border text-[11px] leading-[1.35] max-w-28 truncate"
+      style="display: var(--label-plain-display, none); background-color: {{ paint[0] }}; border-color: {{ paint[0] }}; color: {{ paint[1] }}">{{ name }}</span>

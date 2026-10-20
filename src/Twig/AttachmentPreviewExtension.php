@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Twig;
 
 use App\Domain\Helper\PdfAttachment;
+use App\Domain\Helper\OfficeAttachment;
+use App\Service\Mail\OfficePreviewConverter;
 use App\Entity\Mail\MessagePart;
 use App\Service\Mail\AttachmentThumbnailer;
 use Twig\Extension\AbstractExtension;
@@ -19,7 +21,7 @@ use Twig\TwigFunction;
  */
 final class AttachmentPreviewExtension extends AbstractExtension
 {
-    public function __construct(private readonly AttachmentThumbnailer $thumbnailer)
+    public function __construct(private readonly AttachmentThumbnailer $thumbnailer, private readonly OfficePreviewConverter $officeConverter)
     {
     }
 
@@ -28,20 +30,24 @@ final class AttachmentPreviewExtension extends AbstractExtension
         return [
             new TwigFunction('attachment_has_preview', $this->hasPreview(...)),
             new TwigFunction('attachment_is_pdf', $this->isPdf(...)),
+            new TwigFunction('attachment_can_open', $this->canOpen(...)),
         ];
     }
 
-    /**
-     * Whether the chip should offer to open this in the reader.
-     *
-     * Distinct from hasPreview(), which asks whether a THUMBNAIL can be drawn —
-     * that is about raster images and GD. This asks whether there is a viewer
-     * for it, which today means PDF and is decided from the declared type
-     * rather than from the bytes. See App\Domain\Helper\PdfAttachment.
-     */
     public function isPdf(MessagePart $part): bool
     {
         return PdfAttachment::matches($part->contentType, $part->filename);
+    }
+
+    /**
+     * Whether the chip opens the reader: PDF directly, Office through Gotenberg.
+     * This is separate from hasPreview(), which only asks for a raster thumbnail.
+     * The gate reads metadata only; displaying a thread never starts conversion.
+     */
+    public function canOpen(MessagePart $part): bool
+    {
+        return $this->isPdf($part) || ($this->officeConverter->enabled()
+            && null !== OfficeAttachment::extension($part->contentType, $part->filename));
     }
 
     public function hasPreview(MessagePart $part): bool

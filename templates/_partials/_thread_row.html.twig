@@ -362,7 +362,7 @@ be a worse regression than the one this feature fixes.
            properties, which is what lets the density differ per surface and the
            unread tint scale with the emphasis setting. #}
         class="pointer-events-auto flex items-center @rowwide:items-center gap-3 pl-3 pr-4 list-row-y cursor-pointer transition-colors
-            {{ unread ? 'row-unread' : 'bg-transparent' }}
+            {{ unread ? 'row-unread' : 'row-read' }}
             hover:bg-white/60 dark:hover:bg-white/[0.06]"
     >
         {# Avatar, doubling as the row's checkbox.
@@ -519,7 +519,17 @@ be a worse regression than the one this feature fixes.
                that same position wedges them between a subject and a preview
                that are already competing for one line, so they drop to a line
                of their own underneath. #}
-            <div class="min-w-0 flex-1 flex flex-col @xl:@max-rowwide:contents">
+            <span data-row-neat-labels class="hidden">
+                {% include '_partials/_thread_labels.html.twig' with { item: item } %}
+            </span>
+            <span data-row-neat-text class="hidden">
+                <span data-neat-subject class="truncate {{ unread ? 'font-semibold text-ink' : 'text-ink-soft' }}">{{ subjectLine }}{% if count > 1 %} <span class="text-ink-faint">{{ 'thread_row.message_count'|trans({'{ count }': count}) }}</span>{% endif %}</span>
+                {% if snippet|striptags|trim is not empty %}
+                    <span data-neat-separator class="shrink-0 text-ink-faint" aria-hidden="true">|</span>
+                    <span data-neat-snippet class="truncate text-ink-faint">{{ snippet }}</span>
+                {% endif %}
+            </span>
+            <div data-row-content class="min-w-0 flex-1 flex flex-col @xl:@max-rowwide:contents">
                 <div class="min-w-0 flex flex-col @xl:@max-rowwide:contents @rowwide:flex-row @rowwide:items-baseline @rowwide:gap-2">
                     <span data-row-subject class="truncate text-sm mt-1 @xl:@max-rowwide:mt-0 @rowwide:mt-0 @rowwide:flex-shrink-0 @rowwide:max-w-[45%]
                                  {{ unread ? 'font-semibold text-ink' : 'font-normal text-ink-soft' }}">
@@ -610,7 +620,7 @@ be a worse regression than the one this feature fixes.
                                 </button>
                             </span>
                         {% endif %}
-                        <span class="@rowwide:hidden contents">
+                        <span data-row-standard-labels class="@rowwide:hidden contents">
                             {% include '_partials/_thread_labels.html.twig' with { item: item } %}
                         </span>
                         {# A three-line row has one short line for the preview,
@@ -644,7 +654,7 @@ be a worse regression than the one this feature fixes.
                     </span>
                 </div>
 
-                <div class="hidden @rowwide:flex items-center mt-1">
+                <div data-row-standard-labels class="hidden @rowwide:flex items-center mt-1">
                     {% include '_partials/_thread_labels.html.twig' with { item: item } %}
                 </div>
             </div>
@@ -902,8 +912,9 @@ be a worse regression than the one this feature fixes.
                 <button
                     type="button"
                     data-action="click->mail--message-row#toggleStar"
+                    data-star-color="{{ starred ? (appearance().starColors ? max(1, item.starColor) : 1) : 0 }}"
                     data-mail--message-row-star-url-param="{{ path('app_status_star', {'type': type, 'id': rowId}) }}"
-                    class="z-10 pointer-events-auto cursor-pointer transition-colors
+                    class="mail-star z-10 pointer-events-auto cursor-pointer transition-colors
                            hover:text-amber-400
                            {{ starred
                               ? 'text-amber-400'

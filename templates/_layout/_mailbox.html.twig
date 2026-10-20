@@ -274,7 +274,7 @@ csrf token. Both measured: see App\Twig\ListFragmentGlobal.
                 close, so the placeholder and the message never both show.
                 #}
                 {% set readingPane = app.user ? app.user.readingPaneMode : enum('App\\Domain\\Enum\\Mail\\ReadingPaneMode').Off %}
-                <div class="flex flex-1 overflow-hidden relative main-pane"
+                <div data-message-panel class="flex flex-1 overflow-hidden relative main-pane"
                      data-reading-pane="{{ readingPane.value }}"
                      {% if 'true' == block('pane_open')|trim %}data-reading-open{% endif %}
                      {% if app.user %}

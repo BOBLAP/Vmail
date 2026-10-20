@@ -31,12 +31,12 @@ console to say why. Turbo leaves a link carrying `download` to the browser.
 {% set targets = integrations.forUploadOf(part.contentType) %}
 {% set hasPreview = attachment_has_preview(part) %}
 {% set downloadName = part.filename ?: 'attachment' %}
-{% set isPdf = attachment_is_pdf(part) %}
+{% set canOpen = attachment_can_open(part) %}
 
 {#
-    A PDF opens a reader instead of downloading.
+    A PDF or supported Office document opens the shared reader.
 
-    This is the ONE case where the chip's face is not an `<a download>`, and the
+    This is the case where the chip's face is not an `<a download>`, and the
     note above about `download` being load-bearing still holds everywhere else:
     it is there so Turbo Drive leaves a non-HTML response alone. A button that
     opens a dialog is not a navigation, so Turbo has nothing to swallow and the
@@ -45,7 +45,7 @@ console to say why. Turbo leaves a link carrying `download` to the browser.
     Nothing is lost by it. The reader carries its own download link, and the
     "Save to…" half beside it is untouched.
 #}
-{% macro pdfFace(part, hasPreview, radius) %}
+{% macro readerFace(part, hasPreview, radius) %}
     {# A macro gets no caller scope, so the sibling macro is imported here rather
        than passed in: an imported name lives in Twig's macro table, not in the
        context, so it cannot travel as an argument. #}
@@ -98,9 +98,9 @@ console to say why. Turbo leaves a link carrying `download` to the browser.
 
 {% if targets is empty %}
 
-    {% if isPdf %}
+    {% if canOpen %}
         <span class="inline-flex rounded-lg bg-sunken border border-line overflow-hidden">
-            {{ chip.pdfFace(part, hasPreview, 'rounded-lg') }}
+            {{ chip.readerFace(part, hasPreview, 'rounded-lg') }}
         </span>
     {% else %}
         <a href="{{ path('app_mail_attachment', { id: part.id }) }}?download=1"
@@ -125,8 +125,8 @@ console to say why. Turbo leaves a link carrying `download` to the browser.
     <div class="relative inline-flex" data-controller="ui--dropdown">
 
         <div class="inline-flex items-stretch rounded-lg bg-sunken border border-line overflow-hidden">
-            {% if isPdf %}
-                {{ chip.pdfFace(part, hasPreview, 'rounded-l-lg') }}
+            {% if canOpen %}
+                {{ chip.readerFace(part, hasPreview, 'rounded-l-lg') }}
             {% else %}
                 <a href="{{ path('app_mail_attachment', { id: part.id }) }}?download=1"
                    download="{{ downloadName }}"

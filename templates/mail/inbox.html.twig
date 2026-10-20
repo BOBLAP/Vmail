@@ -126,7 +126,7 @@
        `pb-px -mb-px` on the nav is what the tabs' own `-mb-px` used to do
        against the wrapper's hairline: an overflow container clips whatever
        pokes out of its padding box, and without it the active underline lost
-       a pixel of its two. The scroll controller puts the active tab in view,
+       a pixel of its four. The scroll controller puts the active tab in view,
        since a strip that opens on Forums with Forums off-screen says nothing. #}
     <div class="border-b border-line px-1">
         <nav class="relative flex text-sm overflow-x-auto overflow-y-hidden pb-px -mb-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -184,7 +184,7 @@
                     data-turbo-action="replace"
                     {% if false == isActive %}data-dnd-category="{{ tabCase.value }}"{% endif %}
                     {% if isActive %}data-ui--scroll-active-target="current"{% endif %}
-                    class="flex items-center gap-2.5 px-3 @xl:px-5 py-1.5 min-h-14 font-medium border-b-2 -mb-px transition-colors shrink-0 {{ isActive ? 'text-accent border-accent' : 'text-ink-muted hover:text-gray-700 border-transparent hover:border-gray-300' }}"
+                    class="flex items-center gap-2.5 px-3 @xl:px-5 py-1.5 min-h-14 font-medium border-b-4 -mb-px transition-colors shrink-0 {{ isActive ? 'text-accent border-accent' : 'text-ink-muted hover:text-gray-700 border-transparent hover:border-gray-300' }}"
                 >
                     {% if isActive %}
                         <svg class="w-5 h-5 shrink-0{{ unreadHere > 0 ? ' ' ~ iconTone : '' }}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"

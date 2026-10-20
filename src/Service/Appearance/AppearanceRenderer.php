@@ -29,12 +29,22 @@ final readonly class AppearanceRenderer
             $classes[] = $layoutClass;
         }
 
+        if ($appearance->invertMessagePanel) {
+            $classes[] = 'invert-message-panel';
+        }
+        if (\App\Domain\Enum\Theme\Density::Neat === $appearance->listDensity) {
+            $classes[] = 'list-neat';
+        }
+
         return implode(' ', $classes);
     }
 
     public function cssVariables(Appearance $appearance, ?int $userId = null): string
     {
         $variables = [
+            ...$appearance->labelStyle->cssVariables(),
+            '--message-panel-opacity' => $appearance->messagePanelOpacity . '%',
+            '--message-panel-grey' => implode(' ', array_fill(0, 3, $appearance->messagePanelGrey())),
             '--pane-alpha'    => rtrim(rtrim(number_format($appearance->paneAlpha, 3, '.', ''), '0'), '.'),
             // The floating surfaces — composer, modals, menus, toasts — read
             // this instead of --pane-alpha. See app.css, which is where the

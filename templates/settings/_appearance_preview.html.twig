@@ -118,7 +118,7 @@ the stacked behaviour — which is the one the second line exists for.
            them out of it even though the subtree is hidden, because
            aria-hidden and focusability disagreeing is the one combination that
            produces a focus stop announcing nothing at all. #}
-        <div class="rounded-pane border border-line overflow-hidden
+        <div data-message-panel class="rounded-pane border border-line overflow-hidden
                     pane-fill-grow pane-fill-stack" aria-hidden="true">
             {# THE LIST IS WHAT FILLS NOW, and the pair of utilities swapped
                round to do it. It was `pane-fill-keep` — content height — with
@@ -168,17 +168,25 @@ the stacked behaviour — which is the one the second line exists for.
                                 data-action="click->settings--appearance#pickPreviewRow"
                                 class="w-full text-left cursor-pointer flex items-center gap-3 pl-3 pr-3 list-row-y
                                        {{ loop.index == 1 ? 'bg-hover' : '' }}
-                                    {{ row.unread ? 'row-unread' : 'bg-transparent' }}">
+                                    {{ row.unread ? 'row-unread' : 'row-read' }}">
                             <span data-row-avatar-face
                                   class="flex items-center justify-center rounded-full w-8 h-8 text-xs font-semibold select-none shrink-0 {{ row.tone }}">
                                 {{ ('settings.appearance.preview.sender' ~ loop.index)|trans|first|upper }}
                             </span>
 
-                            <span class="min-w-0 flex-1 flex flex-col">
-                                <span class="truncate text-sm {{ row.unread ? 'font-semibold text-ink' : 'font-normal text-ink-muted' }}">
+                            <span data-row-layout class="min-w-0 flex-1 flex flex-col">
+                                <span data-row-sender class="truncate text-sm {{ row.unread ? 'font-semibold text-ink' : 'font-normal text-ink-muted' }}">
                                     {{ ('settings.appearance.preview.sender' ~ loop.index)|trans }}
                                 </span>
-                                <span class="truncate text-sm mt-0.5 {{ row.unread ? 'font-semibold text-ink' : 'font-normal text-ink-soft' }}">
+                                <span data-row-neat-labels class="hidden">
+                                    {% include '_partials/_thread_labels.html.twig' with { item: { labels: [ { name: 'label.color.blue'|trans, color: 'blue', role: null, isVisible: true } ] } } only %}
+                                </span>
+                                <span data-row-neat-text class="hidden">
+                                    <span data-neat-subject class="truncate {{ row.unread ? 'font-semibold text-ink' : 'font-normal text-ink-soft' }}">{{ ('settings.appearance.preview.subject' ~ loop.index)|trans }}</span>
+                                    <span class="shrink-0 text-ink-faint" aria-hidden="true">|</span>
+                                    <span data-neat-snippet class="truncate text-ink-faint">{{ 'settings.appearance.preview.snippet'|trans }}</span>
+                                </span>
+                                <span data-row-subject class="truncate text-sm mt-0.5 {{ row.unread ? 'font-semibold text-ink' : 'font-normal text-ink-soft' }}">
                                     {{ ('settings.appearance.preview.subject' ~ loop.index)|trans }}
                                 </span>
                                 <span data-row-snippet class="truncate text-sm text-ink-faint mt-0.5">

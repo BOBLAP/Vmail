@@ -8,6 +8,7 @@ use App\Domain\Enum\Theme\BackgroundKind;
 use App\Domain\Enum\Theme\BackgroundPreset;
 use App\Domain\Enum\Theme\Density;
 use App\Domain\Enum\Theme\MessageBodySize;
+use App\Domain\Enum\Theme\LabelStyle;
 use App\Domain\Enum\Theme\MotionLevel;
 use App\Domain\Enum\Theme\FontFamily;
 use App\Domain\Enum\Theme\Layout;
@@ -378,6 +379,9 @@ final class Appearance
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     public bool $listAvatars = true;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    public bool $starColors = true;
+
     /**
      * The unread count beside each inbox tab's name.
      *
@@ -447,6 +451,31 @@ final class Appearance
     #[ORM\Column(type: 'string', length: 16, enumType: MessageBodySize::class, options: ['default' => 'adaptive'])]
     public MessageBodySize $messageBodySize = MessageBodySize::Adaptive;
 
+    #[ORM\Column(type: 'string', length: 16, enumType: LabelStyle::class, options: ['default' => 'subtle'])]
+    public LabelStyle $labelStyle = LabelStyle::Subtle;
+
+    #[ORM\Column(options: ['default' => false])]
+    public bool $invertMessagePanel = false;
+
+    #[ORM\Column(options: ['default' => 70])]
+    public int $messagePanelContrast = 70 {
+        set {
+            $this->messagePanelContrast = max(0, min(100, $value));
+        }
+    }
+
+    #[ORM\Column(options: ['default' => 100])]
+    public int $messagePanelOpacity = 100 {
+        set {
+            $this->messagePanelOpacity = max(0, min(100, $value));
+        }
+    }
+
+    public function messagePanelGrey(): int
+    {
+        return (int) round(128 + 127 * $this->messagePanelContrast / 100);
+    }
+
     /** The density a surface actually renders at: its own, or the global one. */
     public function densityFor(string $surface): Density
     {
@@ -511,6 +540,7 @@ final class Appearance
             'mainAlpha' => $this->mainAlpha,
             'accountCorner' => $this->accountCorner,
             'listAvatars' => $this->listAvatars,
+            'starColors' => $this->starColors,
             'tabUnreadCount' => $this->tabUnreadCount,
             'previewLines' => $this->previewLines,
             'unreadEmphasis' => $this->unreadEmphasis->value,
@@ -520,13 +550,32 @@ final class Appearance
             'listDensity' => $this->listDensity?->value,
             'readingDensity' => $this->readingDensity?->value,
             'messageBodySize' => $this->messageBodySize->value,
+            'labelStyle' => $this->labelStyle->value,
+            'invertMessagePanel' => $this->invertMessagePanel,
+            'messagePanelContrast' => $this->messagePanelContrast,
+            'messagePanelOpacity' => $this->messagePanelOpacity,
         ];
     }
 
     public function applyArray(array $data): static
     {
+        if (isset($data['invertMessagePanel'])) {
+            $this->invertMessagePanel = self::boolean($data['invertMessagePanel']);
+        }
+        if (isset($data['messagePanelOpacity'])) {
+            $this->messagePanelOpacity = (int) $data['messagePanelOpacity'];
+        }
+        if (isset($data['messagePanelContrast'])) {
+            $this->messagePanelContrast = max(0, min(100, (int) $data['messagePanelContrast']));
+        }
+        if (isset($data['labelStyle']) && is_string($data['labelStyle'])) {
+            $this->labelStyle = LabelStyle::tryFrom($data['labelStyle']) ?? $this->labelStyle;
+        }
         if (isset($data['messageBodySize']) && is_string($data['messageBodySize'])) {
             $this->messageBodySize = MessageBodySize::tryFrom($data['messageBodySize']) ?? $this->messageBodySize;
+        }
+        if (isset($data['starColors'])) {
+            $this->starColors = self::boolean($data['starColors']);
         }
         // First: a layout seeds the knobs, so any explicit knob value in the
         // same payload has to be applied after it to win.
@@ -579,7 +628,10 @@ final class Appearance
         }
 
         if (true === isset($data['density'])) {
-            $this->density = Density::tryFrom($data['density']) ?? $this->density;
+            $density = Density::tryFrom($data['density']);
+            if (Density::Neat !== $density) {
+                $this->density = $density ?? $this->density;
+            }
         }
 
         if (true === isset($data['motion'])) {
@@ -665,7 +717,10 @@ final class Appearance
             }
 
             $value = $data[$surface];
-            $this->{$surface} = is_string($value) && '' !== $value ? Density::tryFrom($value) : null;
+            $density = is_string($value) && '' !== $value ? Density::tryFrom($value) : null;
+            if ('listDensity' === $surface || Density::Neat !== $density) {
+                $this->{$surface} = $density;
+            }
         }
 
         return $this;

@@ -21,6 +21,7 @@ Variables:
            applied document-wide regardless of the frame. #}
         <form method="post" action="{{ path('app_settings_filters_save') }}"
               data-controller="rules--rule-builder"
+              data-rules--rule-builder-new-label-url-value="{{ path('app_label_new', {context: 'rule'}) }}"
               data-rules--rule-builder-preview-url-value="{{ path('app_settings_filters_preview') }}"
               data-rules--rule-builder-csrf-value="{{ csrf_token('mail_rule_preview') }}"
               data-rules--rule-builder-conditions-value="{{ (submittedConditions ?: (rule.conditions ? rule.conditions|json_encode : '{}'))|e('html_attr') }}"
@@ -70,6 +71,7 @@ Variables:
                   yes: 'settings.filters.yes'|trans,
                   no: 'settings.filters.no'|trans,
                   selectNoResults: 'form.select.no_results'|trans,
+                  createLabel: 'sidebar.labels.add'|trans,
                   actionTypes: actionTypes,
                   'join.and': 'settings.filters.join.and'|trans,
                   'join.or': 'settings.filters.join.or'|trans,
@@ -125,6 +127,7 @@ Variables:
             <input type="hidden" name="id" value="{{ rule.id }}">
             <input type="hidden" name="conditions" data-rules--rule-builder-target="conditions">
             <input type="hidden" name="actions" data-rules--rule-builder-target="actions">
+            <div id="filter-label-result" hidden></div>
 
             {# ── Header ─────────────────────────────────────────────────── #}
             <div class="flex items-center gap-2 px-4 h-11 border-b border-line bg-sunken">

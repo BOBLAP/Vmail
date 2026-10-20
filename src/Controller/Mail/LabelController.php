@@ -54,9 +54,13 @@ final class LabelController extends AbstractController
     #[Route('/new', name: 'new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
     {
+        $fromRule = 'rule' === $request->query->get('context');
         $label = new Label();
+        if ($fromRule && $request->isMethod('GET')) {
+            $label->name = mb_substr(trim($request->query->getString('name')), 0, 255);
+        }
         $form  = $this->createForm(LabelType::class, $label, [
-            'action' => $this->generateUrl('app_label_new'),
+            'action' => $this->generateUrl('app_label_new', $fromRule ? ['context' => 'rule'] : []),
             'user'   => $this->getUser(),
         ]);
 
@@ -81,7 +85,14 @@ final class LabelController extends AbstractController
                 $this->structurePropagator->created($label);
                 $this->em->flush();
 
-                return $this->labelListsStream('label.created');
+                $response = $this->labelListsStream('label.created');
+                if ($fromRule) {
+                    $response->setContent($response->getContent() . $this->renderView('label/_rule_created.stream.html.twig', [
+                        'label' => $label,
+                    ]));
+                }
+
+                return $response;
             }
         }
 

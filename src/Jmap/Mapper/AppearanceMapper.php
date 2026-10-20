@@ -72,6 +72,7 @@ final class AppearanceMapper
         'accountCorner',
         'listAvatars',
         'tabUnreadCount',
+        'starColors',
         'previewLines',
         'unreadEmphasis',
         'fontFamily',
@@ -80,6 +81,10 @@ final class AppearanceMapper
         'listDensity',
         'readingDensity',
         'messageBodySize',
+        'labelStyle',
+        'invertMessagePanel',
+        'messagePanelContrast',
+        'messagePanelOpacity',
     ];
 
     /**
@@ -188,6 +193,7 @@ final class AppearanceMapper
             'accountCorner' => $appearance->accountCorner,
             'listAvatars' => $appearance->listAvatars,
             'tabUnreadCount' => $appearance->tabUnreadCount,
+            'starColors' => $appearance->starColors,
             'previewLines' => $appearance->previewLines,
             'unreadEmphasis' => $appearance->unreadEmphasis->value,
             'fontFamily' => $appearance->fontFamily->value,
@@ -199,6 +205,10 @@ final class AppearanceMapper
             'listDensity' => $appearance->listDensity?->value,
             'readingDensity' => $appearance->readingDensity?->value,
             'messageBodySize' => $appearance->messageBodySize->value,
+            'labelStyle' => $appearance->labelStyle->value,
+            'invertMessagePanel' => $appearance->invertMessagePanel,
+            'messagePanelContrast' => $appearance->messagePanelContrast,
+            'messagePanelOpacity' => $appearance->messagePanelOpacity,
         ];
     }
 

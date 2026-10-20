@@ -4516,3 +4516,36 @@ whats_new:
     screenshot_close: 'Screenshot schließen'
     screenshot_open: 'Screenshot in voller Größe öffnen'
     title: 'Was ist neu'
+
+settings.appearance.star_colors: Coloured stars
+settings.appearance.star_colors_hint: Yellow → orange → red → green → turquoise → navy → black → unstarred. Turn off for standard On/Off stars.
+
+settings.appearance.logo.motif.vinz: Vinz
+
+
+
+settings.appearance.label_style.heading: "Label-Stil"
+settings.appearance.label_style.hint: "Dezente Umrandung oder ausgefüllte Labels."
+settings.appearance.label_style.subtle: "Dezent"
+settings.appearance.label_style.plain: "Ausgefüllt"
+
+settings.appearance.density.neat: "Neat"
+settings.appearance.invert_message_panel: "Nachrichtenbereich umkehren"
+settings.appearance.invert_message_panel_hint: "Bei dunklen Designs den mittleren Bereich mit hellem Hintergrund und schwarzem Text anzeigen."
+settings.appearance.message_panel_contrast: "Kontraststärke"
+settings.appearance.panel_grey: "Mittelgrau"
+settings.appearance.panel_white: "Weiß"
+
+attachment.office.preparing: "Vorschau wird vorbereitet…"
+attachment.office.too_large: "Die Datei überschreitet die Vorschaugrenze von 25 MB. Sie können sie herunterladen."
+attachment.office.busy: "Eine andere Vorschau wird vorbereitet. Bitte in Kürze erneut versuchen."
+attachment.office.unavailable: "Die Vorschau ist vorübergehend nicht verfügbar. Die Originaldatei kann heruntergeladen werden."
+attachment.office.failed: "Das Dokument konnte nicht konvertiert werden. Es ist möglicherweise geschützt oder beschädigt. Die Originaldatei kann heruntergeladen werden."
+
+content_security:
+    heading: 'Remote content'
+    https_only: 'Only download HTTPS content'
+    hint: 'Blocks HTTP images and backgrounds in emails, including after redirects. Attachments remain available. HTTPS certificates are always verified.'
+
+message_panel_opacity:
+    label: 'Opacity'

@@ -125,6 +125,25 @@ final class ThreadStatusUpdaterTest extends KernelTestCase
         self::assertGreaterThan($before, count($this->transport()->getSent()));
     }
 
+    public function testColourCyclePersistsWithoutUnflaggingBetweenColours(): void
+    {
+        $thread = $this->inboxThread(1);
+        $messages = $thread->messages->toArray();
+        for ($color = 1; $color <= 7; ++$color) {
+            self::assertTrue($this->updater->star($messages, true, true));
+            self::assertSame($color, $thread->starColor);
+            self::assertSame($color, $messages[0]->starColor);
+            self::assertTrue($messages[0]->hasFlag(MessageFlag::FLAGGED));
+            $this->em->refresh($thread);
+            self::assertSame($color, $thread->starColor);
+        }
+        self::assertFalse($this->updater->star($messages, true, true));
+        self::assertSame(0, $thread->starColor);
+        self::assertFalse($messages[0]->hasFlag(MessageFlag::FLAGGED));
+        self::assertTrue($this->updater->star($messages, false, true));
+        self::assertFalse($this->updater->star($messages, false, true));
+    }
+
     // ── archive ──────────────────────────────────────────────────────────────
 
     /**

@@ -6,6 +6,7 @@ entrées sont des points de départ, sans audit complet de leur logique métier.
 
 ## Guides
 
+- [Mise a jour du VPS Vinz](install/update-vps-vinz.md) : construction et deploiement en une commande depuis le PC, sauvegarde et controles ; `bin/vps-preview-config.py` ajoute le complement Compose prive de Gotenberg.
 - [Affichage et personnalisation](PERSONNALISATION.md) : palettes, réglages,
   sauvegarde, priorités, tests et actualisation de l'instance Docker.
 - [Composants visuels partagés](COMPOSANTS_UI.md) : cartes, boutons, champs,
@@ -57,3 +58,110 @@ Le parcours complet d'un message (données, liste, lecture, actions), les brouil
 et l'éditeur, les mises à jour temps réel et les panneaux calendrier restent à
 cartographier en profondeur. Les points d'entrée ci-dessus ne garantissent pas
 le comportement de toute leur logique.
+
+## Étoiles de couleur
+
+Le switch `starColors` dans Apparence active par défaut le cycle jaune, orange, rouge, vert, turquoise, marine, noir, puis sans étoile. Désactivé, le clic bascule On/Off et les favoris apparaissent jaunes. Les index locaux `starColor` des messages et conversations sont stockés séparément du drapeau fournisseur. Points d’entrée : `ThreadStatusController`, `ThreadStatusUpdater`, `StarColor`, `_thread_row.html.twig` et `message_actions_controller.js`. Migration : `Version20261018160000`.
+
+Le motif `Vinz` ajoute la favicon fournie dans la liste Logo. Son PNG est embarqué dans `templates/branding/motif/vinz.svg.twig` pour les trois rendus (logo, tuile et favicon) ; ses couleurs originales restent fixes. Source conservée dans `public/icons/vinz.png`.
+
+## Style des labels
+
+`labelStyle` (`LabelStyle.php`) choisit Discret (défaut) ou Plein dans Apparence.
+Le renderer et les options Twig partagent les variables de visibilité ;
+`_thread_labels.html.twig` et `_label_plain.html.twig` rendent les pastilles.
+Le mode Plein utilise la couleur du label (palette Tailwind 500) et le noir ou
+le blanc offrant le meilleur contraste WCAG selon la luminance relative.
+La préférence suit sauvegarde, export/import et JMAP ; migration `Version20261019120000`.
+
+## Liste Neat et inversion du panneau central
+
+`listDensity = neat` ajoute une ligne fixe de 30 px, un avatar de 22 px et les
+labels avant le sujet. Neat est proposé uniquement pour Message list, après Compact.
+Le snippet est masqué pour tenir sur une seule ligne, à toutes les largeurs.
+Les hooks `data-row-neat-labels`, `data-row-content` et la classe racine `list-neat`
+pilotent le rendu réel et la miniature ; les autres densités gardent leur disposition.
+
+`invertMessagePanel` (désactivé par défaut) ajoute la classe racine
+`invert-message-panel`. Avec `.dark`, les conteneurs `data-message-panel` reçoivent
+une palette locale claire ; la navigation et les réglages gardent leur thème.
+`messagePanelContrast` (défaut 70, borné 0–100) interpole entre #808080 et #ffffff.
+Le renderer et le contrôleur écrivent `--message-panel-grey` avec la même formule.
+L’inversion prend le dessus sur la teinte et l’ancienne opacité principale du panneau tant
+qu’elle est active et le thème sombre. Elle suit aussi le thème System.
+Stockage : migration `Version20261019140000`, export/import et contrat JMAP.
+
+## Aperçus Office
+
+Le lecteur PDF partagé ouvre aussi Word, Excel et PowerPoint :
+`OfficeAttachment`, `OfficePreviewConverter`, `AttachmentController::officePdf()`,
+`AttachmentPreviewExtension::canOpen()`, `_attachment_chip.html.twig` et
+`_attachment_preview.html.twig`. Le lecteur envoie un POST CSRF pour les dérivés
+Office ; les PDF natifs conservent leur GET et leurs outils de signature.
+Le téléchargement vise toujours l’original. Voir [le guide Office](features/office-preview.md)
+pour Gotenberg, les limites, le cache privé et la stack de tests.
+
+## Sécurité des contenus distants
+
+L’onglet Security précède Images dans `templates/settings/index.html.twig` et
+conserve les cartes du mot de passe et de la double authentification.
+`settings/_content_security.html.twig` propose HTTPS uniquement, activé par défaut.
+`ImageSettingsController::updateSecurity()` vérifie le CSRF et stocke
+`User::remoteHttpsOnly` dans le sac de réglages, sans migration.
+`MessageRenderer` transmet ce choix à `RemoteContentBlocker` (images et fonds CSS).
+`ImageProxySigner` signe aussi la politique HTTP : modifier le paramètre invalide
+le lien du proxy anonyme. `ImageProxyFetcher` vérifie la politique avant le cache
+et chaque redirection ; caches séparés pour les deux politiques. Le mode permissif
+reste limité aux ports HTTP 80 et HTTPS 443, avec protection SSRF et TLS inchangées.
+Les liens sortants et pièces jointes ne sont pas concernés. Les imports de signature
+utilisant le fetcher sans préférence restent HTTPS uniquement.
+
+### Opacité du bloc de courrier
+
+`messagePanelOpacity` (0–100, défaut 100) est le curseur suivant Contrast strength.
+La variable `--message-panel-opacity` règle uniquement le fond de `data-message-panel`,
+pas l’opacité du texte ou des boutons. Elle multiplie l’opacité principale existante
+et reste active quand le panneau est inversé (dont le fond était auparavant opaque).
+L’aperçu partage ce contrat. Sauvegarde, export/import et JMAP suivent `Appearance` ;
+migration `Version20261019160000`.
+
+### Raccourcis permanents Settings et Reply
+
+`_partials/_topbar.html.twig` ajoute un engrenage `data-topbar-settings` près de
+Help et Sync, vers la même destination que le menu utilisateur (Health si un
+compte nécessite une intervention). `mail/_message_actions.html.twig` ajoute
+`data-message-quick-reply` entre la date et le menu à trois points : même route,
+paramètres de conversation et contrôleur `compose--frame-target` que Reply dans
+le menu, vers `compose_inline` ou `compose_dock`. Noms accessibles et infobulles
+réutilisent les traductions existantes ; les boutons des menus restent disponibles.
+
+### Navigation entre les résultats ouverts
+
+La barre de `mail/_thread_content.html.twig` propose deux boutons précédent/suivant
+à droite du titre. `mail_pane_controller.js` mémorise les liens de la page de liste
+au clic d’ouverture et conserve leur ordre pendant la lecture (y compris pour une
+recherche de non-lus). Les extrémités et le chargement désactivent les boutons.
+Le retour conserve l’URL de recherche, ses filtres, son tri et sa page ; une nouvelle
+navigation de liste réinitialise le parcours. Le parcours couvre la page de résultats
+chargée, sans franchir la pagination. Test : `tests/e2e/search-navigation.spec.ts`.
+
+### Contraste des lignes lues et onglet actif
+
+`row-read` dans `assets/styles/app.css` pose un gris neutre (128 128 128 à 12 %)
+aux messages lus de `_thread_row.html.twig` et de l’aperçu Apparence. Les non-lus
+conservent `row-unread` et leur réglage d’accentuation ; le survol reste prioritaire.
+Dans `mail/inbox.html.twig`, les onglets de catégorie réservent une bordure basse
+de 4 px, colorée avec l’accent pour l’onglet actif, transparente au repos ailleurs.
+
+### Créer un label depuis un filtre
+
+Dans `settings/filters/_editor.html.twig`, l’action Appliquer un label propose
+Créer un label. `rules/rule_builder_controller.js` ouvre la modale partagée via
+`LabelController::new()` avec `context=rule` et le nom courant de la règle.
+Le formulaire `LabelType` conserve le choix racine/parent, la couleur, le CSRF,
+la validation des doublons et les parents limités à l’utilisateur connecté.
+Après création, `label/_rule_created.stream.html.twig` transmet le label à
+`#filter-label-result` ; le contrôleur actualise ses choix et sélectionne le label
+dans l’action d’origine sans remplacer l’éditeur ni sauvegarder la règle.
+Annuler laisse l’éditeur intact. Le label créé existe indépendamment de la règle.
+Test de parcours : `tests/e2e/filter-create-label.spec.ts` (racine et sous-label).

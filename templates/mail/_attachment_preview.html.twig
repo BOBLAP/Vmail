@@ -1,11 +1,11 @@
 {#
 mail/_attachment_preview.html.twig
 ─────────────────────────────────────────────────────────────────────────────
-Reading a PDF attachment without downloading it.
+Reading a PDF or converted Office attachment in the shared viewer.
 
 Rendered into the app's modal frame. The document itself is NOT delivered by
-this response — the controller fetches the bytes from `app_mail_attachment`,
-which is unchanged and still serves them as a download. `fetch()` ignores
+this response — the controller fetches original PDF bytes from `app_mail_attachment`
+or POSTs to the Office conversion route. Both serve their bytes as a download. `fetch()` ignores
 Content-Disposition, so the strict inline allow-list stays exactly as strict as
 it was.
 
@@ -29,6 +29,7 @@ The signature is VISUAL: a picture of a name, stamped on a page. It is not
 PAdES, it carries no certificate, and nothing on this screen may suggest it
 proves the document is unaltered.
 #}
+{% set isOffice = isOffice|default(false) %}
 {% set assets  = pdfjs_assets() %}
 {% set message = part.message %}
 
@@ -40,7 +41,7 @@ proves the document is unaltered.
 
 <turbo-frame id="modal" class="flex-1 min-h-0 flex flex-col">
     <div class="flex-1 min-h-0 flex flex-col"
-         data-controller="mail--pdf-viewer mail--pdf-sign"
+         data-controller="mail--pdf-viewer{{ isOffice ? '' : ' mail--pdf-sign' }}"
          data-mail--pdf-sign-action-value="{{ path('app_compose_reply_signed', { id: part.id, frame: composeFrame, thread: message.thread ? message.thread.id : null }) }}"
          data-mail--pdf-sign-token-value="{{ csrf_token('reply_signed' ~ part.id) }}"
          data-mail--pdf-sign-frame-value="{{ composeFrame }}"
@@ -48,13 +49,14 @@ proves the document is unaltered.
          data-mail--pdf-sign-encrypted-text-value="{{ 'attachment.sign.protected'|trans }}"
          data-mail--pdf-sign-unreadable-text-value="{{ 'attachment.sign.unreadable'|trans }}"
          data-mail--pdf-sign-saved-url-value="{{ app.user.signature ? path('app_settings_profile_signature', { filename: app.user.signature }) : '' }}"
-         data-mail--pdf-viewer-src-value="{{ path('app_mail_attachment', { id: part.id }) }}"
+         data-mail--pdf-viewer-src-value="{{ path(isOffice ? 'app_mail_attachment_office_pdf' : 'app_mail_attachment', { id: part.id }) }}"
+         data-mail--pdf-viewer-method-value="{{ isOffice ? 'POST' : 'GET' }}"
          data-mail--pdf-viewer-assets-value="{{ assets|json_encode }}"
          data-mail--pdf-viewer-failed-text-value="{{ 'attachment.preview.failed'|trans }}">
 
         {# ── Toolbar ─────────────────────────────────────────────────────── #}
         <div class="shrink-0 flex items-center gap-3 border-b border-line px-4 py-2">
-            <i class="fa-solid fa-file-pdf text-danger shrink-0" aria-hidden="true"></i>
+            <i class="fa-solid {{ isOffice ? 'fa-file-lines text-ink-muted' : 'fa-file-pdf text-danger' }} shrink-0" aria-hidden="true"></i>
 
             <span class="truncate text-sm font-medium text-ink" title="{{ part.filename }}">
                 {{ part.filename ?: 'attachment.preview.untitled'|trans }}
@@ -66,6 +68,7 @@ proves the document is unaltered.
                 <span data-mail--pdf-viewer-target="pages"
                       class="hidden mr-2 text-xs text-ink-faint tabular-nums whitespace-nowrap"></span>
 
+                {% if not isOffice %}
                 {% if app.user.signature %}
                     <button type="button"
                             data-action="mail--pdf-sign#useSaved"
@@ -83,6 +86,8 @@ proves the document is unaltered.
                     <i class="fa-solid fa-signature text-[11px]" aria-hidden="true"></i>
                     {{ 'attachment.sign.action'|trans }}
                 </button>
+
+                {% endif %}
 
                 <button type="button"
                         data-action="mail--pdf-viewer#zoomOut"
@@ -147,7 +152,7 @@ proves the document is unaltered.
                  class="flex flex-col items-center justify-center gap-2 py-12 text-ink-faint"
                  aria-live="polite">
                 <i class="fa-solid fa-circle-notch fa-spin text-2xl" aria-hidden="true"></i>
-                <p class="text-sm">{{ 'attachment.preview.loading'|trans }}</p>
+                <p class="text-sm">{{ (isOffice ? 'attachment.office.preparing' : 'attachment.preview.loading')|trans }}</p>
             </div>
         </div>
 

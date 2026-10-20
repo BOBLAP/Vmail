@@ -1,0 +1,7 @@
+{# Only the editor that requested creation receives this result. #}
+<turbo-stream action="update" target="filter-label-result">
+    <template>
+        <span data-rules--rule-builder-target="createdLabel"
+              data-label="{{ {id: label.id, name: label.fullName, system: false}|json_encode|e('html_attr') }}"></span>
+    </template>
+</turbo-stream>

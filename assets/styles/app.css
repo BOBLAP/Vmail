@@ -5927,3 +5927,16 @@ html[data-dnd-active] [data-dnd-ghost] {
     background-color: rgb(var(--message-panel-grey) / var(--message-panel-opacity, 100%));
     color: rgb(var(--rgb-ink));
 }
+
+/* Direct download stays visible on touch screens and through keyboard focus. */
+@media (hover: hover) and (pointer: fine) {
+    .attachment-tile .attachment-direct-download { opacity: 0; }
+    .attachment-tile:hover .attachment-direct-download,
+    .attachment-tile:focus-within .attachment-direct-download { opacity: 1; }
+}
+
+[data-compose-drop-active="true"] {
+    outline: 2px dashed rgb(var(--rgb-accent));
+    outline-offset: -2px;
+    background-color: rgb(var(--rgb-accent) / 0.08);
+}

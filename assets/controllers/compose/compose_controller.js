@@ -181,17 +181,11 @@ export default class extends Controller {
                 this._focusCursorAtTop();
             }
 
-            // Pasted and dropped images become real parts instead of data:
-            // URIs — see _handleBodyPaste(). Listeners rather than
-            // data-action because both have to be able to preventDefault
-            // before the browser inserts its own version.
+            // Paste intercepts the native data: URI insertion. File drops use
+            // actions on the two wrappers, including their padding and buttons.
             this._boundBodyPaste    = this._handleBodyPaste.bind(this);
-            this._boundBodyDrop     = this._handleBodyDrop.bind(this);
-            this._boundBodyDragOver = this._allowBodyDrop.bind(this);
 
             this.bodyTarget.addEventListener('paste',    this._boundBodyPaste);
-            this.bodyTarget.addEventListener('drop',     this._boundBodyDrop);
-            this.bodyTarget.addEventListener('dragover', this._boundBodyDragOver);
         }
 
         // Tom Select is built by the autocomplete bundle, which may connect
@@ -584,8 +578,6 @@ export default class extends Controller {
 
         if (this.hasBodyTarget && undefined !== this._boundBodyPaste) {
             this.bodyTarget.removeEventListener('paste',    this._boundBodyPaste);
-            this.bodyTarget.removeEventListener('drop',     this._boundBodyDrop);
-            this.bodyTarget.removeEventListener('dragover', this._boundBodyDragOver);
         }
 
         window.removeEventListener('beforeunload', this._boundBeforeUnload);
@@ -3479,6 +3471,13 @@ export default class extends Controller {
         // again after a removal.
         input.value = '';
 
+        await this._uploadAttachments(files);
+    }
+
+    /** Shared by the file picker and both drop zones. */
+    async _uploadAttachments(files) {
+        if (0 === files.length) { return; }
+
         const tooBig = files.find((file) => file.size > this.maxAttachmentBytesValue);
 
         if (undefined !== tooBig) {
@@ -3577,6 +3576,7 @@ export default class extends Controller {
     // ── Inline images ─────────────────────────────────────────────────
 
     openImagePicker() {
+        this._imageInsertionRange = this._toolbar()?.captureInsertionRange();
         if (true === this.hasImageInputTarget) {
             this.imageInputTarget.click();
         }
@@ -3592,9 +3592,9 @@ export default class extends Controller {
         // later autosave.
         input.value = '';
 
-        for (const file of files) {
-            await this._placeImage(file);
-        }
+        const range = this._imageInsertionRange ?? this._toolbar()?.captureInsertionRange();
+        this._imageInsertionRange = null;
+        await this._placeImages(files, range);
     }
 
     /**
@@ -3619,7 +3619,7 @@ export default class extends Controller {
         // through the browser's own handling.
         event.preventDefault();
 
-        this._placeImages(files);
+        this._placeImages(files, this._toolbar()?.captureInsertionRange());
     }
 
     /**
@@ -3679,35 +3679,56 @@ export default class extends Controller {
         document.execCommand('insertHTML', false, doc.body.innerHTML);
     }
 
-    /** Same again for a file dragged onto the body. */
-    _handleBodyDrop(event) {
-        const files = Array.from(event.dataTransfer?.files ?? [])
-            .filter((file) => file.type.startsWith('image/'));
-
-        if (0 === files.length) {
-            return;
-        }
-
+    /** File drags only: moving text inside the editor keeps its native behaviour. */
+    allowFileDrop(event) {
+        if (!Array.from(event.dataTransfer?.types ?? []).includes('Files')) { return; }
         event.preventDefault();
-
-        // The caret follows the pointer on a drop, and the toolbar's saved
-        // range is what the insertion uses — so record where this landed
-        // before the upload's await gives focus away.
-        this._toolbar()?._saveRange();
-
-        this._placeImages(files);
+        event.dataTransfer.dropEffect = 'copy';
+        event.currentTarget.dataset.composeDropActive = 'true';
     }
 
-    /** Dropping onto a contenteditable is refused unless dragover says yes. */
-    _allowBodyDrop(event) {
-        if (Array.from(event.dataTransfer?.items ?? []).some((item) => 'file' === item.kind)) {
-            event.preventDefault();
+    leaveFileDrop(event) {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+            delete event.currentTarget.dataset.composeDropActive;
         }
     }
 
-    async _placeImages(files) {
+    async dropFiles(event) {
+        const files = Array.from(event.dataTransfer?.files ?? []);
+        delete event.currentTarget.dataset.composeDropActive;
+        if (0 === files.length) { return; }
+        event.preventDefault();
+        event.stopPropagation();
+
+        const inBody = event.currentTarget.dataset.composeDropZone === 'body' && !this._isPlainText();
+        const images = inBody ? files.filter(file => file.type.startsWith('image/')) : [];
+        const attachments = files.filter(file => !images.includes(file));
+        // Capture before the first await: cancelling a native drop does not
+        // reliably move its caret, so use the pointer's position explicitly.
+        const range = images.length ? this._dropInsertionRange(event) : null;
+        await this._placeImages(images, range);
+        await this._uploadAttachments(attachments);
+    }
+
+    _dropInsertionRange(event) {
+        let range = null;
+        if (document.caretPositionFromPoint) {
+            const caret = document.caretPositionFromPoint(event.clientX, event.clientY);
+            if (caret) {
+                range = document.createRange();
+                range.setStart(caret.offsetNode, caret.offset);
+                range.collapse(true);
+            }
+        } else if (document.caretRangeFromPoint) {
+            range = document.caretRangeFromPoint(event.clientX, event.clientY);
+        }
+        return range && this.bodyTarget.contains(range.commonAncestorContainer)
+            ? range : this._toolbar()?.captureInsertionRange();
+    }
+
+    async _placeImages(files, range = this._toolbar()?.captureInsertionRange()) {
         for (const file of files) {
-            await this._placeImage(file);
+            await this._placeImage(file, range);
         }
     }
 
@@ -3718,7 +3739,7 @@ export default class extends Controller {
      * hanging off a Message, so the draft has to exist before there is
      * anything to hang it off.
      */
-    async _placeImage(file) {
+    async _placeImage(file, range = this._toolbar()?.captureInsertionRange()) {
         if (file.size > this.maxAttachmentBytesValue) {
             const limit = Math.round(this.maxAttachmentBytesValue / (1024 * 1024));
 
@@ -3778,7 +3799,7 @@ export default class extends Controller {
             return;
         }
 
-        this._toolbar()?.insertInlineImage(payload);
+        this._toolbar()?.insertInlineImage(payload, range);
 
         // Saved straight away rather than left to the debounced autosave. The
         // part row already exists; if the body that references it does not, a

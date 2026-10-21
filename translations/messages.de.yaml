@@ -2333,6 +2333,7 @@ message:
         star: Markieren
         unstar: Markierung entfernen
     attachments: Anhänge
+    download_all_attachments: Alle Anhänge herunterladen
     back: Zurück
     body_frame: Nachrichteninhalt
     bounce:

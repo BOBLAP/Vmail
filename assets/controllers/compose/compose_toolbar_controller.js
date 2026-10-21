@@ -148,6 +148,21 @@ export default class extends Controller {
         this.#rangeLocked = locked;
     }
 
+    /** Each asynchronous upload owns its range; a later blur must not replace it. */
+    captureInsertionRange() {
+        const selection = window.getSelection();
+        const current = selection?.rangeCount ? selection.getRangeAt(0) : null;
+        const range = current && this.editorTarget.contains(current.commonAncestorContainer)
+            ? current : this.#savedRange;
+        if (range && this.editorTarget.contains(range.commonAncestorContainer)) {
+            return range.cloneRange();
+        }
+        const end = document.createRange();
+        end.selectNodeContents(this.editorTarget);
+        end.collapse(false);
+        return end;
+    }
+
     _restoreRange() {
         this._focusEditor();
         if (!this.#savedRange) { return; }
@@ -337,7 +352,7 @@ export default class extends Controller {
      * the identity InlineImageRewriter turns back into `cid:` on save, which is
      * what the recipient's client resolves against the embedded part.
      */
-    insertInlineImage({ url, contentId }) {
+    insertInlineImage({ url, contentId }, insertionRange = null) {
         if ('string' !== typeof url || '' === url) { return; }
 
         const img = document.createElement('img');
@@ -349,23 +364,29 @@ export default class extends Controller {
             img.setAttribute('data-cid', contentId);
         }
 
-        this._insertAtCaret(img);
+        this._insertAtCaret(img, insertionRange);
     }
 
-    _insertAtCaret(node) {
+    _insertAtCaret(node, insertionRange = null) {
         if (false === this.hasEditorTarget) { return; }
 
-        this._restoreRange();
+        if (insertionRange) {
+            this._focusEditor();
+        } else {
+            this._restoreRange();
+        }
 
         const sel = window.getSelection();
-        let range = null;
+        let range = insertionRange && this.editorTarget.contains(insertionRange.commonAncestorContainer)
+            ? insertionRange : null;
 
         // Only a selection that is actually inside this editor may be written
         // to — a range left over in another window's body, or none at all,
         // becomes "the end of this one".
-        if (sel && sel.rangeCount > 0 && this.editorTarget.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+        if (!range && sel && sel.rangeCount > 0 && this.editorTarget.contains(sel.getRangeAt(0).commonAncestorContainer)) {
             range = sel.getRangeAt(0);
-        } else {
+        }
+        if (!range) {
             range = document.createRange();
             range.selectNodeContents(this.editorTarget);
             range.collapse(false);
@@ -404,6 +425,10 @@ export default class extends Controller {
             sel.addRange(after);
         }
 
+        if (insertionRange) {
+            insertionRange.setStartAfter(node);
+            insertionRange.collapse(true);
+        }
         this.#savedRange = after.cloneRange();
 
         this._syncHiddenInput();

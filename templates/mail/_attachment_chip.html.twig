@@ -33,18 +33,16 @@ console to say why. Turbo leaves a link carrying `download` to the browser.
 {% set downloadName = part.filename ?: 'attachment' %}
 {% set canOpen = attachment_can_open(part) %}
 
-{#
-    A PDF or supported Office document opens the shared reader.
+{% macro downloadFace(part) %}
+    <a href="{{ path('app_mail_attachment', { id: part.id, download: 1 }) }}"
+       download="{{ part.filename ?: 'attachment' }}" data-turbo="false"
+       aria-label="{{ 'attachment.preview.download'|trans }}  -  {{ part.filename ?: 'attachment' }}"
+       class="attachment-direct-download inline-flex items-center gap-1 px-2 border-l border-line text-xs text-ink-soft hover:bg-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent">
+        <i class="fa-solid fa-download" aria-hidden="true"></i>
+        <span>{{ 'attachment.preview.download'|trans }}</span>
+    </a>
+{% endmacro %}
 
-    This is the case where the chip's face is not an `<a download>`, and the
-    note above about `download` being load-bearing still holds everywhere else:
-    it is there so Turbo Drive leaves a non-HTML response alone. A button that
-    opens a dialog is not a navigation, so Turbo has nothing to swallow and the
-    attribute has nothing to do.
-
-    Nothing is lost by it. The reader carries its own download link, and the
-    "Save to…" half beside it is untouched.
-#}
 {% macro readerFace(part, hasPreview, radius) %}
     {# A macro gets no caller scope, so the sibling macro is imported here rather
        than passed in: an imported name lives in Twig's macro table, not in the
@@ -99,8 +97,9 @@ console to say why. Turbo leaves a link carrying `download` to the browser.
 {% if targets is empty %}
 
     {% if canOpen %}
-        <span class="inline-flex rounded-lg bg-sunken border border-line overflow-hidden">
-            {{ chip.readerFace(part, hasPreview, 'rounded-lg') }}
+        <span class="attachment-tile inline-flex rounded-lg bg-sunken border border-line overflow-hidden">
+            {{ chip.readerFace(part, hasPreview, 'rounded-l-lg') }}
+            {{ chip.downloadFace(part) }}
         </span>
     {% else %}
         <a href="{{ path('app_mail_attachment', { id: part.id }) }}?download=1"
@@ -124,9 +123,10 @@ console to say why. Turbo leaves a link carrying `download` to the browser.
        the inner box, positioning to the outer one. #}
     <div class="relative inline-flex" data-controller="ui--dropdown">
 
-        <div class="inline-flex items-stretch rounded-lg bg-sunken border border-line overflow-hidden">
+        <div class="attachment-tile inline-flex items-stretch rounded-lg bg-sunken border border-line overflow-hidden">
             {% if canOpen %}
                 {{ chip.readerFace(part, hasPreview, 'rounded-l-lg') }}
+                {{ chip.downloadFace(part) }}
             {% else %}
                 <a href="{{ path('app_mail_attachment', { id: part.id }) }}?download=1"
                    download="{{ downloadName }}"

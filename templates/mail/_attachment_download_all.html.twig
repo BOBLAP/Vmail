@@ -1,0 +1,8 @@
+{% if message.messageParts|filter(part => not part.isInline)|length > 1 %}
+    <a href="{{ path('app_mail_attachments_zip', { id: message.id }) }}"
+       download data-turbo="false" data-attachments-download-all
+       class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs bg-sunken border border-line text-ink-soft hover:bg-hover transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent">
+        <i class="fa-solid fa-file-zipper" aria-hidden="true"></i>
+        <span>{{ 'message.download_all_attachments'|trans }}</span>
+    </a>
+{% endif %}

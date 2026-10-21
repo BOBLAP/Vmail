@@ -218,6 +218,7 @@ Variables:
         {% if message.hasAttachments %}
             <div class="flex flex-wrap items-center gap-2 mb-4">
                 <span class="text-xs font-medium text-ink-faint">{{ 'message.attachments'|trans }}</span>
+                {% include 'mail/_attachment_download_all.html.twig' with { message: message } only %}
                 {% for part in message.messageParts %}
                     {% if not part.isInline %}
                         {% include 'mail/_attachment_chip.html.twig' with { part: part } %}

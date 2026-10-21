@@ -2343,6 +2343,7 @@ message:
         star: Suivre
         unstar: Ne plus suivre
     attachments: Pièces jointes
+    download_all_attachments: Télécharger toutes les pièces jointes
     back: Retour
     body_frame: Contenu du message
     bounce:

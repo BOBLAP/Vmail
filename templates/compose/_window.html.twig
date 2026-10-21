@@ -483,7 +483,8 @@ Variables: form, message, ctx (an App\Domain\DTO\Mail\ComposeContext)
 
             </div>
 
-            <div class="flex-1 min-h-[180px] px-4 py-3">
+            <div data-compose-drop-zone="body" data-action="dragover->compose--compose#allowFileDrop dragleave->compose--compose#leaveFileDrop drop->compose--compose#dropFiles"
+                 class="flex-1 min-h-[180px] px-4 py-3">
                 {# ── The plain-text surface ─────────────────────────────
                    A draft is in plain-text mode when it has text and no HTML
                    — which is not a flag anywhere, it is simply what such a
@@ -567,7 +568,8 @@ Variables: form, message, ctx (an App\Domain\DTO\Mail\ComposeContext)
                also why none of them need the `max-md:fixed` viewport pinning
                they used to carry: that was a workaround for the sideways
                scrollers, and the scrollers are gone. #}
-            <div class="relative px-2 md:px-3 pb-2 md:pb-3 pt-1 shrink-0">
+            <div data-compose-drop-zone="attachments" data-action="dragover->compose--compose#allowFileDrop dragleave->compose--compose#leaveFileDrop drop->compose--compose#dropFiles"
+                 class="relative px-2 md:px-3 pb-2 md:pb-3 pt-1 shrink-0">
 
                 {# ── Link popover ─────────────────────────────────────
                    Shared with the settings signature editor, which runs the

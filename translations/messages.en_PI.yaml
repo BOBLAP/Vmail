@@ -2212,6 +2212,7 @@ message:
         star: Mark with an X
         unstar: Rub out the X
     attachments: Cargo
+    download_all_attachments: Haul aboard all cargo
     back: Back
     body_frame: The bottle's contents
     bounce:

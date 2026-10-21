@@ -2332,6 +2332,7 @@ message:
         star: Star
         unstar: Remove star
     attachments: Attachments
+    download_all_attachments: Download all attachments
     back: Back
     body_frame: Message content
     bounce:

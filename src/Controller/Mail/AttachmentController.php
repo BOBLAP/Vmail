@@ -12,6 +12,7 @@ use App\Service\Mail\OfficePreviewException;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use App\Entity\Mail\MessagePart;
+use App\Entity\Mail\Message;
 use App\Security\Voter\OwnershipVoter;
 use App\Service\Mail\AttachmentResolver;
 use App\Service\Mail\AttachmentThumbnailer;
@@ -30,6 +31,68 @@ final class AttachmentController extends AbstractController
         private readonly AttachmentResolver $attachmentResolver,
         private readonly AttachmentThumbnailer $thumbnailer,
     ) {}
+
+    /** Bundle the same non-inline parts shown in the message, retaining original bytes. */
+    #[Route('/mail/message/{id}/attachments.zip', name: 'app_mail_attachments_zip', methods: ['GET'], requirements: ['id' => '\\d+'])]
+    public function downloadAll(Message $message): Response
+    {
+        $this->denyAccessUnlessGranted(OwnershipVoter::OWN, $message);
+        $parts = $message->messageParts->filter(static fn (MessagePart $part): bool => !$part->isInline);
+        if ($parts->isEmpty()) {
+            throw $this->createNotFoundException();
+        }
+
+        $path = tempnam(sys_get_temp_dir(), 'plmail-zip-');
+        if (false === $path) {
+            throw new \RuntimeException('Cannot create attachment archive.');
+        }
+        $zip = new \ZipArchive();
+        try {
+            if (true !== $zip->open($path, \ZipArchive::OVERWRITE)) {
+                throw new \RuntimeException('Cannot open attachment archive.');
+            }
+            $used = [];
+            foreach ($parts as $part) {
+                $this->denyAccessUnlessGranted(OwnershipVoter::OWN, $part);
+                $base = InlineDisposition::headerFilename($part->filename);
+                if (in_array($base, ['.', '..'], true)) {
+                    $base = 'attachment';
+                }
+                $name = $base;
+                $suffix = 2;
+                // Duplicate names must not silently replace an earlier attachment.
+                while (isset($used[strtolower($name)])) {
+                    $extension = pathinfo($base, PATHINFO_EXTENSION);
+                    $stem = '' === $extension ? $base : substr($base, 0, -strlen($extension) - 1);
+                    $name = $stem.' ('.$suffix++.')'.('' === $extension ? '' : '.'.$extension);
+                }
+                $used[strtolower($name)] = true;
+                if (!$zip->addFile($this->attachmentResolver->absolutePathFor($part), $name)) {
+                    throw new \RuntimeException('Cannot add attachment to archive.');
+                }
+            }
+            if (!$zip->close()) {
+                throw new \RuntimeException('Cannot finish attachment archive.');
+            }
+        } catch (\Throwable $error) {
+            try {
+                $zip->close();
+            } catch (\Throwable) {
+                // The archive may already be closed, or opening it may have failed.
+            }
+            @unlink($path);
+            throw $error;
+        }
+
+        clearstatcache(true, $path);
+        $response = new BinaryFileResponse($path);
+        $response->headers->set('Content-Type', 'application/zip');
+        $response->headers->set('Cache-Control', 'private, no-store');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'attachments-'.$message->id.'.zip');
+        $response->deleteFileAfterSend(true);
+        return $response;
+    }
 
     /** The shared reader: native PDFs stay in the browser; Office bytes are converted separately. */
     #[Route('/mail/attachment/{id}/preview', name: 'app_mail_attachment_preview', methods: ['GET'], requirements: ['id' => '\d+'])]

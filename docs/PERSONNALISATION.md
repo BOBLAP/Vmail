@@ -387,3 +387,28 @@ aux messages lus de `_thread_row.html.twig` et de l’aperçu Apparence. Les non
 conservent `row-unread` et leur réglage d’accentuation ; le survol reste prioritaire.
 Dans `mail/inbox.html.twig`, les onglets de catégorie réservent une bordure basse
 de 4 px, colorée avec l’accent pour l’onglet actif, transparente au repos ailleurs.
+
+### Téléchargement des pièces jointes
+
+`mail/_attachment_chip.html.twig` ajoute un lien de téléchargement direct aux
+PDF et documents Office ouvrables dans le lecteur. Il apparaît au survol ou au
+focus clavier, et reste visible sur écran tactile ; le bouton voisin ouvre le lecteur.
+`_attachment_download_all.html.twig` propose le ZIP dès deux pièces non inline,
+dans les deux vues de lecture. `AttachmentController::downloadAll()` vérifie la
+propriété du message et des pièces, récupère les originaux via `AttachmentResolver`,
+neutralise les chemins, conserve les noms en doublon avec un suffixe et supprime
+le ZIP temporaire après l’envoi. Les liens de téléchargement échappent à Turbo.
+
+### Dépôt de fichiers et collage dans la rédaction
+
+`compose/_window.html.twig` définit deux surfaces `data-compose-drop-zone` :
+`body` (zone de saisie) et `attachments` (barres de boutons). Le contrôleur
+`compose_controller.js` accepte les fichiers, surligne la zone pendant le survol,
+insère les images déposées dans le corps riche à la position du dépôt et envoie
+les autres fichiers comme PJ. Sur les boutons, tous les fichiers deviennent des
+PJ. En texte brut, les images déposées deviennent aussi des PJ.
+Le collage et le sélecteur d’images capturent un Range propre avant tout envoi ;
+`compose_toolbar_controller.js` utilise cette position même si le focus change
+pendant la requête. Un lot d’images conserve son ordre. Le déplacement de texte
+sans fichier reste natif. Les limites, le CSRF et les routes d’envoi existants
+sont réutilisés. Régression : `tests/e2e/compose-file-drop.spec.ts`.

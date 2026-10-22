@@ -471,6 +471,7 @@ final readonly class ConfigBackupUsers
                 // keeps the mark the user recognises it by; leave it out and
                 // they all come back sharing colour 0.
                 'colorIndex'        => $account->colorIndex,
+                'imapRetrieveSince' => $account->imapRetrieveSince?->format('Y-m-d'),
                 'imapHost'          => $account->imapHost,
                 'imapPort'          => $account->imapPort,
                 'imapEncryption'    => $account->imapEncryption,

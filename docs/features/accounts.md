@@ -308,3 +308,8 @@ looks in the folders that are switched on, so a message filed elsewhere into a f
 fetching disappears here although it still exists on the server. That is the switch doing what it
 says, and nothing is lost: switch the folder on and plMail fetches the message again. A move made
 inside plMail is different — plMail knows where it put the message and keeps its copy.
+
+
+## IMAP retrieval selection
+
+Rules support `retrievalAccount`, an internal account ID selected from the current user’s IMAP accounts, for existing and future messages. New IMAP accounts may set `imapRetrieveSince` (inclusive server INTERNALDATE, not the message Date header). Historical import and incremental retrieval use UID SEARCH with SINCE; errors never fall back to unrestricted retrieval. Existing accounts default to null (all history). Original messages are untouched by this selection. Sources: AccountType, MailRuleController, EmailFilterCompiler, MessageSyncer::retrievalCriteria, ImapMailboxImporter; migration Version20261022120000.

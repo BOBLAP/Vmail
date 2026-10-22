@@ -149,6 +149,7 @@ final class EmailFilterCompiler
             // hasLabel takes a user-scoped Label id, unlike inMailbox, which
             // takes a per-account LabelBinding id — rules have no reason to
             // know about the JMAP id space.
+            'retrievalAccount' => 'm.account_id = :'.$this->bind($this->requireIntish($value, 'retrievalAccount'), $parameters),
             'hasLabel' => $this->hasLabel($value, true, $parameters),
             'notLabel' => $this->hasLabel($value, false, $parameters),
             'filename' => $this->filename($value, $parameters),

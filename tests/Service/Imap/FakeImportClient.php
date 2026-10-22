@@ -26,6 +26,8 @@ final class FakeImportClient extends Client
     /** @var array<int, Message|\Throwable|string> UID => the message, what building it throws, or FakeQuery::NEVER_RETURNED */
     public array $script = [];
 
+    public array $receiptDates = [];
+
     /** @var list<list<int>> the UIDs asked for by name, one entry per page fetched */
     public array $fetched = [];
 
@@ -81,6 +83,7 @@ final class FakeImportClient extends Client
         });
 
         $query->pageFailure = $this->pageFailure;
+        $query->receiptDates = $this->receiptDates;
 
         return $query;
     }

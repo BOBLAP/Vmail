@@ -48,6 +48,7 @@ final class FilterDescriber implements ResetInterface
     private ?UserInterface $subject = null;
 
     public function __construct(
+        private readonly \App\Repository\Mail\AccountRepository $accountRepository,
         private readonly TranslatorInterface $translator,
         private readonly LabelRepository       $labelRepository,
         private readonly IntegrationRepository $integrationRepository,
@@ -205,6 +206,11 @@ final class FilterDescriber implements ResetInterface
     private function condition(string $property, mixed $value): string
     {
         $label = $this->translator->trans('settings.filters.field.' . $property);
+
+        if ('retrievalAccount' === $property) {
+            $account = null === $this->subject ? null : $this->accountRepository->findOneBy(['id' => $value, 'usr' => $this->subject]);
+            return $label . ' ' . (null === $account ? '#' . $value : ($account->email ?? $account->username));
+        }
 
         if (true === in_array($property, ['hasLabel', 'notLabel'], true)) {
             return $label . ' ' . $this->labelName($value);

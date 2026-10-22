@@ -63,6 +63,16 @@ final class UidRangeQueryTest extends TestCase
         self::assertSame('UID 42', self::query()->where('UID', '42')->generate_query());
     }
 
+    public function testPersistentDateBoundIsCombinedWithUidRange(): void
+    {
+        $since = new \DateTimeImmutable('2025-01-01');
+        foreach (['1:99', '100:*'] as $range) {
+            $criteria = \App\Service\Imap\MessageSyncer::retrievalCriteria($range, $since);
+            self::assertSame('UID '.$range.' SINCE 01-Jan-2025', self::query()->where($criteria)->generate_query());
+        }
+        self::assertSame('CUSTOM UID 1:*', \App\Service\Imap\MessageSyncer::retrievalCriteria('1:*', null));
+    }
+
     /** Reaches the private helper the syncer uses, without duplicating it. */
     private static function callUidRangeCriteria(string $range): string
     {

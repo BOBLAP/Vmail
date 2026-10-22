@@ -63,6 +63,7 @@ final class FilterVocabulary
 
     /** Conditions taking an integer. */
     public const array INT_CONDITIONS = [
+        'retrievalAccount',
         'minSize',
         'maxSize',
         'hasLabel',

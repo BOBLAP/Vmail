@@ -153,6 +153,7 @@ final class MailRuleController extends AbstractController
 
         try {
             $this->validator->validate($conditions);
+            $this->validateRetrievalAccounts($conditions);
         } catch (InvalidFilterException $e) {
             $errors[] = $e->getMessage();
         }
@@ -232,6 +233,7 @@ final class MailRuleController extends AbstractController
 
         try {
             $this->validator->validate($conditions);
+            $this->validateRetrievalAccounts($conditions);
             // Scoped to the account the rule is being written for: it only
             // ever acts there, and counting every account would be most wrong
             // exactly where it matters most — a rule with no conditions.
@@ -480,6 +482,19 @@ final class MailRuleController extends AbstractController
         }
 
         return $clean;
+    }
+
+    private function validateRetrievalAccounts(array $node): void
+    {
+        if (array_key_exists('retrievalAccount', $node)) {
+            $account = $this->accountRepository->find($node['retrievalAccount']);
+            if (null === $account || false === $this->isGranted(OwnershipVoter::OWN, $account) || $account->isGmail() || $account->isMicrosoft()) {
+                throw new InvalidFilterException('Invalid IMAP retrieval account.');
+            }
+        }
+        foreach ($node['conditions'] ?? [] as $child) {
+            $this->validateRetrievalAccounts($child);
+        }
     }
 
     private function resolveAccount(mixed $id): ?\App\Entity\Mail\Account

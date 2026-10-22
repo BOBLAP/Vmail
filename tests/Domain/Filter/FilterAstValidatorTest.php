@@ -56,6 +56,14 @@ final class FilterAstValidatorTest extends TestCase
     /**
      * @param array<string,mixed> $ast
      */
+    public function testRetrievalAccountRequiresAPositiveInternalId(): void
+    {
+        $validator = new \App\Domain\Filter\FilterAstValidator();
+        $validator->validate(['retrievalAccount' => 42]);
+        $this->expectException(\App\Domain\Filter\InvalidFilterException::class);
+        $validator->validate(['retrievalAccount' => '42']);
+    }
+
     #[DataProvider('validProvider')]
     public function testAcceptsSupportedTrees(array $ast): void
     {

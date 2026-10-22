@@ -151,6 +151,19 @@ class AccountType extends AbstractType
                 'required'     => false,
             ]);
 
+        $builder->addEventListener(FormEvents::PRE_SET_DATA, static function (FormEvent $event): void {
+            if (null === $event->getData()?->id) {
+                $event->getForm()->add('imapRetrieveSince', \Symfony\Component\Form\Extension\Core\Type\DateType::class, [
+                    'required' => false,
+                    'widget' => 'single_text',
+                    'input' => 'datetime_immutable',
+                    'label' => 'account.form.retrieve_since',
+                    'help' => 'account.form.retrieve_since_help',
+                    'attr' => ['class' => 'form-input'],
+                ]);
+            }
+        });
+
         // What the account had before the form wrote on it: `always_empty`
         // submits a blank for an untouched field, and by POST_SUBMIT that
         // blank is already on the entity.

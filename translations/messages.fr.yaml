@@ -4578,3 +4578,9 @@ content_security:
 
 message_panel_opacity:
     label: 'Opacité'
+
+settings.filters.field.retrievalAccount: 'Compte de récupération IMAP'
+
+account.form.retrieve_since: 'Récupérer les messages à partir du'
+
+account.form.retrieve_since_help: 'Facultatif, date de réception IMAP incluse. Les messages antérieurs restent dans la boîte originale.'

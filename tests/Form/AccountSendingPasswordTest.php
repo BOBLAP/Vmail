@@ -42,6 +42,37 @@ final class AccountSendingPasswordTest extends KernelTestCase
         'smtpEncryption' => 'ssl',
     ];
 
+    public function testRetrievalDateIsOptionalAndStoredAsAnInclusiveDate(): void
+    {
+        $account = new Account();
+        $form = $this->form($account);
+        $form->submit(self::FIELDS + ['imapRetrieveSince' => '2025-01-01']);
+        self::assertTrue($form->isSynchronized());
+        self::assertSame('2025-01-01', $account->imapRetrieveSince?->format('Y-m-d'));
+
+        $blank = new Account();
+        $this->form($blank)->submit(self::FIELDS);
+        self::assertNull($blank->imapRetrieveSince);
+    }
+
+    public function testExistingAccountKeepsItsDateWhenEdited(): void
+    {
+        $account = $this->saved();
+        new \ReflectionProperty(Account::class, 'id')->setValue($account, 42);
+        $account->imapRetrieveSince = new \DateTimeImmutable('2025-01-01');
+        $form = $this->form($account, false);
+        self::assertFalse($form->has('imapRetrieveSince'));
+        $form->submit(self::FIELDS);
+        self::assertSame('2025-01-01', $account->imapRetrieveSince?->format('Y-m-d'));
+    }
+
+    public function testInvalidRetrievalDateIsRejected(): void
+    {
+        $form = $this->form(new Account());
+        $form->submit(self::FIELDS + ['imapRetrieveSince' => 'not-a-date']);
+        self::assertFalse($form->get('imapRetrieveSince')->isSynchronized());
+    }
+
     public function testWithoutTheBoxThereIsOnePasswordWhateverTheHiddenFieldWasSentWith(): void
     {
         $account = new Account();

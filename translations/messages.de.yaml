@@ -4550,3 +4550,9 @@ content_security:
 
 message_panel_opacity:
     label: 'Opacity'
+
+settings.filters.field.retrievalAccount: 'IMAP-Abrufkonto'
+
+account.form.retrieve_since: 'Nachrichten abrufen ab'
+
+account.form.retrieve_since_help: 'Optional, einschließlich IMAP-Empfangsdatum. Ältere Nachrichten bleiben im ursprünglichen Postfach.'

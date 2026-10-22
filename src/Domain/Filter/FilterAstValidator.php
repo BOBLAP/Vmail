@@ -153,6 +153,10 @@ final class FilterAstValidator
             return;
         }
 
+        if ('retrievalAccount' === $property && (false === is_int($value) || $value < 1)) {
+            throw new InvalidFilterException('A retrieval account needs a positive internal ID.');
+        }
+
         if (true === in_array($property, FilterVocabulary::INT_CONDITIONS, true)) {
             if (false === is_int($value)) {
                 throw new InvalidFilterException(sprintf('"%s" must be a whole number.', $property));

@@ -39,6 +39,9 @@ final class FakeQuery extends WhereQuery
     /** @var list<int> the page number of every fetch, in order */
     public array $fetchedPages = [];
 
+    public array $receiptDates = [];
+    private ?string $since = null;
+
     /** @var list<int>|null the UIDs the criterion names, or null for all */
     private ?array $wanted = null;
 
@@ -64,6 +67,10 @@ final class FakeQuery extends WhereQuery
     public function where(mixed $criteria, mixed $value = null): static
     {
         $criteria = (string) $criteria;
+        if (1 === preg_match('/ SINCE (\d{2}-[A-Za-z]{3}-\d{4})$/', $criteria, $date)) {
+            $this->since = (new \DateTimeImmutable($date[1]))->format('Y-m-d');
+            $criteria = substr($criteria, 0, -strlen($date[0]));
+        }
 
         if (1 === preg_match('~^CUSTOM UID (\d+):(\d+|\*)$~', $criteria, $m)) {
             $this->range = [(int) $m[1], '*' === $m[2] ? PHP_INT_MAX : (int) $m[2]];
@@ -79,6 +86,9 @@ final class FakeQuery extends WhereQuery
     public function search(): Collection
     {
         $uids = array_keys($this->script);
+        if (null !== $this->since) {
+            $uids = array_values(array_filter($uids, fn (int $uid): bool => ($this->receiptDates[$uid] ?? '2026-09-21') >= $this->since));
+        }
 
         if (null !== $this->range) {
             [$from, $to] = $this->range;

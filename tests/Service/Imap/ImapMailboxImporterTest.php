@@ -80,6 +80,21 @@ final class ImapMailboxImporterTest extends KernelTestCase
         parent::tearDown();
     }
 
+    public function testDateLimitSurvivesMultipleImportPages(): void
+    {
+        $this->account->imapRetrieveSince = new \DateTimeImmutable('2025-01-01');
+        $this->em->flush();
+        $server = FakeImportClient::holding($this->mails(range(1, self::TOP)));
+        $server->receiptDates = array_fill_keys(range(1, 70), '2024-12-31');
+        // The boundary itself is included, independently of the Date header.
+        $server->receiptDates[71] = '2025-01-01';
+
+        self::assertSame(ImapImportOutcome::More, $this->importer->importPage($this->mailboxId, $server));
+        self::assertSame(ImapImportOutcome::Finished, $this->importer->importPage($this->mailboxId, $server));
+        self::assertSame(range(71, self::TOP), $this->storedUids());
+        self::assertCount(self::TOP, $server->script, 'original messages remain on the server');
+    }
+
     public function testTheFirstPageIsTheNewestFiftyRatherThanTheOldest(): void
     {
         $server = FakeImportClient::holding($this->mails(range(1, self::TOP)));

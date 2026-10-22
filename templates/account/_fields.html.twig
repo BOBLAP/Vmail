@@ -64,6 +64,7 @@ genuinely needed, merge onto form.<field>.vars.attr.
         {{ form_row(form.imapHost, { label: 'account.form.imap.host'|trans }) }}
         {{ form_row(form.imapPort, { label: 'account.form.port'|trans }) }}
     </div>
+    {% if form.imapRetrieveSince is defined %}{{ form_row(form.imapRetrieveSince) }}{% endif %}
     {{ form_row(form.imapEncryption, { label: 'account.form.encryption'|trans }) }}
 </div>
 

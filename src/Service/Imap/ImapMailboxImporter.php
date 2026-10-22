@@ -197,7 +197,7 @@ final readonly class ImapMailboxImporter
     private function missingBelow(Mailbox $mailbox, \Webklex\PHPIMAP\Folder $folder, int $floor): array
     {
         $onServer = $folder->messages()
-            ->where(MessageSyncer::uidRangeCriteria(sprintf('1:%d', $floor - 1)))
+            ->where(MessageSyncer::retrievalCriteria(sprintf('1:%d', $floor - 1), $mailbox->account->imapRetrieveSince))
             ->search()
             ->all();
 

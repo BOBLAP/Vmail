@@ -153,6 +153,27 @@ final class EmailFilterCompilerTest extends KernelTestCase
         self::assertSame($expected, $actual);
     }
 
+    public function testRetrievalAccountUsesStableInternalId(): void
+    {
+        $account = $this->corpus[0]->account;
+        $account->email = 'Renamed account';
+        $this->em->flush();
+        self::assertCount(3, $this->match(['retrievalAccount' => $account->id]));
+        $other = new Account();
+        $other->usr = $account->usr;
+        $other->email = $account->email;
+        $other->username = 'other@example.test';
+        $other->authType = 'password';
+        $other->isActive = true;
+        $this->em->persist($other);
+        $this->corpus[2]->account = $other;
+        $this->em->flush();
+        self::assertCount(2, $this->match(['retrievalAccount' => $account->id]));
+        self::assertSame([(int) $this->corpus[2]->id], $this->match(['retrievalAccount' => $other->id]));
+        self::assertSame([], $this->match(['retrievalAccount' => 2147483647]));
+        self::assertSame([(int) $this->corpus[2]->id], $this->match(['operator' => 'NOT', 'conditions' => [['retrievalAccount' => $account->id]]]));
+    }
+
     /**
      * A comparison against NULL is NULL in SQL, so a sizeless message matches
      * neither bound. maxSize is the surprising half — it reads like "smaller

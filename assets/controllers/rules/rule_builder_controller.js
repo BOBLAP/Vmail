@@ -38,6 +38,7 @@ const FIELDS = {
     to: "text", cc: "text", bcc: "text",
     subject: "text", body: "text", text: "text",
     filename: "text", listId: "text",
+    retrievalAccount: "account",
     hasLabel: "label", notLabel: "label",
     minSize: "number", maxSize: "number",
     before: "date", after: "date",
@@ -53,6 +54,7 @@ export default class extends Controller {
         conditions: Object,
         actions: Array,
         labels: Array,
+        accounts: Array,
         categories: Array,
         integrations: Array,
         previewUrl: String,
@@ -232,7 +234,7 @@ export default class extends Controller {
             this.schedulePreview()
         }
 
-        if (kind === "bool" || kind === "keyword" || kind === "label") {
+        if (kind === "bool" || kind === "keyword" || kind === "label" || kind === "account") {
             const select = this._selectElement("flex-1 min-w-[9rem]")
 
             const options =
@@ -240,7 +242,7 @@ export default class extends Controller {
                     ? [{ v: true, t: this._t("yes") }, { v: false, t: this._t("no") }]
                     : kind === "keyword"
                       ? KEYWORDS.map((k) => ({ v: k, t: this._t(`keyword.${k.slice(1)}`) }))
-                      : this.labelsValue.map((l) => ({ v: l.id, t: l.name }))
+                      : kind === "account" ? this.accountsValue.map((a) => ({ v: a.id, t: a.name })) : this.labelsValue.map((l) => ({ v: l.id, t: l.name }))
 
             for (const opt of options) {
                 const o = document.createElement("option")
@@ -251,7 +253,7 @@ export default class extends Controller {
             }
 
             select.addEventListener("change", () => {
-                commit(kind === "bool" ? select.value === "true" : kind === "label" ? Number(select.value) : select.value)
+                commit(kind === "bool" ? select.value === "true" : (kind === "label" || kind === "account") ? Number(select.value) : select.value)
             })
 
             return select
@@ -756,6 +758,7 @@ export default class extends Controller {
 
         if (kind === "bool") return true
         if (kind === "keyword") return KEYWORDS[0]
+        if (kind === "account") return this.accountsValue[0]?.id ?? 0
         if (kind === "label") return this.labelsValue[0]?.id
         if (kind === "number") return 0
 

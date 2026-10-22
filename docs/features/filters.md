@@ -246,3 +246,8 @@ delete the tab.
 **The last filter to file a message wins** — the opposite of what the order of a list of rules
 usually suggests. Put a broad filter above the specific ones, or give a specific one **Stop after
 this filter**.
+
+
+## IMAP retrieval selection
+
+Rules support `retrievalAccount`, an internal account ID selected from the current user’s IMAP accounts, for existing and future messages. New IMAP accounts may set `imapRetrieveSince` (inclusive server INTERNALDATE, not the message Date header). Historical import and incremental retrieval use UID SEARCH with SINCE; errors never fall back to unrestricted retrieval. Existing accounts default to null (all history). Original messages are untouched by this selection. Sources: AccountType, MailRuleController, EmailFilterCompiler, MessageSyncer::retrievalCriteria, ImapMailboxImporter; migration Version20261022120000.

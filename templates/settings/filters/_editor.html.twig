@@ -32,6 +32,7 @@ Variables:
                  editor arguing with them. #}
               data-rules--rule-builder-seed-condition-value="{{ (submittedConditions is empty and rule.id is null) ? '1' : '0' }}"
               data-rules--rule-builder-actions-value="{{ (submittedActions ?: (rule.actions ? rule.actions|json_encode : '[]'))|e('html_attr') }}"
+              data-rules--rule-builder-accounts-value="{{ accounts|filter(a => not a.isGmail and not a.isMicrosoft)|map(a => { id: a.id, name: a.email ?: a.username })|json_encode|e('html_attr') }}"
               data-rules--rule-builder-labels-value="{{ labels|map(l => { id: l.id, name: l.fullName, system: l.isSystem })|json_encode|e('html_attr') }}"
               {# The reader's own categories, for the "File in category" row. #}
               data-rules--rule-builder-categories-value="{{ categories|json_encode|e('html_attr') }}"
@@ -84,6 +85,7 @@ Variables:
                   'placeholder.text': 'settings.filters.placeholder.text'|trans,
                   'placeholder.number': 'settings.filters.placeholder.number'|trans,
                   'placeholder.date': 'settings.filters.placeholder.date'|trans,
+                  'field.retrievalAccount': 'settings.filters.field.retrievalAccount'|trans,
                   'field.from': 'settings.filters.field.from'|trans,
                   'field.fromAddress': 'settings.filters.field.fromAddress'|trans,
                   'field.fromDomain': 'settings.filters.field.fromDomain'|trans,

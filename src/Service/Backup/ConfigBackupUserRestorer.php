@@ -343,6 +343,7 @@ final readonly class ConfigBackupUserRestorer
             // restores the colours that backup's accounts were actually wearing.
             $account->colorIndex        = $this->number($row, 'colorIndex')
                 ?? $account->sortOrder;
+            $account->imapRetrieveSince = $this->moment($row, 'imapRetrieveSince');
             $account->imapHost          = $this->text($row, 'imapHost');
             $account->imapPort          = $this->number($row, 'imapPort');
             $account->imapEncryption    = $this->text($row, 'imapEncryption');
@@ -636,7 +637,7 @@ final readonly class ConfigBackupUserRestorer
             $rule->usr            = $user;
             $rule->name           = $this->text($row, 'name');
             $rule->account        = $accounts[$this->number($row, 'accountId') ?? 0] ?? null;
-            $rule->conditions     = $this->remapConditions($this->map($row, 'conditions'), $labels);
+            $rule->conditions     = $this->remapConditions($this->map($row, 'conditions'), $labels, $accounts);
             $rule->actions        = $this->remapActions($this->rows($row, 'actions'), $labels, $integrations, $categories);
             $rule->isEnabled      = true === ($row['isEnabled'] ?? true);
             $rule->sortOrder      = $this->number($row, 'sortOrder') ?? 0;
@@ -647,8 +648,7 @@ final readonly class ConfigBackupUserRestorer
     }
 
     /**
-     * Walk the condition tree and rewrite the two conditions that hold a label
-     * id.
+     * Walk the condition tree and rewrite account and label references.
      *
      * Recursive because the tree is: an operator node carries a `conditions`
      * list of further nodes. A condition naming a label the file did not carry
@@ -661,7 +661,7 @@ final readonly class ConfigBackupUserRestorer
      *
      * @return array<string, mixed>
      */
-    private function remapConditions(array $node, array $labels): array
+    private function remapConditions(array $node, array $labels, array $accounts = []): array
     {
         $remapped = [];
 
@@ -674,7 +674,7 @@ final readonly class ConfigBackupUserRestorer
                         continue;
                     }
 
-                    $mapped = $this->remapConditions($child, $labels);
+                    $mapped = $this->remapConditions($child, $labels, $accounts);
 
                     if ([] !== $mapped) {
                         $children[] = $mapped;
@@ -683,6 +683,12 @@ final readonly class ConfigBackupUserRestorer
 
                 $remapped[$key] = $children;
 
+                continue;
+            }
+
+            if ('retrievalAccount' === $key) {
+                // Keep a missing reference impossible to match, never widen it.
+                $remapped[$key] = is_int($value) ? ($accounts[$value]->id ?? 0) : 0;
                 continue;
             }
 

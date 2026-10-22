@@ -95,6 +95,15 @@ class MessageSyncer
     }
 
     /**
+     * Inclusive server INTERNALDATE bound, combined with the UID window.
+     * A failed SEARCH must propagate: falling back would import excluded mail.
+     */
+    public static function retrievalCriteria(string $range, ?\DateTimeImmutable $since): string
+    {
+        return self::uidRangeCriteria($range) . (null === $since ? '' : ' SINCE ' . $since->format('d-M-Y'));
+    }
+
+    /**
      * The instant an RFC 2822 `Date:` header names, in UTC.
      *
      * Both halves of this are needed. webklex parses the header with a bare
@@ -177,7 +186,7 @@ class MessageSyncer
         try {
             // Not the library's chunked(): one message it cannot parse ends
             // that loop for the whole folder, on every sync. See ImapPagedFetch.
-            $query = $folder->messages()->where(self::uidRangeCriteria($uidRange));
+            $query = $folder->messages()->where(self::retrievalCriteria($uidRange, $mailbox->account->imapRetrieveSince));
 
             foreach ($this->pagedFetch->pages($query, self::BATCH_SIZE) as [$batch, $unreadable]) {
                 $this->processBatch($batch, $mailboxId, $accountId, $lastSeenUid, $syncedUids, $lowestSkippedUid, $presence, $unreadable);

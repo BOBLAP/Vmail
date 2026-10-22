@@ -4553,3 +4553,9 @@ content_security:
 
 message_panel_opacity:
     label: 'Opacity'
+
+settings.filters.field.retrievalAccount: 'IMAP retrieval account'
+
+account.form.retrieve_since: 'Retrieve messages from'
+
+account.form.retrieve_since_help: 'Optional, inclusive IMAP receipt date. Older messages remain in the original mailbox.'

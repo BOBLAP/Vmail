@@ -185,6 +185,7 @@ final class ConfigBackupRoundTripTest extends KernelTestCase
         // ── The account ───────────────────────────────────────────────────
         $this->check('account.password (IMAP)', self::MAILBOX_PASSWORD, $account->password);
         $this->check('account.smtpPassword', 'the-smtp-password-4c1e', $account->smtpPassword);
+        $this->check('account.imapRetrieveSince', '2025-01-01', $account->imapRetrieveSince?->format('Y-m-d'));
         $this->check('account.imapHost', 'imap.audit.test', $account->imapHost);
         $this->check('account.colorIndex', 3, $account->colorIndex);
         $this->check('account.oauthGrantedScopes', 'https://mail.google.com/ openid', $account->oauthGrantedScopes);
@@ -418,6 +419,7 @@ final class ConfigBackupRoundTripTest extends KernelTestCase
         $account->username           = 'anna@work.audit.test';
         $account->password           = self::MAILBOX_PASSWORD;
         $account->smtpPassword       = 'the-smtp-password-4c1e';
+        $account->imapRetrieveSince  = new \DateTimeImmutable('2025-01-01');
         $account->imapHost           = 'imap.audit.test';
         $account->imapPort           = 993;
         $account->smtpHost           = 'smtp.audit.test';

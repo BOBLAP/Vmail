@@ -190,3 +190,17 @@ Le collage et le sélecteur d’images capturent un Range propre avant tout envo
 pendant la requête. Un lot d’images conserve son ordre. Le déplacement de texte
 sans fichier reste natif. Les limites, le CSRF et les routes d’envoi existants
 sont réutilisés. Régression : `tests/e2e/compose-file-drop.spec.ts`.
+
+
+## Filtre de compte et date de récupération IMAP
+
+`retrievalAccount` stocke l’ID interne du compte choisi dans le constructeur de
+règles : `MailRuleController`, `FilterVocabulary`, `EmailFilterCompiler` et
+`FilterDescriber`. La même comparaison SQL s’applique aux messages existants et
+au pipeline d’ingestion. Le formulaire `AccountType` propose à la création
+`imapRetrieveSince`, conservé sur `Account` (migration `Version20261022120000`).
+`MessageSyncer::retrievalCriteria` ajoute `SINCE` aux critères UID de l’import
+historique (`ImapMailboxImporter`) et de chaque synchronisation. La date inclut
+le jour choisi et porte sur INTERNALDATE côté serveur. Aucun repli sans limite
+n’est effectué en cas de refus du serveur. Les comptes existants gardent null.
+Les sauvegardes conservent la date et remappent les IDs de compte des règles.

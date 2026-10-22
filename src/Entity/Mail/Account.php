@@ -84,6 +84,10 @@ class Account extends AccountModel
     #[ORM\Column(length: 255, nullable: true)]
     public ?string $imapHost = null;
 
+    /** Inclusive IMAP INTERNALDATE bound; null keeps all history. */
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    public ?DateTimeImmutable $imapRetrieveSince = null;
+
     #[ORM\Column(nullable: true)]
     public ?int $imapPort = null;
 

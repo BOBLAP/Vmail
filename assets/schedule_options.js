@@ -137,6 +137,10 @@ export function zoneNow(timeZone, now = new Date()) {
  * @returns {number} epoch milliseconds
  */
 export function instantOf(at, timeZone) {
+    const seconds = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:(\d{2})$/.exec(at);
+    if (seconds) {
+        return Number(seconds[1]) < 60 ? instantOf(at.slice(0, 16), timeZone) + Number(seconds[1]) * 1000 : NaN;
+    }
     const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(at);
 
     if (null === match) {

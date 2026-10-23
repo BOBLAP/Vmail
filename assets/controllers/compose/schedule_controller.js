@@ -27,19 +27,6 @@ import { csrfToken } from "../../csrf.js";
  * assets/schedule_options.js — this posts a wall clock and lets the server
  * turn it into an instant.
  */
-/**
- * The instant the containing whole minute began.
- *
- * The field has minute granularity, so every bound has to be compared at that
- * granularity or a time typed in the current minute reads as already past.
- * Whole minutes are safe to take with modulo: every real zone offset is a whole
- * number of minutes, so a minute boundary is a minute boundary everywhere at
- * once, DST transitions included.
- */
-function minuteOf(ms) {
-    return Math.floor(ms / 60_000) * 60_000;
-}
-
 export default class extends Controller {
     static targets = ["option", "field", "custom", "input", "error", "toggle"];
 
@@ -167,7 +154,12 @@ export default class extends Controller {
         // instantOf(), which also explains what that cost.
         const chosenAt = this._instant(chosen);
 
-        if (chosenAt < minuteOf(Date.now())) {
+        if (!Number.isFinite(chosenAt)) {
+            this._refuse(event, this._t("scheduleUnreadable", "Pick a date and time first."));
+            return;
+        }
+
+        if (chosenAt <= Date.now()) {
             this._refuse(event, this._t("schedulePast", "That time has already passed."));
 
             return;
@@ -241,26 +233,9 @@ export default class extends Controller {
 
     // ── Private ───────────────────────────────────────────────────────────
 
-    /**
-     * The earliest MINUTE the server will still accept, as an instant.
-     *
-     * "Now, plus the minimum hold", truncated to the minute the field can
-     * actually express. The extra 59 seconds are what makes a minute-
-     * granularity field comparable to a second-granularity rule: at 11:43:20
-     * the minimum instant is 11:44:20, and the earliest *minute* every second
-     * of which clears it is 11:45. Rounding the other way would put 11:44 back
-     * on the accepted side of a browser check and on the refused side of the
-     * server's — which is the bug this exists to close. Erring strict costs the
-     * user one minute; erring loose costs them the whole feature, silently.
-     *
-     * An instant rather than the wall clock this used to return, and that is
-     * the DST fix: during a fall-back "02:00" names two moments an hour apart,
-     * so a floor expressed that way could be — and was — read back as the
-     * earlier of the two, landing a whole hour below where it belonged. Nothing
-     * about the rounding changed; only what the number is.
-     */
+    /** Earliest accepted instant, with second precision. */
     _floor() {
-        return minuteOf(Date.now() + (this.minSecondsValue + 59) * 1000);
+        return Date.now() + this.minSecondsValue * 1000;
     }
 
     /**

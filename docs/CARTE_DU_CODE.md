@@ -204,3 +204,7 @@ historique (`ImapMailboxImporter`) et de chaque synchronisation. La date inclut
 le jour choisi et porte sur INTERNALDATE côté serveur. Aucun repli sans limite
 n’est effectué en cas de refus du serveur. Les comptes existants gardent null.
 Les sauvegardes conservent la date et remappent les IDs de compte des règles.
+
+### Programmation des mails à la seconde
+
+Le menu près d’Envoyer partage compose/_send_pill.html.twig entre nouveaux mails et réponses. Son champ natif datetime-local utilise step=1 pour saisir les secondes ; le format de date suit le navigateur, dans le fuseau configuré indiqué. compose/schedule_controller.js et schedule_options.js valident les instants à la seconde. ScheduledSendResolver accepte déjà ce format (minimum 60 secondes, maximum 30 jours). La file d’envoi peut ajouter un délai après l’heure choisie. Le sélecteur partagé du calendrier reste indépendant.

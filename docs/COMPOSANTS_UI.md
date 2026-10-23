@@ -301,3 +301,7 @@ Le collage et le sélecteur d’images capturent un Range propre avant tout envo
 pendant la requête. Un lot d’images conserve son ordre. Le déplacement de texte
 sans fichier reste natif. Les limites, le CSRF et les routes d’envoi existants
 sont réutilisés. Régression : `tests/e2e/compose-file-drop.spec.ts`.
+
+### Programmation des mails à la seconde
+
+Le menu près d’Envoyer partage compose/_send_pill.html.twig entre nouveaux mails et réponses. Son champ natif datetime-local utilise step=1 pour saisir les secondes ; le format de date suit le navigateur, dans le fuseau configuré indiqué. compose/schedule_controller.js et schedule_options.js valident les instants à la seconde. ScheduledSendResolver accepte déjà ce format (minimum 60 secondes, maximum 30 jours). La file d’envoi peut ajouter un délai après l’heure choisie. Le sélecteur partagé du calendrier reste indépendant.

@@ -246,29 +246,14 @@ Variables: message, params (from the including context); placement.
            is now, `max` the end of the hold — the picker greys out what lies
            outside) and confirms it. The menu widens while this is open; a
            six-day strip does not fit sixteen rem. #}
-        {% import 'calendar/_when.html.twig' as when %}
         <div data-compose--schedule-target="custom" hidden class="px-3 py-2 space-y-2">
-            <div {{ when.attrs('now'|date('Y-m-d')) }} class="flex flex-col gap-2">
-                {# `input` as well as `change`, so a refusal goes the moment the
-                   time that earned it is changed. #}
-                <input type="hidden"
-                       data-calendar--when-target="start"
+            <label class="block text-xs text-ink-muted">
+                {{ 'calendar.when.send_at'|trans }}
+                <input type="datetime-local" step="1"
                        data-compose--schedule-target="input"
-                       data-action="input->compose--schedule#revalidate change->compose--schedule#revalidate">
-                <div data-calendar--when-target="startCard" tabindex="-1"
-                     role="status" aria-label="{{ 'compose.schedule.custom'|trans }}"
-                     class="flex flex-col gap-0.5 rounded-xl border px-3 py-2 focus:outline-none">
-                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
-                        {{ 'calendar.when.send_at'|trans }}
-                    </span>
-                    <span class="flex items-baseline gap-2">
-                        <span data-when-part="day" class="text-[13px] text-ink-muted"></span>
-                        <span data-when-part="time" class="text-lg font-semibold tracking-tight text-ink tabular-nums"></span>
-                    </span>
-                </div>
-                <div data-calendar--when-target="panel"
-                     class="flex flex-col gap-2.5 rounded-xl border border-line bg-sunken p-2.5"></div>
-            </div>
+                       data-action="input->compose--schedule#revalidate change->compose--schedule#revalidate"
+                       class="mt-1 block w-full min-w-0 rounded-lg border border-field-border bg-field px-2 py-2 text-sm text-ink">
+            </label>
             {# Named, because a bare time is ambiguous the moment the machine and
                the setting disagree — which is exactly when it matters. #}
             <p class="text-[11px] text-ink-faint">

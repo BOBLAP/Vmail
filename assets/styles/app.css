@@ -3515,6 +3515,17 @@ html {
     0 2px 4px -2px rgb(var(--rgb-shadow) / var(--shadow-alpha));
 }
 
+/* Timed auto-responder: tint the main app tiles, retaining each theme's text contrast. */
+body.auto-responder-active .main-pane,
+body.auto-responder-active [data-message-panel].main-pane {
+    background-color: color-mix(in srgb, rgb(var(--rgb-main)) 74%, #fca5a5 26%);
+    border-color: color-mix(in srgb, rgb(var(--rgb-border)) 65%, #ef4444 35%);
+}
+body.auto-responder-active .shell-chrome {
+    background-color: color-mix(in srgb, rgb(var(--rgb-surface)) 78%, #fca5a5 22%);
+    border-color: color-mix(in srgb, rgb(var(--rgb-border)) 65%, #ef4444 35%);
+}
+
 /*
    The sheet a message body is rendered on.
 

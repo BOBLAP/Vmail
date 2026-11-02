@@ -1187,6 +1187,10 @@ class User extends UserEntityModel implements UserInterface, PasswordAuthenticat
         }
     }
 
+    /** Private recipient groups: names and addresses, independent of contact row IDs. */
+    public const string SETTING_RECIPIENT_GROUPS = 'mail.recipient_groups';
+    public const string SETTING_AUTO_RESPONDER = 'mail.auto_responder';
+
     public function getSetting(string $key, mixed $default = null): mixed
     {
         if (true === array_key_exists($key, $this->settings)) {

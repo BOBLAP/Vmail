@@ -152,6 +152,8 @@
                                         { section: 'read-receipts', icon: 'fa-solid fa-envelope-open-text', label: 'settings.nav.read_receipts' },
                                         { section: 'signature',     icon: 'fa-solid fa-signature' },
                                         { section: 'templates',     icon: 'fa-regular fa-file-lines' },
+                                        { section: 'recipient-groups', icon: 'fa-solid fa-users', label: 'recipient_groups.title' },
+                                        { section: 'auto-responder', icon: 'fa-solid fa-voicemail', label: 'auto_responder.title' },
                                         { section: 'categories',    icon: 'fa-solid fa-inbox' },
                                         { section: 'labels',        icon: 'fa-solid fa-tag' },
                                         { section: 'filters',       icon: 'fa-solid fa-filter' },
@@ -553,6 +555,20 @@
                                                         manageableAccounts: manageableAccounts,
                                                     } %}
                                                 </div>
+                                            {% endblock %}
+                                        {% endembed %}
+                                    {% elseif section == 'auto-responder' %}
+                                        {% embed 'settings/_card.html.twig' with { heading: 'auto_responder.title'|trans, subheading: 'auto_responder.description'|trans, padded: true } %}
+                                            {% block body %}{% include 'settings/_auto_responder.html.twig' %}{% endblock %}
+                                        {% endembed %}
+                                    {% elseif section == 'recipient-groups' %}
+                                        {% embed 'settings/_card.html.twig' with {
+                                            heading: 'recipient_groups.title'|trans,
+                                            subheading: 'recipient_groups.description'|trans,
+                                            padded: true,
+                                        } %}
+                                            {% block body %}
+                                                {% include 'settings/_recipient_groups.html.twig' %}
                                             {% endblock %}
                                         {% endembed %}
                                     {% elseif section == 'templates' %}

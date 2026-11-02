@@ -113,6 +113,8 @@ final readonly class ConfigBackupUsers
      * @var list<string>
      */
     public const array USER_SETTINGS = [
+        User::SETTING_RECIPIENT_GROUPS,
+        User::SETTING_AUTO_RESPONDER,
         User::SETTING_CLOCK,
         User::SETTING_CLOCK_PLACEMENT,
         User::SETTING_CALENDAR_PANE_OPEN,

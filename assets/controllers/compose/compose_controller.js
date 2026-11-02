@@ -3,6 +3,7 @@ import { Controller } from '@hotwired/stimulus'
 import { forgetPendingCancel, markPendingCancel } from "../../compose/pending_cancel.js";
 import { requestFailed } from "../../request_errors.js";
 import { csrfToken } from "../../csrf.js";
+import { parseRecipientList, addRecipients } from "../../compose/recipient_list.js";
 import {
     fillMarkers,
     fillTokens,
@@ -352,6 +353,21 @@ export default class extends Controller {
         }
 
         select.plmailTamed = true;
+        input?.addEventListener('paste', event => {
+            const pasted = event.clipboardData?.getData('text/plain');
+            if (!pasted) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const text = input.value.slice(0, input.selectionStart ?? input.value.length)
+                + pasted + input.value.slice(input.selectionEnd ?? input.value.length);
+            const { recipients, invalid } = parseRecipientList(text);
+            addRecipients(select, recipients);
+            // Closing Tom Select clears its textbox; restore any invalid text afterwards.
+            select.close();
+            select.setTextboxValue(invalid.join('; '));
+            select.plmailTyped = invalid.join('; ');
+            if (invalid.length) this._reportError(this._t('invalidAddress', '"%s" is not a valid email address').replace('%s', invalid.join('; ')));
+        }, true);
         select.settings.openOnFocus = false;
 
         // NOT reparented to <body>, and that is a decision rather than an
@@ -1108,7 +1124,8 @@ export default class extends Controller {
 
         const select = this._tomSelectFor(wrapper);
 
-        if (false === this.constructor.ADDRESS.test(typed)) {
+        const { recipients, invalid } = parseRecipientList(typed);
+        if (invalid.length || !recipients.length) {
             this._reportError(this._t('invalidAddress', '"%s" is not a valid email address').replace('%s', typed));
 
             return;
@@ -1120,8 +1137,20 @@ export default class extends Controller {
             return;
         }
 
-        select.createItem(typed, false);
+        addRecipients(select, recipients);
         select.setTextboxValue('');
+        select.focus();
+    }
+
+    insertRecipientGroup(event) {
+        const picker = event.currentTarget;
+        const emails = JSON.parse(picker.selectedOptions[0]?.dataset.emails ?? '[]');
+        const row = this._addressRows().find(candidate => candidate.contains(picker));
+        const select = this._tomSelectFor(row?.querySelector('.ts-wrapper'));
+        if (!select || !emails.length) return;
+        addRecipients(select, emails.map(email => ({ email, label: email })));
+        select.close();
+        picker.value = '';
         select.focus();
     }
 
@@ -1129,7 +1158,7 @@ export default class extends Controller {
     _tomSelectFor(wrapper) {
         // The bundle hangs the instance off the original <select>, which Tom
         // Select leaves in the DOM (hidden) next to the wrapper it built.
-        const select = wrapper.parentElement?.querySelector('select');
+        const select = wrapper?.parentElement?.querySelector('select');
 
         return select?.tomselect ?? null;
     }
@@ -2768,7 +2797,8 @@ export default class extends Controller {
                 continue;
             }
 
-            if (false === this.constructor.ADDRESS.test(typed)) {
+            const { recipients, invalid } = parseRecipientList(typed);
+            if (invalid.length || !recipients.length) {
                 this._reportError(
                     this._t('invalidAddress', '"%s" is not a valid email address').replace('%s', typed),
                 );
@@ -2782,7 +2812,7 @@ export default class extends Controller {
             }
 
             if (null !== select) {
-                select.createItem(typed, false);
+                addRecipients(select, recipients);
                 select.setTextboxValue('');
                 select.plmailTyped = '';
             }

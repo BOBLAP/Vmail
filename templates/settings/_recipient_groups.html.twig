@@ -1,0 +1,28 @@
+<div class="space-y-6" data-recipient-groups>
+    <a href="{{ path('app_settings_index', {section: 'recipient-groups'}) }}"
+       class="inline-flex rounded-full bg-accent text-accent-ink px-4 py-2 text-sm font-semibold hover:bg-accent-strong">
+        {{ 'recipient_groups.new'|trans }}
+    </a>
+    {% for id, group in recipientGroups %}
+        <div class="rounded-xl border border-line p-3 space-y-2" data-recipient-group="{{ id }}">
+            <div class="flex flex-wrap items-center gap-3">
+                <strong class="min-w-0 break-words">{{ group.name }} ({{ 'recipient_groups.count'|trans({'%count%': group.emails|length}) }})</strong>
+                <a class="text-sm text-accent hover:underline" href="{{ path('app_settings_index', {section: 'recipient-groups', edit: id}) }}">{{ 'recipient_groups.edit'|trans }}</a>
+                <form method="post" action="{{ path('app_settings_recipient_groups_delete', {id: id}) }}" data-turbo-confirm="{{ 'recipient_groups.confirm_delete'|trans }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('recipient_group_delete_' ~ id) }}">
+                    <button class="text-sm text-danger hover:underline" type="submit">{{ 'recipient_groups.delete'|trans }}</button>
+                </form>
+            </div>
+            <p class="text-xs text-ink-muted break-words">{{ group.emails|join(', ') }}</p>
+        </div>
+    {% else %}
+        <p class="text-sm text-ink-muted">{{ 'recipient_groups.empty'|trans }}</p>
+    {% endfor %}
+    <div class="border-t border-line pt-5">
+        <h3 class="font-semibold mb-4">{{ (recipientGroupId == 'new' ? 'recipient_groups.new' : 'recipient_groups.edit')|trans }}</h3>
+        {{ form_start(recipientGroupForm) }}
+            {{ form_widget(recipientGroupForm) }}
+            <button type="submit" class="mt-4 rounded-full bg-accent text-accent-ink px-4 py-2 text-sm font-semibold hover:bg-accent-strong">{{ 'recipient_groups.save'|trans }}</button>
+        {{ form_end(recipientGroupForm) }}
+    </div>
+</div>

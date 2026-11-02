@@ -305,3 +305,45 @@ sont réutilisés. Régression : `tests/e2e/compose-file-drop.spec.ts`.
 ### Programmation des mails à la seconde
 
 Le menu près d’Envoyer partage compose/_send_pill.html.twig entre nouveaux mails et réponses. Son champ natif datetime-local utilise step=1 pour saisir les secondes ; le format de date suit le navigateur, dans le fuseau configuré indiqué. compose/schedule_controller.js et schedule_options.js valident les instants à la seconde. ScheduledSendResolver accepte déjà ce format (minimum 60 secondes, maximum 30 jours). La file d’envoi peut ajouter un délai après l’heure choisie. Le sélecteur partagé du calendrier reste indépendant.
+
+### Listes de destinataires et groupes d’envoi
+
+`assets/compose/recipient_list.js` découpe les listes collées dans À, Cc et Cci
+(virgules, points-virgules, retours à la ligne, noms entre guillemets ou suivis
+ de `<adresse>`). `compose_controller.js` ajoute les destinataires via Tom Select,
+réutilise les contacts connus et conserve les fragments invalides à corriger.
+Les doublons sont évités dans chaque champ ; les trois champs restent indépendants.
+
+Réglages → Groupes d’envoi : `RecipientGroupType`, `RecipientGroupController`,
+`RecipientGroups` et `settings/_recipient_groups.html.twig` permettent création,
+modification et suppression. Le sac de réglages utilisateur stocke
+`mail.recipient_groups` (100 groupes maximum, 500 adresses distinctes par groupe),
+sans migration ; les sauvegardes utilisateur conservent ce sac. Les opérations
+sont privées à l’utilisateur connecté et protégées par CSRF. Aucune adresse
+invalide n’est écartée silencieusement à la sauvegarde d’un groupe.
+
+`compose/_recipient_groups.html.twig` propose les groupes avec leur nombre de
+membres dans chaque ligne de destinataires et un lien vers leur gestion. Les
+options sont chargées à l’ouverture de la rédaction : après modification d’un
+groupe dans un autre onglet, rouvrir la rédaction pour actualiser ce sélecteur.
+L’insertion crée des destinataires individuels ; modifier ou supprimer un groupe
+n’altère pas les messages déjà rédigés. Les adresses sont visibles par les autres
+destinataires si le groupe est inséré dans À ou Cc ; Cci garde son rôle habituel.
+Tests : `tests/recipient-list.test.mjs`, `RecipientGroupsTest.php` et
+`tests/e2e/recipient-groups.spec.ts` sur la stack dédiée.
+
+### Indication du répondeur automatique
+
+`_partials/_auto_responder_banner.html.twig` est le lien partagé vers les réglages :
+tuile rouge pâle avec échéance dans la barre latérale, icône compacte dans la barre
+supérieure. L’image fournie est `public/icons/auto-responder.png` ; son texte est
+porté par le lien accessible, l’image étant décorative. Les tuiles principales
+reçoivent la classe d’état `body.auto-responder-active`, sans modifier les réglages
+d’apparence enregistrés ni les couleurs du corps des mails.
+
+Le contrôleur global `ui/auto_responder_controller.js` programme les deux bornes
+horaires et consulte l’état privé toutes les 60 secondes et au retour dans l’onglet.
+Le formulaire utilise la carte partagée, les champs Symfony et les commandes
+existantes de `compose--compose-toolbar` pour son éditeur HTML. Le contrôleur
+`settings/auto_responder_controller.js` bascule texte/HTML et synchronise la saisie
+avant soumission. L’arrêt immédiat est un formulaire POST avec CSRF.

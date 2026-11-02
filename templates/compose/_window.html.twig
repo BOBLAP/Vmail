@@ -448,6 +448,7 @@ Variables: form, message, ctx (an App\Domain\DTO\Mail\ComposeContext)
                        class="text-xs font-medium text-ink-faint w-10 shrink-0 text-right">{{ 'compose.cc'|trans }}</label>
                 <div class="flex-1 min-w-0">
                     {{ form_widget(form.ccAddresses) }}
+                    {% include 'compose/_recipient_groups.html.twig' %}
                 </div>
             </div>
 
@@ -459,6 +460,7 @@ Variables: form, message, ctx (an App\Domain\DTO\Mail\ComposeContext)
                        class="text-xs font-medium text-ink-faint w-10 shrink-0 text-right">{{ 'compose.bcc'|trans }}</label>
                 <div class="flex-1 min-w-0">
                     {{ form_widget(form.bccAddresses) }}
+                    {% include 'compose/_recipient_groups.html.twig' %}
                 </div>
             </div>
 

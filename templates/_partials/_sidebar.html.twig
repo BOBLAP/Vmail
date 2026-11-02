@@ -397,6 +397,7 @@ controller instead — the scroll position and which trees are open.
               {{ _drawerMode is defined and _drawerMode ? '' : 'shell-chrome' }}">
 
     {# Compose #}
+    {% include '_partials/_auto_responder_banner.html.twig' with {compact: false} %}
     <div class="compose-wrap px-3 py-3 border-b border-line">
         <a href="{{ path('app_compose_new') }}"
            data-turbo-frame="compose_dock"

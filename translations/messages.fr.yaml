@@ -4584,3 +4584,47 @@ settings.filters.field.retrievalAccount: 'Compte de récupération IMAP'
 account.form.retrieve_since: 'Récupérer les messages à partir du'
 
 account.form.retrieve_since_help: 'Facultatif, date de réception IMAP incluse. Les messages antérieurs restent dans la boîte originale.'
+
+recipient_groups:
+    title: Groupes d’envoi
+    description: Créez vos listes de destinataires, puis insérez-les dans À, Cc ou Cci lors de la rédaction.
+    new: Nouveau groupe
+    name: Nom du groupe
+    addresses: Adresses e-mail
+    help: 'Séparez les adresses par des virgules, points-virgules ou retours à la ligne. Les noms suivis de <adresse> sont acceptés. Maximum 500 adresses distinctes.'
+    count: '%count% e-mails'
+    insert: Ajouter un groupe
+    manage: Gérer les groupes
+    edit: Modifier
+    delete: Supprimer
+    confirm_delete: Supprimer ce groupe d’envoi ? Les messages déjà rédigés restent inchangés.
+    empty: Aucun groupe d’envoi pour le moment.
+    save: Enregistrer le groupe
+    saved: Groupe d’envoi enregistré.
+    invalid: Vérifiez les adresses. Le groupe doit contenir de 1 à 500 adresses valides, sans entrée incorrecte.
+    duplicate: Un groupe porte déjà ce nom.
+    limit: Vous pouvez créer au maximum 100 groupes.
+
+auto_responder:
+    title: Répondeur automatique
+    description: Programmez un message d’absence pour vos comptes de messagerie.
+    enabled: Activer le répondeur sur cette période
+    starts: Début
+    ends: Fin
+    format: Format du message
+    plain: Texte brut
+    html: HTML avec mise en forme
+    subject: Objet de la réponse (facultatif)
+    message: Message de réponse
+    formatting: Mise en forme du message
+    save: Enregistrer le répondeur
+    stop: Désactiver le répondeur maintenant
+    saved: Répondeur automatique enregistré.
+    off: Répondeur désactivé
+    scheduled: Période programmée — le répondeur suit les dates ci-dessous.
+    active_until: 'Mode répondeur actif jusqu’au %date%'
+    behaviour: Une réponse par expéditeur et par période, tous comptes confondus. Les messages automatiques, listes de diffusion, spams et anciens messages importés sont ignorés. Les réponses sont conservées dans les messages envoyés.
+    timezone: 'Dates et heures dans votre fuseau : %zone%.'
+    invalid_period: La fin doit être postérieure au début et encore à venir si le répondeur est activé.
+    empty_message: Saisissez un message non vide.
+    reply_subject: Réponse automatique

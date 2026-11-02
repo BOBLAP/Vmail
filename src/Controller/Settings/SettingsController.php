@@ -12,6 +12,11 @@ use App\Domain\Helper\TimezoneHelper;
 use App\Domain\Enum\Mail\LabelRole;
 use App\Entity\User\User;
 use App\Form\ApiTokenType;
+use App\Form\RecipientGroupType;
+use App\Service\Mail\RecipientGroups;
+use App\Service\Mail\AutoResponder;
+use App\Form\AutoResponderType;
+use App\Service\Mail\MailBodySanitizer;
 use App\Service\User\ClockFormatResolver;
 use App\Service\User\ProfileSectionViewData;
 use App\Service\User\UserTimezoneResolver;
@@ -63,7 +68,7 @@ final class SettingsController extends AbstractController
     /** Where /settings opens: the first entry in the navigation. */
     private const string DEFAULT_SECTION = 'profile';
 
-    private const array SECTIONS = ['health', 'accounts', 'profile', 'security', 'labels', 'calendars', 'sharing', 'filters', 'insights', 'ai', 'integrations', 'appearance', 'aliases', 'read-receipts', 'signature', 'templates', 'app-passwords', 'notifications', 'general', 'categories', 'reading-pane', 'shortcuts', 'disposal', 'images', 'calendar-behaviour'];
+    private const array SECTIONS = ['health', 'accounts', 'profile', 'security', 'labels', 'calendars', 'sharing', 'filters', 'insights', 'ai', 'integrations', 'appearance', 'aliases', 'read-receipts', 'signature', 'templates', 'recipient-groups', 'auto-responder', 'app-passwords', 'notifications', 'general', 'categories', 'reading-pane', 'shortcuts', 'disposal', 'images', 'calendar-behaviour'];
 
     /**
      * One icon per AI feature, here rather than on the enum.
@@ -109,6 +114,9 @@ final class SettingsController extends AbstractController
         private readonly AiAssistant $ai,
         private readonly LabelResolver $labelResolver,
         private readonly TemplateLibrary $templateLibrary,
+        private readonly RecipientGroups $recipientGroups,
+        private readonly AutoResponder $autoResponder,
+        private readonly MailBodySanitizer $autoResponseSanitizer,
     ) {
     }
 
@@ -153,6 +161,8 @@ final class SettingsController extends AbstractController
         $manageableAccounts = $this->accountRepository->findForUserOrdered($this->getUser());
 
         return $this->render('settings/index.html.twig', [
+            ...$this->recipientGroupSectionData($section, $request),
+            ...$this->autoResponderSectionData($section, $request),
             'section'            => $section,
             'manageableAccounts' => $manageableAccounts,
             'labels'             => $this->labelRepository->findForUserTreeOrdered($this->getUser()),
@@ -213,6 +223,43 @@ final class SettingsController extends AbstractController
      *
      * @return array<string, mixed>
      */
+    private function recipientGroupSectionData(string $section, Request $request): array
+    {
+        if ('recipient-groups' !== $section) {
+            return [];
+        }
+        $groups = $this->recipientGroups->all($this->getUser());
+        $id = (string) ($request->attributes->get('recipientGroupId') ?? $request->query->getString('edit', 'new'));
+        if ('new' !== $id && !isset($groups[$id])) {
+            throw $this->createNotFoundException();
+        }
+        $form = $request->attributes->get('recipientGroupForm');
+        if (!$form instanceof FormInterface) {
+            $form = $this->createForm(RecipientGroupType::class, isset($groups[$id]) ? [
+                'name' => $groups[$id]['name'],
+                'addresses' => implode("\n", $groups[$id]['emails']),
+            ] : null, [
+                'action' => $this->generateUrl('app_settings_recipient_groups_save', ['id' => $id]),
+            ]);
+        }
+
+        return ['recipientGroups' => $groups, 'recipientGroupForm' => $form->createView(), 'recipientGroupId' => $id];
+    }
+
+    private function autoResponderSectionData(string $section, Request $request): array
+    {
+        if ('auto-responder' !== $section) return [];
+        $user = $this->getUser();
+        $form = $request->attributes->get('autoResponderForm');
+        if (!$form instanceof FormInterface) {
+            $form = $this->createForm(AutoResponderType::class, $this->autoResponder->formData($user), [
+                'timezone' => $this->timezones->nameFor($user), 'action' => $this->generateUrl('app_settings_auto_responder_save'),
+            ]);
+        }
+        $data = $form->getData();
+        return ['autoResponderForm' => $form->createView(), 'autoResponderHtml' => 'html' === ($data['format'] ?? 'text') ? $this->autoResponseSanitizer->sanitizeComposedBody($data['message'] ?? '') : ''];
+    }
+
     private function templatesSectionData(string $section): array
     {
         $user = $this->getUser();

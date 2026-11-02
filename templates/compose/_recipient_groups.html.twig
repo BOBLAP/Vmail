@@ -1,0 +1,15 @@
+{% set groups = app.user.getSetting('mail.recipient_groups', {}) %}
+<div class="flex flex-wrap items-center gap-2 mt-1" data-recipient-group-picker>
+    {% if groups is not empty %}
+        <select aria-label="{{ 'recipient_groups.insert'|trans }}"
+                data-action="change->compose--compose#insertRecipientGroup"
+                class="max-w-full rounded-lg border border-line bg-surface text-ink text-xs px-2 py-1">
+            <option value="">{{ 'recipient_groups.insert'|trans }}</option>
+            {% for id, group in groups %}
+                <option value="{{ id }}" data-emails="{{ group.emails|json_encode|e('html_attr') }}">{{ group.name }} ({{ 'recipient_groups.count'|trans({'%count%': group.emails|length}) }})</option>
+            {% endfor %}
+        </select>
+    {% endif %}
+    <a href="{{ path('app_settings_index', {section: 'recipient-groups'}) }}" target="_blank" rel="noopener"
+       class="text-xs text-ink-faint hover:text-accent">{{ 'recipient_groups.manage'|trans }}</a>
+</div>

@@ -1,4 +1,5 @@
 <header class="flex items-center gap-2 px-4 h-14 flex-shrink-0 pane shell-chrome relative z-20">
+    {% include '_partials/_auto_responder_banner.html.twig' with {compact: true} %}
 
     {# Burger — opens the drawer on mobile, collapses to the icon rail on md+.
        aria-expanded is kept in step by ui--sidebar-drawer: the drawer's state

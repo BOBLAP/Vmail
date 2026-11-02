@@ -1,0 +1,8 @@
+{% set state = autoResponder.state %}
+<a href="{{ path('app_settings_index', {section: 'auto-responder'}) }}"
+   data-auto-responder-banner {% if not state.active %}hidden{% endif %}
+   aria-label="{{ state.label }}" title="{{ state.label }}"
+   class="{{ not state.active ? 'hidden ' : '' }}{{ compact|default(false) ? 'shrink-0 p-1.5' : 'flex items-center gap-2 p-2 mx-2 my-2' }} rounded-xl border border-red-300 bg-red-100 text-red-950 focus-visible:ring-2 focus-visible:ring-red-500">
+    <img src="{{ asset('icons/auto-responder.png') }}" width="26" height="26" alt="" class="rounded-lg shrink-0">
+    <span data-auto-responder-label role="status" class="{{ compact|default(false) ? 'sr-only' : 'rail-hide text-xs font-semibold leading-relaxed' }}">{{ state.label }}</span>
+</a>

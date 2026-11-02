@@ -4559,3 +4559,47 @@ settings.filters.field.retrievalAccount: 'IMAP retrieval account'
 account.form.retrieve_since: 'Retrieve messages from'
 
 account.form.retrieve_since_help: 'Optional, inclusive IMAP receipt date. Older messages remain in the original mailbox.'
+
+recipient_groups:
+    title: Recipient groups
+    description: Create recipient lists and insert them into To, Cc or Bcc when composing.
+    new: New group
+    name: Group name
+    addresses: Email addresses
+    help: 'Separate addresses with commas, semicolons or new lines. Names followed by <address> are accepted. Maximum 500 distinct addresses.'
+    count: '%count% emails'
+    insert: Add a group
+    manage: Manage groups
+    edit: Edit
+    delete: Delete
+    confirm_delete: Delete this recipient group? Existing drafts will keep their recipients.
+    empty: No recipient groups yet.
+    save: Save group
+    saved: Recipient group saved.
+    invalid: Check the addresses. A group must contain 1 to 500 valid addresses and no invalid entries.
+    duplicate: A group already has this name.
+    limit: You can create up to 100 groups.
+
+auto_responder:
+    title: Automatic replies
+    description: Schedule an away message for your email accounts.
+    enabled: Enable automatic replies during this period
+    starts: Start
+    ends: End
+    format: Message format
+    plain: Plain text
+    html: Formatted HTML
+    subject: Reply subject (optional)
+    message: Reply message
+    formatting: Message formatting
+    save: Save automatic replies
+    stop: Turn off automatic replies now
+    saved: Automatic replies saved.
+    off: Automatic replies are off
+    scheduled: Period scheduled — automatic replies follow the dates below.
+    active_until: 'Automatic replies active until %date%'
+    behaviour: One reply per sender and period across all accounts. Automated messages, mailing lists, spam and old imported mail are ignored. Replies are kept in Sent.
+    timezone: 'Dates and times use your timezone: %zone%.'
+    invalid_period: The end must follow the start and must still be in the future when automatic replies are enabled.
+    empty_message: Enter a non-empty reply message.
+    reply_subject: Automatic reply

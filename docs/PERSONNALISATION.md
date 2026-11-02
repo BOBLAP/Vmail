@@ -257,7 +257,7 @@ sans masquer une véritable erreur serveur ni modifier les données de l'instanc
 
 ## 7. Voir les changements dans l'instance locale
 
-Configuration constatée le 18 octobre 2026 :
+Configuration locale actualisée le 2 novembre 2026 :
 
 - `compose.yaml` seul décrit l'image publiée `ghcr.io/karatektus/pl_mail:latest`.
 - `compose.override.yaml`, ajouté localement, est chargé automatiquement par un
@@ -269,8 +269,10 @@ Configuration constatée le 18 octobre 2026 :
   `docs/releases/Vinz-1.0.0.md` pour la première version du fork.
 - Cette image **copie** le code à la construction : modifier un fichier du dépôt
   ne modifie pas immédiatement l'application exécutée.
-- Accès HTTPS : `https://localhost:8443`, HTTP : `http://localhost:8085`.
-  Ces ports viennent du `.env` local ; ils ne sont pas universels.
+- Accès HTTPS : `https://localhost:9443`, HTTP : `http://localhost:8085`.
+  L’override Docker local fixe ces ports (dont 9443 en TCP et UDP), car Windows
+  réserve actuellement 8443. Le `.env` personnel reste inchangé. Ces ports ne
+  sont pas universels et ce contournement local ne modifie pas le VPS.
 
 Depuis la racine du dépôt, après une modification à rendre visible :
 
@@ -278,7 +280,7 @@ Depuis la racine du dépôt, après une modification à rendre visible :
 docker compose build php
 docker compose up -d --no-build php worker
 docker compose ps
-curl.exe -k -s -o NUL -w '%{http_code}' https://localhost:8443/healthz
+curl.exe -k -s -o NUL -w '%{http_code}' https://localhost:9443/healthz
 ```
 
 Attendre que php soit healthy et que `/healthz` réponde 200, puis recharger les
@@ -416,3 +418,44 @@ sont réutilisés. Régression : `tests/e2e/compose-file-drop.spec.ts`.
 ### Programmation des mails à la seconde
 
 Le menu près d’Envoyer partage compose/_send_pill.html.twig entre nouveaux mails et réponses. Son champ natif datetime-local utilise step=1 pour saisir les secondes ; le format de date suit le navigateur, dans le fuseau configuré indiqué. compose/schedule_controller.js et schedule_options.js valident les instants à la seconde. ScheduledSendResolver accepte déjà ce format (minimum 60 secondes, maximum 30 jours). La file d’envoi peut ajouter un délai après l’heure choisie. Le sélecteur partagé du calendrier reste indépendant.
+
+### Listes de destinataires et groupes d’envoi
+
+`assets/compose/recipient_list.js` découpe les listes collées dans À, Cc et Cci
+(virgules, points-virgules, retours à la ligne, noms entre guillemets ou suivis
+ de `<adresse>`). `compose_controller.js` ajoute les destinataires via Tom Select,
+réutilise les contacts connus et conserve les fragments invalides à corriger.
+Les doublons sont évités dans chaque champ ; les trois champs restent indépendants.
+
+Réglages → Groupes d’envoi : `RecipientGroupType`, `RecipientGroupController`,
+`RecipientGroups` et `settings/_recipient_groups.html.twig` permettent création,
+modification et suppression. Le sac de réglages utilisateur stocke
+`mail.recipient_groups` (100 groupes maximum, 500 adresses distinctes par groupe),
+sans migration ; les sauvegardes utilisateur conservent ce sac. Les opérations
+sont privées à l’utilisateur connecté et protégées par CSRF. Aucune adresse
+invalide n’est écartée silencieusement à la sauvegarde d’un groupe.
+
+`compose/_recipient_groups.html.twig` propose les groupes avec leur nombre de
+membres dans chaque ligne de destinataires et un lien vers leur gestion. Les
+options sont chargées à l’ouverture de la rédaction : après modification d’un
+groupe dans un autre onglet, rouvrir la rédaction pour actualiser ce sélecteur.
+L’insertion crée des destinataires individuels ; modifier ou supprimer un groupe
+n’altère pas les messages déjà rédigés. Les adresses sont visibles par les autres
+destinataires si le groupe est inséré dans À ou Cc ; Cci garde son rôle habituel.
+Tests : `tests/recipient-list.test.mjs`, `RecipientGroupsTest.php` et
+`tests/e2e/recipient-groups.spec.ts` sur la stack dédiée.
+
+### Teinte temporaire pendant le répondeur
+
+Quand le répondeur est actif, `body.auto-responder-active` teinte `.main-pane` et
+`.shell-chrome` avec `color-mix` dans `assets/styles/app.css` : respectivement 26 %
+et 22 % de rouge pâle `#fca5a5`, mélangé aux surfaces du thème. Les bordures
+reçoivent aussi une teinte rouge. Les règles ciblées restent prioritaires en
+mode Flat et pour le volet de lecture ; elles ne changent pas les couleurs de
+texte ni les préférences personnelles. La teinte disparaît à la fin de la période.
+
+La tuile partagée `_partials/_auto_responder_banner.html.twig` utilise un fond
+rouge pâle, un texte rouge sombre et l’icône fournie. Elle indique la fin dans le
+fuseau utilisateur ; sa version compacte s’affiche dans la barre supérieure,
+y compris sur mobile. Le contrôle navigateur dédié vérifie l’affichage sans
+débordement et les transitions horaires sur une page déjà ouverte.

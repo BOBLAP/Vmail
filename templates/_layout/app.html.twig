@@ -218,13 +218,17 @@
        and calendar page. The mailbox layout adds it back. #}
     {# has-demo-bar: the fixed demo bar overlays the panes, so scrollers need
        room to bring their last row clear of it. See app.css. #}
-    class="{% block body_class %}{% endblock %}{% if app.user and demo.isEnabled %} has-demo-bar{% endif %}"
+    class="{% block body_class %}{% endblock %}{% if app.user and demo.isEnabled %} has-demo-bar{% endif %}{% if app.user and autoResponder.state.active %} auto-responder-active{% endif %}"
     {# ui--shortcuts is outside the block for the reason ui--tooltip is, and
        for somebody who has not switched the shortcuts off — an absent
        controller is the whole of "off", so there is no flag for the script to
        remember to read. See App\Entity\User\User::SETTING_KEYBOARD_SHORTCUTS. #}
     {% set _shortcuts = app.user and app.user.keyboardShortcuts %}
-    data-controller="ui--tooltip{% if _shortcuts %} ui--shortcuts{% endif %} {% if app.user %}{% block body_controllers %}core--mercure mail--jobs{% endblock %}{% endif %}"
+    data-controller="ui--tooltip{% if _shortcuts %} ui--shortcuts{% endif %} {% if app.user %}ui--auto-responder {% block body_controllers %}core--mercure mail--jobs{% endblock %}{% endif %}"
+    {% if app.user %}
+        data-ui--auto-responder-url-value="{{ path('app_settings_auto_responder_status') }}"
+        data-ui--auto-responder-state-value="{{ autoResponder.state|json_encode|e('html_attr') }}"
+    {% endif %}
     {% if _shortcuts %}
         data-ui--shortcuts-go-value="{{ {
             i: path('app_mail_inbox'),

@@ -407,6 +407,7 @@ framework:
             # follows mail arriving without being the fetching of it, and its
             # retries should be the patient ones.
             App\Infrastructure\Messaging\Message\SendReadReceiptMessage: export
+            App\Infrastructure\Messaging\Message\SendAutoResponseMessage: export
             App\Infrastructure\Messaging\Message\ProcessReadReceiptsMessage: enrich
             # ingest rather than export, although a calendar sync writes
             # outward as well as reading. Nobody waits on it: a local edit is

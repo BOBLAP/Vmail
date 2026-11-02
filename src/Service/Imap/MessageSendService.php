@@ -313,6 +313,15 @@ class MessageSendService
             ->subject($subject);
 
         $this->applyPriority($message, $email);
+        if ('auto-replied' === ($message->headers['auto-submitted'] ?? null)) {
+            $email->getHeaders()->addTextHeader('Auto-Submitted', 'auto-replied');
+            $email->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'All');
+            $replyIds = array_values(array_filter(array_map(MessageIdHelper::normalise(...), $message->inReplyTo ?? [])));
+            if ([] !== $replyIds) {
+                $email->getHeaders()->addIdHeader('In-Reply-To', $replyIds);
+                $email->getHeaders()->addIdHeader('References', $replyIds);
+            }
+        }
         $this->applyReceiptRequest($message, $email, $fromAddress);
 
         $toAddresses = $message->toAddresses;

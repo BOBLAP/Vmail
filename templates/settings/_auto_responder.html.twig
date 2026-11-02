@@ -1,0 +1,56 @@
+{% set state = autoResponder.state %}
+<div class="space-y-5" data-auto-responder-settings>
+    <div class="flex items-start gap-3 rounded-xl border border-line bg-sunken p-4">
+        <img src="{{ asset('icons/auto-responder.png') }}" width="44" height="44" alt="" class="rounded-lg shrink-0">
+        <div class="space-y-1 text-sm">
+            <p class="font-semibold">{{ state.active ? state.label : (state.enabled ? 'auto_responder.scheduled'|trans : 'auto_responder.off'|trans) }}</p>
+            <p class="text-ink-muted">{{ 'auto_responder.behaviour'|trans }}</p>
+            <p class="text-xs text-ink-faint">{{ 'auto_responder.timezone'|trans({'%zone%': clock.timezone}) }}</p>
+        </div>
+    </div>
+    {% if state.enabled %}
+        <form method="post" action="{{ path('app_settings_auto_responder_stop') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('auto_responder_stop') }}">
+            <button type="submit" class="rounded-full border border-danger text-danger px-4 py-2 text-sm font-semibold hover:bg-danger/10">{{ 'auto_responder.stop'|trans }}</button>
+        </form>
+    {% endif %}
+    {{ form_start(autoResponderForm, {attr: {
+        'data-controller': 'settings--auto-responder compose--compose-toolbar',
+        'data-action': 'submit->settings--auto-responder#prepare',
+    }}) }}
+        {{ form_errors(autoResponderForm) }}
+        {{ form_row(autoResponderForm.enabled) }}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            {{ form_row(autoResponderForm.startsAt) }}
+            {{ form_row(autoResponderForm.endsAt) }}
+        </div>
+        <div class="mt-4">{{ form_row(autoResponderForm.subject) }}</div>
+        <div class="mt-4">{{ form_row(autoResponderForm.format, {attr: {
+            'data-settings--auto-responder-target': 'format',
+            'data-action': 'change->settings--auto-responder#changeFormat',
+        }}) }}</div>
+        <div class="mt-4" data-settings--auto-responder-target="plain">
+            {{ form_row(autoResponderForm.message, {attr: {
+                'data-settings--auto-responder-target': 'message',
+                'data-compose--compose-toolbar-target': 'hiddenInput',
+            }}) }}
+        </div>
+        <div hidden data-settings--auto-responder-target="rich" class="mt-4">
+            <label id="auto-responder-editor-label" class="block text-sm font-medium mb-2">{{ 'auto_responder.message'|trans }}</label>
+            <div class="rounded-lg border border-field overflow-hidden">
+                <div class="flex gap-1 border-b border-line bg-sunken p-2" role="toolbar" aria-label="{{ 'auto_responder.formatting'|trans }}">
+                    {% for tool in [['bold', 'compose.bold', 'fa-bold'], ['italic', 'compose.italic', 'fa-italic'], ['underline', 'compose.underline', 'fa-underline'], ['unorderedList', 'compose.list.unordered', 'fa-list-ul']] %}
+                        <button type="button" data-compose--compose-toolbar-action data-action="click->compose--compose-toolbar#{{ tool[0] }}"
+                                aria-label="{{ tool[1]|trans }}" title="{{ tool[1]|trans }}" class="h-9 w-9 rounded-lg text-ink-muted hover:bg-hover focus-visible:ring-2 focus-visible:ring-accent">
+                            <i class="fa-solid {{ tool[2] }}" aria-hidden="true"></i>
+                        </button>
+                    {% endfor %}
+                </div>
+                <div contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="auto-responder-editor-label"
+                     data-compose--compose-toolbar-target="editor" data-settings--auto-responder-target="editor"
+                     class="min-h-48 p-3 bg-field text-ink text-sm outline-none [contain:paint]">{{ autoResponderHtml|raw }}</div>
+            </div>
+        </div>
+        <button type="submit" class="mt-5 rounded-full bg-accent text-accent-ink px-4 py-2 text-sm font-semibold hover:bg-accent-strong">{{ 'auto_responder.save'|trans }}</button>
+    {{ form_end(autoResponderForm) }}
+</div>

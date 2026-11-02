@@ -31,6 +31,7 @@ twig:
         # `clock.hour`. A global because the templates that print a time are
         # partials included from layouts, with no one controller behind them.
         clock: '@App\Twig\ClockGlobal'
+        autoResponder: '@App\Twig\AutoResponderGlobal'
         # Read by the admin header only, but a global rather than a controller
         # variable because that header renders from a layout every admin
         # section extends — there is no one controller to thread it through.

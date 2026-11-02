@@ -40,6 +40,8 @@ final class OfficePreviewConverterTest extends TestCase
             self::assertSame('POST', $method);
             self::assertSame('http://gotenberg:3000/forms/libreoffice/convert', $url);
             self::assertSame(0, $options['max_redirects']);
+            self::assertSame(25.0, (float) $options['timeout']);
+            self::assertSame(25.0, (float) $options['max_duration']);
             return new MockResponse('%PDF-1.7 fixture', ['http_code' => 200]);
         });
         $converter = new OfficePreviewConverter($http, $this->directory, 'http://gotenberg:3000');

@@ -84,7 +84,9 @@ final readonly class OfficePreviewConverter
             $response = $this->httpClient->request('POST', rtrim($this->gotenbergUrl, '/').'/forms/libreoffice/convert', [
                 'headers' => $form->getPreparedHeaders()->toArray(),
                 'body' => $form->bodyToIterable(),
-                'timeout' => 10,
+                // LibreOffice starts lazily; on the VPS its first response can
+                // exceed ten seconds. Wait through the server's 20s deadline.
+                'timeout' => 25,
                 'max_duration' => 25,
                 'max_redirects' => 0,
                 'buffer' => false,

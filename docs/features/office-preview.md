@@ -44,7 +44,10 @@ web ; copier aussi `compose.gotenberg.yaml` si `extends` est utilisé.
 Entrée : 25 Mio maximum, contrôlée avant récupération distante lorsque la taille
 est connue, puis sur le fichier réel. Sortie : 50 Mio maximum, écrite en flux.
 Gotenberg : délai total 20 s, corps multipart 27 MB, file d’attente de deux.
-Client PHP : durée totale 25 s, sans redirection. Un verrou global limite à une
+Client PHP : attente sans réponse et durée totale limitées à 25 s, sans redirection.
+Le démarrage à froid de LibreOffice peut dépasser 10 s sur le VPS ; le client
+attend donc l’échéance serveur de 20 s au lieu d’annuler avant celle-ci.
+Un verrou global limite à une
 conversion simultanée par stockage partagé ; une seconde demande reçoit un message
 invitant à réessayer. Les PDF natifs ne prennent pas ce verrou.
 

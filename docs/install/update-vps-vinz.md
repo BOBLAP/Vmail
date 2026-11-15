@@ -59,7 +59,9 @@ Ne pas desactiver la verification de l'identite du serveur ni transmettre la cle
    Les migrations s'executent au demarrage.
 6. Verifie `/healthz`, les checks database/queue/workers et les images reellement
    executees, la connexion a Gotenberg, puis controle l'acces HTTPS public.
-7. Supprime les archives d'image de cet envoi apres succes, en conservant la sauvegarde.
+7. Supprime les archives d'image de cet envoi et conserve le point de restauration
+   produit juste avant la mise a jour. Apres validation du service public, retire
+   les anciennes sauvegardes de ce script et leurs images de retour arriere.
 
 Le compose principal reste intact. Le complement gere est
 `/home/migration/vmail/compose.vinz-preview.json`, avec sa definition
@@ -71,8 +73,8 @@ Les deux fichiers du complement sont aussi sauvegardes lors des mises a jour sui
 
 Les sauvegardes sont sous `/home/migration/vmail/backups/<date UTC>/`, en acces
 prive. Elles occupent de la place et contiennent donnees personnelles et secrets :
-les conserver hors VPS, avec protection adaptee et separation durable des secrets
-et de la base. Aucune suppression automatique des sauvegardes n'est effectuee.
+conserver hors VPS les copies de plus longue duree, avec protection adaptee et
+separation durable des secrets et de la base.
 
 Si la sauvegarde ou l'import echoue avant tout nouveau demarrage, le script tente
 de relancer l'ancienne version. Apres le debut du deploiement, il ne revient pas

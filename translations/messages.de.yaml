@@ -1884,6 +1884,9 @@ compose:
     forward: Weiterleiten
     from: Von
     image: Bild einfügen
+    image_width: Bildbreite (px)
+    image_resize: Größe ändern
+    image_resize_cancel: Abbrechen
     image_insert_failed: Das Bild konnte nicht in die Nachricht eingefügt werden
     indent: Einzug vergrößern
     insert_emoji: Emoji einfügen
@@ -2603,7 +2606,24 @@ request_error:
     refused: 'Das konnte plMail nicht erledigen. Lade die Seite neu und versuch es noch einmal.'
     offline: 'plMail ist nicht erreichbar. Prüf deine Verbindung und versuch es noch einmal.'
     reference: 'Ref. %id%'
+sync_frequency:
+    title: 'Abrufhäufigkeit'
+    description: 'Verschiebe Konten zwischen Gruppen oder nutze das Auswahlmenü. Lege die automatischen Abrufintervalle in Minuten fest.'
+    group:
+        default: 'Standard'
+        priority: 'Priorität'
+        secondary: 'Sekundär'
+        economy: 'Sparmodus'
+    minutes: min
+    group_for: 'Abrufgruppe für %account%'
+    save: 'Speichern'
+    saved: 'Abrufhäufigkeiten gespeichert.'
+    invalid: 'Gib für jede Gruppe ein Intervall von 1 bis 1440 Minuten ein.'
+
 sync_now:
+    priority: 'Priorisierte Postfächer abrufen'
+    all: 'Alle Postfächer abrufen'
+    no_accounts: 'Keine aktiven Konten in dieser Auswahl.'
     label: 'Jetzt synchronisieren'
     syncing_one: '1 Konto wird synchronisiert …'
     syncing_other: '%count% Konten werden synchronisiert …'

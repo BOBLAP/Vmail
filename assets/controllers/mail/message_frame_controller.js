@@ -19,9 +19,10 @@ import { Controller } from "@hotwired/stimulus";
  */
 export default class extends Controller {
     static targets = ["frame", "status"];
-    static values  = { minHeight: { type: Number, default: 80 } };
+    static values  = { minHeight: { type: Number, default: 80 }, attachmentPaths: Array };
 
     connect() {
+        this.attachmentRequests = new AbortController();
         this.onMessage = this.handleMessage.bind(this);
         window.addEventListener("message", this.onMessage);
 
@@ -40,12 +41,16 @@ export default class extends Controller {
         this.sync = () => {
             this.postTheme();
             this.post({ plmail: "measure" });
+            if (this.attachmentPathsValue.length) {
+                this.post({ plmail: "attachment-paths", paths: this.attachmentPathsValue });
+            }
         };
         this.frameTarget.addEventListener("load", this.sync);
         this.sync();
     }
 
     disconnect() {
+        this.attachmentRequests.abort();
         window.removeEventListener("message", this.onMessage);
         this.sizes?.disconnect();
         if (this.hasFrameTarget) this.frameTarget.removeEventListener("load", this.sync);
@@ -86,6 +91,10 @@ export default class extends Controller {
             this.showLink(data.href);
         }
 
+        if (data.plmail === "load-attachment" && this.attachmentPathsValue.includes(data.path)) {
+            void this.loadAttachment(data.path);
+        }
+
         // A key pressed inside the message, for ui--shortcuts. Re-announced as
         // an event of our own rather than as a synthetic keydown: nothing else
         // listening for keys should mistake this for the keyboard, and the
@@ -101,6 +110,28 @@ export default class extends Controller {
                     altKey: true === data.altKey,
                 },
             }));
+        }
+    }
+
+    async loadAttachment(path) {
+        const { signal } = this.attachmentRequests;
+        try {
+            // The sandbox has no session cookie. Fetch the message's own part
+            // from the parent, where the normal ownership check still applies.
+            const response = await fetch(path, { mode: "same-origin", redirect: "error", signal });
+            if (!response.ok || !response.headers.get("Content-Type")?.startsWith("image/")) {
+                await response.body?.cancel();
+                return;
+            }
+
+            const blob = await response.blob();
+            const reader = new FileReader();
+            reader.addEventListener("load", () => {
+                if (!signal.aborted) this.post({ plmail: "attachment-image", path, src: reader.result });
+            }, { once: true });
+            reader.readAsDataURL(blob);
+        } catch {
+            // Leave the original source in place when the attachment is unavailable.
         }
     }
 

@@ -578,8 +578,7 @@
         </div>
 
         {# Sync now: the same account syncs as app:mail:sync, for this user (SyncController). #}
-        <button
-            type="button"
+        <div class="flex shrink-0"
             data-controller="mail--sync-now"
             data-mail--sync-now-url-value="{{ path('app_mail_sync_run') }}"
             data-mail--sync-now-status-url-value="{{ path('app_mail_sync_status') }}"
@@ -589,16 +588,25 @@
                 stillRunning:   'sync_now.still_running'|trans,
                 complete:       'sync_now.complete'|trans,
                 sessionExpired: 'sync_now.session_expired'|trans,
+                noAccounts:     'sync_now.no_accounts'|trans,
             }|json_encode }}"
-            data-action="click->mail--sync-now#run"
-            class="flex cursor-pointer items-center justify-center w-9 h-9 rounded-lg
-                   text-ink-muted hover:bg-hover transition-colors flex-shrink-0
-                   disabled:cursor-default disabled:opacity-60"
-            aria-label="{{ 'sync_now.label'|trans }}"
-            title="{{ 'sync_now.label'|trans }}"
         >
-            <i class="fa-solid fa-rotate text-base" data-mail--sync-now-target="icon" aria-hidden="true"></i>
-        </button>
+            {% set syncClass = 'flex cursor-pointer items-center justify-center w-9 h-9 rounded-lg
+                   text-ink-muted hover:bg-hover transition-colors flex-shrink-0
+                   focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-default disabled:opacity-60' %}
+            <button type="button" class="{{ syncClass }}" data-mail--sync-now-target="button"
+                    data-action="click->mail--sync-now#run"
+                    data-mail--sync-now-url-param="{{ path('app_mail_sync_run_priority') }}"
+                    data-mail--sync-now-status-url-param="{{ path('app_mail_sync_status_priority') }}"
+                    aria-label="{{ 'sync_now.priority'|trans }}" title="{{ 'sync_now.priority'|trans }}">
+                <i class="fa-solid fa-bolt text-base" data-mail--sync-now-target="icon" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="{{ syncClass }}" data-mail--sync-now-target="button" data-sync-all
+                    data-action="click->mail--sync-now#run"
+                    aria-label="{{ 'sync_now.all'|trans }}" title="{{ 'sync_now.all'|trans }}">
+                <i class="fa-solid fa-rotate text-base" data-mail--sync-now-target="icon" aria-hidden="true"></i>
+            </button>
+        </div>
 
         <a href="{{ path('app_settings_index', accountHealth.attention ? { section: 'health' } : {}) }}"
            data-topbar-settings

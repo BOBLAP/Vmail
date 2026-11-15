@@ -1770,6 +1770,9 @@ compose:
     forward: Pass it along
     from: From
     image: Paste in a likeness
+    image_width: Likeness width (px)
+    image_resize: Resize
+    image_resize_cancel: Cancel
     image_insert_failed: Could not paste the likeness into the scroll
     indent: Shove it inboard
     insert_emoji: Daub on a face
@@ -2477,7 +2480,24 @@ request_error:
     refused: 'plMail couldn''t do that. Reload the page an'' try again.'
     offline: 'plMail can''t be hailed. Check yer connection an'' try again.'
     reference: 'Bearing %id%'
+sync_frequency:
+    title: 'Mail retrieval frequency'
+    description: 'Drag accounts between groups or use their menu. Set the automatic retrieval intervals in minutes.'
+    group:
+        default: 'Default'
+        priority: 'Priority'
+        secondary: 'Secondary'
+        economy: 'Economy'
+    minutes: min
+    group_for: 'Retrieval group for %account%'
+    save: 'Save'
+    saved: 'Retrieval frequencies saved.'
+    invalid: 'Enter an interval from 1 to 1440 minutes for each group.'
+
 sync_now:
+    priority: 'Retrieve priority mailboxes'
+    all: 'Retrieve all mailboxes'
+    no_accounts: 'No active accounts in this selection.'
     label: 'Haul in the post'
     syncing_one: 'Haulin'' in 1 account…'
     syncing_other: 'Haulin'' in %count% accounts…'

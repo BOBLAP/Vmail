@@ -28,6 +28,19 @@ test.beforeEach(() => {
 });
 
 test.describe("image proxy · renders inside the opaque frame", () => {
+    test("an embedded attachment renders while remote images are blocked", async ({ page }) => {
+        await page.goto("/mail/inbox");
+        await mailRow(page, SUBJECT).click();
+
+        const body = page.locator(".mail-message-body").first();
+        await expect(body.getByTestId("images-bar")).toBeVisible();
+        const frame = body.locator("iframe");
+        await expect(frame).not.toHaveAttribute("sandbox", /allow-same-origin/);
+        const picture = body.frameLocator("iframe").getByAltText("E2E Inline Image");
+        await expect.poll(() => picture.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1);
+        await expect(body.frameLocator("iframe").getByAltText(PROBE_ALT)).toHaveAttribute("data-plmail-src", /image-proxy/);
+    });
+
     test("an opted-in remote image paints real pixels in the sandboxed frame", async ({ page }) => {
         // Watch the browser-visible proxy requests: the frame's origin is opaque,
         // so if these ever carried a cookie the isolation would be broken.

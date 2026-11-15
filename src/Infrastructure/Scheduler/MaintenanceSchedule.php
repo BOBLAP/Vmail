@@ -44,7 +44,7 @@ final class MaintenanceSchedule implements ScheduleProviderInterface
                 // Neither Gmail push nor Graph subscriptions guarantee
                 // delivery, and IDLE connections drop. Polling is the backstop
                 // that notices what the push paths missed.
-                RecurringMessage::cron('*/15 * * * *', new RunCommandMessage('app:mail:sync')),
+                RecurringMessage::cron('* * * * *', new RunCommandMessage('app:mail:sync --due')),
 
                 // Gmail watches last 7 days, Graph subscriptions ~3. Daily
                 // renewal with the command's own thresholds leaves ample

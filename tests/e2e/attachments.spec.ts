@@ -30,7 +30,7 @@ test.beforeAll(() => {
  * is not one — a signature logo would otherwise put a paperclip on every mail
  * the account ever sends.
  */
-test("an inline image is not counted as an attachment", async ({ page }) => {
+test("an inline image can be resized and stays in the body after reopening", async ({ page }) => {
     await page.goto("/mail/inbox");
     await page.getByRole("link", { name: "Compose" }).first().click();
 
@@ -38,14 +38,16 @@ test("an inline image is not counted as an attachment", async ({ page }) => {
     const editor = dock.locator('[data-compose--compose-toolbar-target="editor"]');
 
     await expect(editor).toBeVisible();
+    const subject = `E2E Resized Image ${Date.now()}`;
+    await dock.locator('input[name="compose[subject]"]').fill(subject);
     await editor.click();
     await editor.fill("a picture, in the body");
 
     await dock.locator('input[data-compose--compose-target="imageInput"]').setInputFiles({
-        name: "e2e-inline.png",
-        mimeType: "image/png",
+        name: "e2e-inline.gif",
+        mimeType: "image/gif",
         buffer: Buffer.from(
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+            "R0lGODlhEAAQAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
             "base64",
         ),
     });
@@ -54,10 +56,27 @@ test("an inline image is not counted as an attachment", async ({ page }) => {
     await expect(editor.locator("img[data-cid]")).toBeVisible();
 
     // …and nowhere in the strip beside it.
-    await expect(dock.getByRole("link", { name: "e2e-inline.png" })).toHaveCount(0);
+    await expect(dock.getByRole("link", { name: "e2e-inline.gif" })).toHaveCount(0);
     await expect(
         dock.locator('[data-compose--compose-target="attachments"]'),
-    ).not.toContainText("e2e-inline.png");
+    ).not.toContainText("e2e-inline.gif");
+
+    const image = editor.locator("img[data-cid]");
+    await image.click();
+    const width = dock.getByRole("spinbutton", { name: "Image width (px)" });
+    await width.fill("160");
+    const saved = page.waitForResponse(response =>
+        response.url().includes("/compose/draft") &&
+        response.request().method() === "POST" &&
+        response.ok(),
+    );
+    await width.press("Enter");
+    await expect(image).toHaveAttribute("width", "160");
+    await saved;
+
+    await page.goto("/mail/drafts");
+    await page.getByRole("link", { name: subject, exact: true }).click();
+    await expect(image).toHaveAttribute("width", "160");
 
     // The upload forced a save, so this spec owns a draft now. Take it away
     // again rather than leaving it for the next run to find.

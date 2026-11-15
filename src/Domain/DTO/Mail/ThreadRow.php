@@ -24,6 +24,8 @@ final readonly class ThreadRow
     public function __construct(
         public array $messages,
         public string $snippet,
+        /** @var list<array{sender: string, text: string}> */
+        public array $unreadPreviews = [],
     ) {
         $this->latest = [] === $messages ? null : $messages[count($messages) - 1];
 

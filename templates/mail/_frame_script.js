@@ -168,6 +168,7 @@
         reportHeight(true);
     });
 
+    var attachmentImages = new Map();
     window.addEventListener("message", function (event) {
         // The parent is the only window that can reach us.
         if (event.source !== parent || !event.data || typeof event.data !== "object") { return; }
@@ -181,6 +182,26 @@
         // message scrolling inside it. The parent asks for a measurement once
         // it is listening; answer it unconditionally.
         if (event.data.plmail === "measure") { reportHeight(true); }
+
+        if (event.data.plmail === "attachment-paths") {
+            var allowed = new Set(event.data.paths);
+            document.querySelectorAll("img[src]").forEach(function (img) {
+                var path = img.getAttribute("src");
+                if (!allowed.has(path)) { return; }
+                if (!attachmentImages.has(path)) {
+                    attachmentImages.set(path, new Set());
+                    send({ plmail: "load-attachment", path: path });
+                }
+                attachmentImages.get(path).add(img);
+            });
+        }
+
+        if (event.data.plmail === "attachment-image" && attachmentImages.has(event.data.path)) {
+            attachmentImages.get(event.data.path).forEach(function (img) {
+                img.removeAttribute("srcset");
+                img.src = event.data.src;
+            });
+        }
 
         if (event.data.plmail === "show-images") {
             document.querySelectorAll("img[data-plmail-src]").forEach(function (img) {

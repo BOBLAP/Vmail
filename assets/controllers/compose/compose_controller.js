@@ -2041,6 +2041,7 @@ export default class extends Controller {
         textarea.hidden   = false === plain;
         textarea.classList.toggle('hidden', false === plain);
         editor.classList.toggle('hidden', true === plain);
+        if (plain) this._toolbar()?.closeImageSize();
 
         // The HTML body has to go on the wire empty for the send path to emit
         // text only — that branch is `if ($message->bodyHtml)` in

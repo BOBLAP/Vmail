@@ -148,6 +148,7 @@
                                     ] },
                                     { label: 'settings.nav.group.mail', items: [
                                         { section: 'accounts',      icon: 'fa-solid fa-at',    label: 'settings.nav.accounts' },
+                                        { section: 'sync-frequency', icon: 'fa-solid fa-rotate', label: 'sync_frequency.title' },
                                         { section: 'aliases',       icon: 'fa-solid fa-user-tag' },
                                         { section: 'read-receipts', icon: 'fa-solid fa-envelope-open-text', label: 'settings.nav.read_receipts' },
                                         { section: 'signature',     icon: 'fa-solid fa-signature' },
@@ -322,6 +323,8 @@
                                            chrome from _partials/_card_chrome.html.twig, so it
                                            matches without being flattened into the macro. #}
                                         {% include 'settings/_appearance.html.twig' %}
+                                    {% elseif section == 'sync-frequency' %}
+                                        {% include 'settings/_sync_frequency.html.twig' %}
                                     {% elseif section == 'profile' %}
                                         {% include 'settings/_profile.html.twig' %}
                                     {% elseif section == 'security' %}

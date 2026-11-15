@@ -9,7 +9,7 @@ import { showToast } from "../../toast.js";
  * icon can stop spinning.
  */
 export default class extends Controller {
-    static targets = ["icon"];
+    static targets = ["button", "icon"];
 
     static values = {
         url: String,
@@ -28,12 +28,14 @@ export default class extends Controller {
         clearTimeout(this._poll);
     }
 
-    async run() {
+    async run(event) {
         if (true === this._running) {
             return;
         }
 
         this._running = true;
+        this._activeButton = event?.currentTarget ?? this.buttonTargets.find(button => button.hasAttribute("data-sync-all"));
+        this._statusUrl = event?.params?.statusUrl ?? this.statusUrlValue;
         this._spin(true);
         // Said here, after the guard, so a click that is refused says nothing.
         this.dispatch("started");
@@ -41,7 +43,7 @@ export default class extends Controller {
         let response = null;
 
         try {
-            response = await fetch(this.urlValue, {
+            response = await fetch(event?.params?.url ?? this.urlValue, {
                 method: "POST",
                 headers: jsonCsrfHeaders(),
             });
@@ -60,6 +62,11 @@ export default class extends Controller {
         try {
             const result = await this._json(response);
             const t = this.i18nValue;
+            if (0 === result.dispatched) {
+                this._toast(t.noAccounts, "info");
+                this._stop();
+                return;
+            }
 
             this._toast(
                 (1 === result.dispatched ? t.syncingOne : t.syncingOther).replace("%count%", String(result.dispatched)),
@@ -105,7 +112,7 @@ export default class extends Controller {
         }
 
         try {
-            const response = await fetch(this.statusUrlValue);
+            const response = await fetch(this._statusUrl);
             const { pending } = await response.json();
 
             if (0 === pending) {
@@ -139,8 +146,10 @@ export default class extends Controller {
     }
 
     _spin(on) {
-        this.iconTarget.classList.toggle("fa-spin", on);
-        this.element.disabled = on;
+        for (const button of this.buttonTargets) button.disabled = on;
+        for (const icon of this.iconTargets) {
+            icon.classList.toggle("fa-spin", on && this._activeButton?.contains(icon));
+        }
     }
 
     _toast(message, type) {

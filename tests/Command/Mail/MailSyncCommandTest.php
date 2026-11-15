@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Command\Mail;
 
 use App\Command\Mail\MailSyncCommand;
+use App\Domain\Enum\Mail\SyncFrequency;
 use App\Service\Demo\DemoMode;
 use App\Entity\Mail\Account;
 use App\Infrastructure\Messaging\Message\SyncAccountMessage;
@@ -13,6 +14,7 @@ use App\Tests\Command\MailFixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Messenger\Envelope;
@@ -117,6 +119,30 @@ final class MailSyncCommandTest extends KernelTestCase
         );
     }
 
+    public function testScheduledPollUsesTheConfiguredIntervalWithoutDelayingManualSync(): void
+    {
+        $account = $this->account();
+        $account->setSetting(SyncFrequency::ACCOUNT_SETTING, SyncFrequency::Priority->value);
+        $account->usr->setSetting(SyncFrequency::USER_SETTING, ['priority' => 8]);
+        $this->em->flush();
+
+        $cache = new ArrayAdapter();
+        $lastPoll = $cache->getItem('mail.last_poll.' . $account->id);
+        $cache->save($lastPoll->set(intdiv(time(), 60) - 5));
+        $command = $this->tester(cache: $cache);
+        $args = ['account-id' => (string) $account->id];
+        $command->execute($args + ['--due' => true]);
+        self::assertSame([], $this->dispatchedAccountIds());
+
+        $cache->save($lastPoll->set(intdiv(time(), 60) - 8));
+        $command->execute($args + ['--due' => true]);
+        $command->execute($args + ['--due' => true]);
+        self::assertSame([$account->id], $this->dispatchedAccountIds());
+
+        $command->execute($args);
+        self::assertSame([$account->id, $account->id], $this->dispatchedAccountIds());
+    }
+
     // ── Fixtures ──────────────────────────────────────────────────────────
 
     /** @return list<int> */
@@ -143,17 +169,17 @@ final class MailSyncCommandTest extends KernelTestCase
      *                   install, which is the one condition under which it
      *                   dispatches nothing at all
      */
-    private function tester(bool $demo = false): CommandTester
+    private function tester(bool $demo = false, ?ArrayAdapter $cache = null): CommandTester
     {
         return new CommandTester(
-            new MailSyncCommand($this->repository(), $this->bus(), new DemoMode($demo, 'PT2H')),
+            new MailSyncCommand($this->repository(), $this->bus(), new DemoMode($demo, 'PT2H'), $cache ?? new ArrayAdapter()),
         );
     }
 
     /**
      * A demo instance's accounts point at documentation domains, so every
      * dispatch would be a worker spending its full retry ladder on a host that
-     * does not resolve. The scheduler runs this every fifteen minutes, so this
+     * does not resolve. The scheduler runs this every minute, so this
      * branch is what actually keeps a demo's queue clean.
      */
     public function testItDispatchesNothingOnADemoInstall(): void

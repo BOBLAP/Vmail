@@ -1876,6 +1876,9 @@ compose:
     forward: Forward
     from: From
     image: Insert image
+    image_width: Image width (px)
+    image_resize: Resize
+    image_resize_cancel: Cancel
     image_insert_failed: Could not place the image in the message
     indent: Indent
     insert_emoji: Insert emoji
@@ -2617,7 +2620,24 @@ request_error:
     refused: 'plMail couldn''t do that. Reload the page and try again.'
     offline: 'plMail couldn''t be reached. Check your connection and try again.'
     reference: 'Ref. %id%'
+sync_frequency:
+    title: 'Mail retrieval frequency'
+    description: 'Drag accounts between groups or use their menu. Set the automatic retrieval intervals in minutes.'
+    group:
+        default: 'Default'
+        priority: 'Priority'
+        secondary: 'Secondary'
+        economy: 'Economy'
+    minutes: min
+    group_for: 'Retrieval group for %account%'
+    save: 'Save'
+    saved: 'Retrieval frequencies saved.'
+    invalid: 'Enter an interval from 1 to 1440 minutes for each group.'
+
 sync_now:
+    priority: 'Retrieve priority mailboxes'
+    all: 'Retrieve all mailboxes'
+    no_accounts: 'No active accounts in this selection.'
     label: 'Sync now'
     syncing_one: 'Syncing 1 account…'
     syncing_other: 'Syncing %count% accounts…'

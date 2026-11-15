@@ -10,6 +10,7 @@ use App\Domain\Enum\User\ClockPlacement;
 use App\Entity\Ai\AiFeature;
 use App\Domain\Helper\TimezoneHelper;
 use App\Domain\Enum\Mail\LabelRole;
+use App\Domain\Enum\Mail\SyncFrequency;
 use App\Entity\User\User;
 use App\Form\ApiTokenType;
 use App\Form\RecipientGroupType;
@@ -68,7 +69,7 @@ final class SettingsController extends AbstractController
     /** Where /settings opens: the first entry in the navigation. */
     private const string DEFAULT_SECTION = 'profile';
 
-    private const array SECTIONS = ['health', 'accounts', 'profile', 'security', 'labels', 'calendars', 'sharing', 'filters', 'insights', 'ai', 'integrations', 'appearance', 'aliases', 'read-receipts', 'signature', 'templates', 'recipient-groups', 'auto-responder', 'app-passwords', 'notifications', 'general', 'categories', 'reading-pane', 'shortcuts', 'disposal', 'images', 'calendar-behaviour'];
+    private const array SECTIONS = ['health', 'accounts', 'sync-frequency', 'profile', 'security', 'labels', 'calendars', 'sharing', 'filters', 'insights', 'ai', 'integrations', 'appearance', 'aliases', 'read-receipts', 'signature', 'templates', 'recipient-groups', 'auto-responder', 'app-passwords', 'notifications', 'general', 'categories', 'reading-pane', 'shortcuts', 'disposal', 'images', 'calendar-behaviour'];
 
     /**
      * One icon per AI feature, here rather than on the enum.
@@ -159,12 +160,22 @@ final class SettingsController extends AbstractController
         // primary account two different rows on any install where the two
         // orderings disagree.
         $manageableAccounts = $this->accountRepository->findForUserOrdered($this->getUser());
+        $syncGroups = [];
+        if ('sync-frequency' === $section && $user instanceof User) {
+            foreach (SyncFrequency::cases() as $group) {
+                $syncGroups[$group->value] = ['minutes' => $group->minutes($user), 'accounts' => []];
+            }
+            foreach ($manageableAccounts as $account) {
+                $syncGroups[SyncFrequency::forAccount($account)->value]['accounts'][] = $account;
+            }
+        }
 
         return $this->render('settings/index.html.twig', [
             ...$this->recipientGroupSectionData($section, $request),
             ...$this->autoResponderSectionData($section, $request),
             'section'            => $section,
             'manageableAccounts' => $manageableAccounts,
+            'syncGroups'         => $syncGroups,
             'labels'             => $this->labelRepository->findForUserTreeOrdered($this->getUser()),
             'calendars'          => $this->calendarRepository->findForUser($this->getUser()),
             'rules'              => $this->mailRuleRepository->findForUserOrdered($this->getUser()),

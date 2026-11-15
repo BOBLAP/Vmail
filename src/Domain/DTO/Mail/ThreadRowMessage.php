@@ -43,6 +43,7 @@ final readonly class ThreadRowMessage
          * mailbox of their own when it is not. See OwnAddressHelper.
          */
         public bool $filedAsSent = false,
+        public bool $unread = false,
     ) {
     }
 
@@ -64,6 +65,7 @@ final readonly class ThreadRowMessage
             // labels of each message on the row — a lazy load apiece.
             true === ($message->account ?? null)?->catchesAddress($message->fromAddress)
                 && true === OwnAddressHelper::sentByAccount($message),
+            null === $message->seenAt,
         );
     }
 }

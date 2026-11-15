@@ -1884,6 +1884,9 @@ compose:
     forward: Transférer
     from: De
     image: Insérer une image
+    image_width: Largeur de l’image (px)
+    image_resize: Redimensionner
+    image_resize_cancel: Annuler
     image_insert_failed: Impossible de placer l’image dans le message
     indent: Augmenter le retrait
     insert_emoji: Insérer un emoji
@@ -2630,7 +2633,24 @@ request_error:
     refused: 'plMail n’a pas pu faire cela. Rechargez la page et réessayez.'
     offline: 'plMail est injoignable. Vérifiez votre connexion et réessayez.'
     reference: 'Réf. %id%'
+sync_frequency:
+    title: 'Fréquence de récupération'
+    description: 'Glissez les comptes entre les groupes ou utilisez leur menu. Réglez les intervalles de relève automatique en minutes.'
+    group:
+        default: 'Défaut'
+        priority: 'Prioritaire'
+        secondary: 'Secondaire'
+        economy: 'Économie'
+    minutes: min
+    group_for: 'Groupe de relève pour %account%'
+    save: 'Enregistrer'
+    saved: 'Fréquences de relève enregistrées.'
+    invalid: 'Saisissez une durée de 1 à 1 440 minutes pour chaque groupe.'
+
 sync_now:
+    priority: 'Récupérer les boîtes prioritaires'
+    all: 'Récupérer toutes les boîtes'
+    no_accounts: 'Aucun compte actif dans cette sélection.'
     label: 'Synchroniser maintenant'
     syncing_one: 'Synchronisation d’un compte…'
     syncing_other: 'Synchronisation de %count% comptes…'

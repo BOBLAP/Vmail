@@ -20,7 +20,7 @@ import { test, expect, type Page } from "./support/test";
  */
 test.use({ viewport: { width: 1280, height: 800 } });
 
-const BUTTON = '[data-controller~="mail--sync-now"]';
+const BUTTON = '[data-sync-all]';
 const ICON = `${BUTTON} [data-mail--sync-now-target="icon"]`;
 const POLL_MS = 1500;
 

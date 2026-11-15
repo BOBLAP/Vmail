@@ -315,6 +315,12 @@ Ne pas supprimer les volumes pour actualiser un thème : ils portent les donnée
 
 ## 9. Entretien de cette cartographie
 
+Réglages → Fréquence de récupération affiche quatre colonnes de largeur égale
+sur grand écran, puis deux ou une sur écran réduit. Glisser une boîte ou choisir
+son groupe dans le menu de la boîte, puis enregistrer. Dans la barre supérieure,
+l’éclair lance la relève des comptes prioritaires et la flèche circulaire lance
+la relève de tous les comptes actifs.
+
 À chaque changement concerné, actualiser les fonctions disponibles, chemins,
 priorités, procédures et tests touchés. Signaler explicitement ce qui a été testé
 et ce qui reste une observation du code. Éviter de dupliquer tous les détails
@@ -340,6 +346,9 @@ La préférence suit sauvegarde, export/import et JMAP ; migration `Version20261
 `listDensity = neat` ajoute une ligne fixe de 30 px, un avatar de 22 px et les
 labels avant le sujet. Neat est proposé uniquement pour Message list, après Compact.
 Le sujet est suivi de `|` puis du début du message, tronqué selon la largeur disponible.
+L’aperçu privilégie le plus ancien message non lu. Avec deux non-lus ou plus,
+Neat partage l’espace restant en deux et affiche les initiales et le texte des
+deux premiers non-lus en gras.
 Les labels sont affichés uniquement avant le sujet ; leurs copies standard restent masquées.
 Les hooks `data-row-neat-labels`, `data-row-neat-text`, `data-row-content` et la classe racine `list-neat`
 pilotent le rendu réel et la miniature ; les autres densités gardent leur disposition.
@@ -392,6 +401,10 @@ de 4 px, colorée avec l’accent pour l’onglet actif, transparente au repos a
 
 ### Téléchargement des pièces jointes
 
+Les images intégrées au corps s’affichent directement dans le lecteur.
+Le contrôle navigateur se trouve dans `tests/e2e/image-proxy-render.spec.ts`
+et couvre aussi un message dont les images distantes sont bloquées.
+
 `mail/_attachment_chip.html.twig` ajoute un lien de téléchargement direct aux
 PDF et documents Office ouvrables dans le lecteur. Il apparaît au survol ou au
 focus clavier, et reste visible sur écran tactile ; le bouton voisin ouvre le lecteur.
@@ -402,6 +415,10 @@ neutralise les chemins, conserve les noms en doublon avec un suffixe et supprime
 le ZIP temporaire après l’envoi. Les liens de téléchargement échappent à Turbo.
 
 ### Dépôt de fichiers et collage dans la rédaction
+
+Un clic sur une image intégrée ouvre le champ de largeur en pixels. Le
+redimensionnement conserve ses proportions et la largeur suit la sauvegarde
+du brouillon. Le champ est extérieur au corps du message.
 
 `compose/_window.html.twig` définit deux surfaces `data-compose-drop-zone` :
 `body` (zone de saisie) et `attachments` (barres de boutons). Le contrôleur

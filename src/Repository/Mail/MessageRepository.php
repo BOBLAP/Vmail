@@ -2654,6 +2654,7 @@ class MessageRepository extends ServiceEntityRepository
                 'm.fromName',
                 'm.toAddresses',
                 'm.flags',
+                'm.seenAt',
                 'm.receivedAt',
                 'm.sentAt',
                 'm.createdAt',
@@ -2678,7 +2679,7 @@ class MessageRepository extends ServiceEntityRepository
 
     /**
      * The two body columns MessageSnippet reads, for specific messages only —
-     * one per list row, the row's latest.
+     * up to two per list row.
      *
      * @param list<int> $ids
      *

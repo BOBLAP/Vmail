@@ -27,8 +27,8 @@ use Symfony\Contracts\Service\ResetInterface;
  *
  * Now it is two statements for the page: the row fields of every message
  * (MessageRepository::findRowFieldsForThreads), and the two body columns of
- * the ONE message per row whose snippet is shown. The snippet is flattened
- * here, once per row, rather than by the template.
+ * up to two messages per row whose snippets are shown. Snippets are flattened
+ * here before rendering the template.
  *
  * ── The three ways a row is asked for ───────────────────────────────────────
  * A list page calls preload() with its rows first. A single row re-rendered on
@@ -114,14 +114,15 @@ final class ThreadRows implements ResetInterface
 
     private function fromEntities(MessageThread $thread): ThreadRow
     {
-        $messages = array_values(array_map(
-            ThreadRowMessage::of(...),
-            $thread->messages->toArray(),
-        ));
-
+        $entities = array_values($thread->messages->toArray());
+        $messages = array_map(ThreadRowMessage::of(...), $entities);
+        $previews = [];
+        foreach ($this->unreadMessages($messages) as $index => $message) {
+            $previews[] = $this->preview($message, $this->snippet->of($entities[$index]));
+        }
         $latest = $thread->messages->last();
 
-        return new ThreadRow($messages, $this->snippet->of(false === $latest ? null : $latest));
+        return new ThreadRow($messages, $previews[0]['text'] ?? $this->snippet->of(false === $latest ? null : $latest), $previews);
     }
 
     /**
@@ -153,30 +154,57 @@ final class ThreadRows implements ResetInterface
                 $createdAt,
                 self::dateOrNull($row['submissionSendAt']),
                 (int) ($row['filedAsSent'] ?? 0) > 0,
+                null === $row['seenAt'],
             );
         }
 
-        $latestIds = [];
+        $previewIds = [];
 
         foreach ($byThread as $messages) {
-            $latest = $messages[count($messages) - 1] ?? null;
-
-            if (null !== $latest?->id) {
-                $latestIds[] = $latest->id;
+            $sources = $this->unreadMessages($messages) ?: array_slice($messages, -1);
+            foreach ($sources as $message) {
+                if (null !== $message->id) {
+                    $previewIds[] = $message->id;
+                }
             }
         }
 
-        $bodies = $this->messages->findSnippetBodies($latestIds);
+        $bodies = $this->messages->findSnippetBodies($previewIds);
 
         foreach ($byThread as $threadId => $messages) {
+            $previews = [];
+            foreach ($this->unreadMessages($messages) as $message) {
+                $unreadBody = $bodies[$message->id] ?? null;
+                $previews[] = $this->preview($message, null === $unreadBody ? '' : $this->snippet->fromBodies($unreadBody['bodyHtmlSafe'], $unreadBody['bodyText']));
+            }
             $latestId = ($messages[count($messages) - 1] ?? null)?->id;
             $body     = null !== $latestId ? ($bodies[$latestId] ?? null) : null;
 
             $this->rows[$threadId] = new ThreadRow(
                 $messages,
-                null === $body ? '' : $this->snippet->fromBodies($body['bodyHtmlSafe'], $body['bodyText']),
+                $previews[0]['text'] ?? (null === $body ? '' : $this->snippet->fromBodies($body['bodyHtmlSafe'], $body['bodyText'])),
+                $previews,
             );
         }
+    }
+
+    /**
+     * @param list<ThreadRowMessage> $messages
+     * @return array<int, ThreadRowMessage>
+     */
+    private function unreadMessages(array $messages): array
+    {
+        return array_slice(array_filter($messages, static fn (ThreadRowMessage $message): bool => $message->unread && !$message->isDraft), 0, 2, true);
+    }
+
+    /** @return array{sender: string, text: string} */
+    private function preview(ThreadRowMessage $message, string $text): array
+    {
+        $name = $message->fromName ?: explode('@', $message->fromAddress ?? '')[0];
+        preg_match_all('/[\p{L}\p{N}]+/u', $name, $words);
+        $initials = implode('', array_map(static fn (string $word): string => mb_substr($word, 0, 1), array_slice($words[0], 0, 3)));
+
+        return ['sender' => mb_strtoupper($initials), 'text' => $text];
     }
 
     private static function stringOrNull(mixed $value): ?string

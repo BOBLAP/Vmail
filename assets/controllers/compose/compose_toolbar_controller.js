@@ -22,6 +22,8 @@ export default class extends Controller {
         'linkError',
         'linkUnlink',
         'linkHref',
+        'imageSize',
+        'imageWidth',
     ];
 
     static values = {
@@ -78,6 +80,7 @@ export default class extends Controller {
     // anchor inside an anchor is not something a mail client should ever
     // produce, and execCommand('createLink') happily would.
     #linkAnchor = null;
+    #selectedImage = null;
 
     connect() {
         this._boundUpdateState = this._updateButtonState.bind(this);
@@ -843,6 +846,20 @@ export default class extends Controller {
      * and is honoured as such.
      */
     _handleEditorClick(event) {
+        if (this.hasImageSizeTarget && !event.metaKey && !event.ctrlKey) {
+            const image = event.target.closest('img[data-cid]');
+            if (image) {
+                this.#selectedImage = image;
+                this.imageWidthTarget.value = image.getAttribute('width') || Math.max(1, Math.round(image.getBoundingClientRect().width));
+                this.imageSizeTarget.hidden = false;
+                this.imageWidthTarget.focus();
+                this.imageWidthTarget.select();
+                return;
+            }
+            this.imageSizeTarget.hidden = true;
+            this.#selectedImage = null;
+        }
+
         const anchor = event.target?.closest?.('a');
 
         if (!anchor || false === this.editorTarget.contains(anchor)) {
@@ -1103,6 +1120,31 @@ export default class extends Controller {
     }
 
     // ── Sync contenteditable → hidden input ───────────────────────────
+
+    resizeImage(event) {
+        event.preventDefault();
+        const image = this.#selectedImage;
+        if (!image || !this.editorTarget.contains(image)) {
+            this.closeImageSize();
+            return;
+        }
+        if (!this.imageWidthTarget.reportValidity()) return;
+
+        image.setAttribute('width', String(this.imageWidthTarget.valueAsNumber));
+        image.removeAttribute('height');
+        image.style.removeProperty('width');
+        image.style.height = 'auto';
+        image.style.maxWidth = '100%';
+        this.editorTarget.dispatchEvent(new Event('input', { bubbles: true }));
+        this.closeImageSize(event);
+    }
+
+    closeImageSize(event) {
+        if (!this.hasImageSizeTarget) return;
+        this.imageSizeTarget.hidden = true;
+        this.#selectedImage = null;
+        if (event) this._restoreRange();
+    }
 
     _syncHiddenInput() {
         if (!this.hasEditorTarget || !this.hasHiddenInputTarget) {

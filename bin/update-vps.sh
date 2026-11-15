@@ -71,7 +71,8 @@ if [[ $old_image == "$new_image" && -f $preview_service ]] && cmp -s "$definitio
   fi
 fi
 stamp=$(date -u +%Y%m%d-%H%M%S)
-backup="/home/migration/vmail/backups/$stamp"
+backup_root=/home/migration/vmail/backups
+backup="$backup_root/$stamp"
 [[ ! -e $backup ]] || { echo 'Dossier de sauvegarde deja present.'; exit 1; }
 mkdir -p "$backup"
 chmod 700 "$backup"
@@ -198,6 +199,20 @@ done
 [[ $public_ready == true ]] || { echo 'Acces HTTPS public non disponible apres attente du proxy.'; exit 1; }
 echo "Mise a jour reussie. Image : $new_image"
 echo "Sauvegarde conservee : $backup"
-echo 'Les sauvegardes contiennent des secrets : prevoir leur conservation securisee hors VPS.'
+# Rotate only the restore points made by this script, after validating the new
+# deployment. Each restore point consists of its directory and rollback tag.
+shopt -s nullglob
+for previous in "$backup_root"/*; do
+  previous_stamp=${previous##*/}
+  [[ $previous_stamp =~ ^[0-9]{8}-[0-9]{6}$ && $previous_stamp < $stamp ]] || continue
+  [[ -d $previous && ! -L $previous && -f $previous/previous-image.txt && -f $previous/compose.yaml ]] || continue
+  tag="vmail-rollback:$previous_stamp"
+  if docker image inspect "$tag" >/dev/null 2>&1; then
+    docker image rm "$tag"
+  fi
+  rm -r -- "$previous"
+  echo "Ancienne sauvegarde retiree : $previous_stamp"
+done
+echo 'La sauvegarde contient des secrets : prevoir sa conservation securisee hors VPS.'
 # Only this explicitly supplied upload is removed, after successful validation.
 rm -- "$archive"

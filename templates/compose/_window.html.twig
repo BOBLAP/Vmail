@@ -536,11 +536,33 @@ Variables: form, message, ctx (an App\Domain\DTO\Mail\ComposeContext)
                         declarations too; this is what holds when one gets
                         past it. #}
                      class="w-full min-h-[170px] bg-transparent outline-none [contain:paint]
-                            text-sm leading-relaxed
+                            text-sm leading-relaxed [&_img[data-cid]]:cursor-pointer
                             text-ink {{ plainText ? 'hidden' : '' }}
                             empty:before:content-[attr(data-placeholder)]
                             empty:before:text-ink-faint
                             empty:before:pointer-events-none">{{ form.bodyHtml.vars.value|raw ?: '' }}</div>
+                <div hidden data-compose--compose-toolbar-target="imageSize"
+                     data-action="keydown.esc->compose--compose-toolbar#closeImageSize:stop"
+                     class="mt-2 rounded-lg border border-line bg-raised px-3 py-2">
+                    <div class="flex flex-wrap items-center gap-2 text-sm">
+                        <label class="flex items-center gap-2">
+                            <span>{{ 'compose.image_width'|trans }}</span>
+                            {# The resize field validates only when applying the width. #}
+                            <input type="number" min="1" max="10000" step="1" required form=""
+                                   class="w-24 rounded border border-field bg-field px-2 py-1"
+                                   data-compose--compose-toolbar-target="imageWidth"
+                                   data-action="keydown.enter->compose--compose-toolbar#resizeImage">
+                        </label>
+                        <button type="button" class="rounded-md bg-accent px-3 py-1 text-accent-ink hover:bg-accent-strong focus-visible:ring-2 focus-visible:ring-accent"
+                                data-action="compose--compose-toolbar#resizeImage">
+                            {{ 'compose.image_resize'|trans }}
+                        </button>
+                        <button type="button" class="rounded-md px-3 py-1 text-ink-muted hover:bg-hover focus-visible:ring-2 focus-visible:ring-accent"
+                                data-action="compose--compose-toolbar#closeImageSize">
+                            {{ 'compose.image_resize_cancel'|trans }}
+                        </button>
+                    </div>
+                </div>
             </div>
 
             </div>{# end scroller #}

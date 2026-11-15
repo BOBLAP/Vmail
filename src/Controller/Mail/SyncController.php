@@ -6,6 +6,7 @@ namespace App\Controller\Mail;
 
 use App\Controller\ChecksCsrf;
 use App\Domain\Enum\Mail\SyncTrigger;
+use App\Domain\Enum\Mail\SyncFrequency;
 use App\Entity\Mail\Account;
 use App\Infrastructure\Messaging\Message\SyncAccountMessage;
 use App\Repository\Mail\AccountRepository;
@@ -48,13 +49,14 @@ final class SyncController extends AbstractController
     ) {}
 
     #[Route('', name: 'run', methods: ['POST'])]
-    public function run(Request $request): JsonResponse
+    #[Route('/priority', name: 'run_priority', defaults: ['priorityOnly' => true], methods: ['POST'])]
+    public function run(Request $request, bool $priorityOnly = false): JsonResponse
     {
         // sync_now_controller.js sends the token from the csrf-token meta tag in
         // the layout head; the tag is what this check needs to be worth having.
         $this->assertCsrf($request, 'ajax');
 
-        $accounts = $this->activeAccounts();
+        $accounts = $this->activeAccounts($priorityOnly);
 
         foreach ($accounts as $account) {
             $this->bus->dispatch(new SyncAccountMessage($account->id, SyncTrigger::Manual));
@@ -73,9 +75,10 @@ final class SyncController extends AbstractController
      * controller may not.
      */
     #[Route('/status', name: 'status', methods: ['GET'])]
-    public function status(): JsonResponse
+    #[Route('/priority/status', name: 'status_priority', defaults: ['priorityOnly' => true], methods: ['GET'])]
+    public function status(bool $priorityOnly = false): JsonResponse
     {
-        $accounts = $this->activeAccounts();
+        $accounts = $this->activeAccounts($priorityOnly);
 
         if ([] === $accounts) {
             return $this->json(['pending' => 0]);
@@ -97,11 +100,12 @@ final class SyncController extends AbstractController
     /**
      * @return list<Account>
      */
-    private function activeAccounts(): array
+    private function activeAccounts(bool $priorityOnly): array
     {
         return array_values(array_filter(
             $this->accountRepository->findForUserOrdered($this->getUser()),
-            static fn (Account $account): bool => true === $account->isActive,
+            static fn (Account $account): bool => true === $account->isActive
+                && (!$priorityOnly || SyncFrequency::Priority === SyncFrequency::forAccount($account)),
         ));
     }
 }

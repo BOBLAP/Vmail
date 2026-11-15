@@ -27,7 +27,7 @@ entrées sont des points de départ, sans audit complet de leur logique métier.
 | Ajouter menu ou select | `templates/_partials/_select.html.twig`, `assets/controllers/ui/dropdown_controller.js` | Contrôleur de select, styles Tom Select ou menu métier |
 | Ajouter confirmation ou notification | `assets/confirm.js`, `assets/toast.js` | Partial partagé, traduction, erreurs et chemin Turbo/fetch |
 | Modifier la recherche avancée | `templates/search/_advanced.html.twig`, `assets/controllers/mail/advanced_search_controller.js` | Conversion des champs dans `assets/advanced_search.js`, parseur `src/Service/Search/SearchQueryParser.php`, navigation dans `assets/controllers/mail/search_controller.js` |
-| Changer une ligne de courrier | `templates/_partials/_thread_row.html.twig` | `assets/controllers/mail/message_row_controller.js`, `src/Controller/Mail/MailController.php` |
+| Changer une ligne de courrier | `templates/_partials/_thread_row.html.twig` | `src/Service/Mail/ThreadRows.php` prépare les aperçus, `assets/controllers/mail/message_row_controller.js` gère les actions |
 | Modifier la barre d'actions | `templates/_partials/_list_toolbar.html.twig` | `assets/controllers/mail/list_toolbar_controller.js`, contrôleur serveur de l'action |
 | Modifier le message ouvert | `templates/mail/_thread_content.html.twig`, `templates/mail/_thread_message.html.twig` | `assets/controllers/mail/thread_read_controller.js`, `assets/controllers/mail/thread_message_controller.js` |
 | Modifier la rédaction | `templates/compose/_window.html.twig` | `assets/controllers/compose/compose_controller.js`, `assets/controllers/compose/compose_toolbar_controller.js`, `src/Controller/Mail/ComposeController.php` |
@@ -102,6 +102,11 @@ Le téléchargement vise toujours l’original. Voir [le guide Office](features/
 pour Gotenberg, les limites, le cache privé et la stack de tests.
 
 ## Sécurité des contenus distants
+
+Les images intégrées référencées par le corps sont chargées par
+`mail/message_frame_controller.js` via la route de pièce jointe authentifiée.
+`_message_body.html.twig` limite les chemins aux pièces du message courant.
+`_frame_script.js` reçoit les images et les affiche dans le lecteur isolé.
 
 L’onglet Security précède Images dans `templates/settings/index.html.twig` et
 conserve les cartes du mot de passe et de la double authentification.
@@ -179,6 +184,10 @@ le ZIP temporaire après l’envoi. Les liens de téléchargement échappent à 
 
 ### Dépôt de fichiers et collage dans la rédaction
 
+`compose_toolbar_controller.js` redimensionne les images CID depuis le champ
+de largeur de `compose/_window.html.twig`. L’attribut HTML `width` suit le
+brouillon et le message envoyé.
+
 `compose/_window.html.twig` définit deux surfaces `data-compose-drop-zone` :
 `body` (zone de saisie) et `attachments` (barres de boutons). Le contrôleur
 `compose_controller.js` accepte les fichiers, surligne la zone pendant le survol,
@@ -193,6 +202,15 @@ sont réutilisés. Régression : `tests/e2e/compose-file-drop.spec.ts`.
 
 
 ## Filtre de compte et date de récupération IMAP
+
+Réglages → Fréquence de récupération : `SyncFrequency`,
+`SyncFrequencyController`, `settings/_sync_frequency.html.twig` et
+`settings/sync_frequency_controller.js`. Les intervalles sont enregistrés avec
+l’utilisateur et le groupe avec le compte. `MaintenanceSchedule` lance
+`app:mail:sync --due` chaque minute ; la commande conserve la minute du dernier
+déclenchement planifié par compte. Les notifications fournisseur, IMAP IDLE et
+la relève manuelle suivent leur parcours habituel. `SyncController` scope la
+relève manuelle et son suivi aux comptes prioritaires ou à tous les comptes actifs.
 
 `retrievalAccount` stocke l’ID interne du compte choisi dans le constructeur de
 règles : `MailRuleController`, `FilterVocabulary`, `EmailFilterCompiler` et

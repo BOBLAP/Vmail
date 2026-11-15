@@ -215,6 +215,7 @@ final class SeedRenderingCommand extends Command
         $this->entityManager->flush();
 
         $this->attach($long);
+        $this->embedImage($fetchable);
 
         $accountId = (int) $account->id;
         $threadIds = [];
@@ -414,6 +415,24 @@ final class SeedRenderingCommand extends Command
 
         $this->entityManager->persist($part);
         $this->entityManager->flush();
+    }
+
+    private function embedImage(Message $message): void
+    {
+        $bytes = base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
+        $part = new MessagePart();
+        $part->message = $message;
+        $part->contentType = 'image/gif';
+        $part->filename = 'inline.gif';
+        $part->disposition = 'inline';
+        $part->isInline = true;
+        $part->size = strlen($bytes);
+        $part->storagePath = $this->attachmentStorage->store((int) $message->account->id, 0, (int) $message->id, $part->filename, $bytes);
+        $message->addMessagePart($part);
+        $this->entityManager->persist($part);
+        $this->entityManager->flush();
+
+        $message->bodyHtmlSafe .= sprintf('<img src="/mail/attachment/%d" alt="E2E Inline Image">', $part->id);
     }
 
     private function account(object $user): Account

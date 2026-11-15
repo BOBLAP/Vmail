@@ -524,7 +524,12 @@ be a worse regression than the one this feature fixes.
             </span>
             <span data-row-neat-text class="hidden">
                 <span data-neat-subject class="truncate {{ unread ? 'font-semibold text-ink' : 'text-ink-soft' }}">{{ subjectLine }}{% if count > 1 %} <span class="text-ink-faint">{{ 'thread_row.message_count'|trans({'{ count }': count}) }}</span>{% endif %}</span>
-                {% if snippet|striptags|trim is not empty %}
+                {% if highlight.snippet|default(null) is null and row.unreadPreviews|default([])|length == 2 %}
+                    {% for preview in row.unreadPreviews %}
+                        <span data-neat-separator class="shrink-0 text-ink-faint" aria-hidden="true">|</span>
+                        <strong data-neat-snippet class="truncate text-ink">{{ preview.sender }} | {{ preview.text|slice(0, 100) }}</strong>
+                    {% endfor %}
+                {% elseif snippet|striptags|trim is not empty %}
                     <span data-neat-separator class="shrink-0 text-ink-faint" aria-hidden="true">|</span>
                     <span data-neat-snippet class="truncate text-ink-faint">{{ snippet }}</span>
                 {% endif %}
